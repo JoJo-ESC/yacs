@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useEffect } from "react";
+import { GripVertical, Plus, Save } from "lucide-react";
 
 // ---------------------- Types ----------------------
 type Course = { id: string; title: string; credits: number; };
@@ -63,24 +64,26 @@ function defaultTerms(startFallYear = 2023): TermId[] {
 // ---------------------- Components ----------------------
 const HeaderBar: React.FC<{ total: number; max?: number; onSave: () => void; onAdd: () => void; }>
 = ({ total, max = 128, onSave, onAdd }) => (
-  <div className="sticky top-0 z-20 bg-header p-2">
-    <div className="h-2 w-full rounded bg-muted overflow-hidden">
-      <div className="h-full bg-footer" style={{ width: `${Math.min((total / max) * 100, 100)}%` }} />
+  <div className="sticky top-[68px] z-30 border-b border-slate-200/60 bg-white/85 px-3 py-3 backdrop-blur-xl shadow-sm shadow-slate-900/5 dark:border-border dark:bg-header/90">
+    <div className="h-3 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-muted">
+      <div className="h-full rounded-full bg-gradient-to-r from-blue-500 to-blue-700 transition-all duration-500 ease-out" style={{ width: `${Math.min((total / max) * 100, 100)}%` }} />
     </div>
-    <div className="mt-2 flex items-center justify-between">
-      <span className="text-foreground/90 text-sm">{total} / {max} credits</span>
-      <div className="flex gap-2">
+    <div className="mt-3 flex items-center justify-between">
+      <span className="text-sm font-medium text-slate-700 dark:text-foreground/90">{total} / {max} credits</span>
+      <div className="flex gap-3">
         <button
           onClick={onAdd}
-          className="px-3 py-1 rounded-lg bg-surface text-foreground border border-border hover:brightness-110"
+          className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 dark:border-border dark:bg-surface dark:text-foreground"
         >
-          ADD +
+          <Plus className="h-4 w-4" />
+          Add
         </button>
         <button
           onClick={onSave}
-          className="px-3 py-1 rounded-lg bg-footer text-white hover:brightness-110"
+          className="inline-flex h-10 items-center gap-2 rounded-xl bg-gradient-to-br from-indigo-600 to-indigo-700 px-5 text-sm font-medium text-white shadow-lg shadow-indigo-600/25 transition-all hover:from-indigo-700 hover:to-indigo-800 hover:shadow-xl hover:shadow-indigo-600/30"
         >
-          SAVE
+          <Save className="h-4 w-4" />
+          Save
         </button>
       </div>
     </div>
@@ -95,19 +98,18 @@ const TermColumn: React.FC<{
 }> = ({ id, items, onDropCourse, onRemove }) => {
   const credits = termCredits(items);
   return (
-    <div className="rounded-lg bg-surface border border-border p-3 min-h-[160px]">
+    <div className="min-h-[160px] rounded-2xl border border-slate-200/70 bg-white p-5 shadow-sm shadow-slate-900/5 dark:border-border dark:bg-surface">
       <div className="flex items-baseline justify-between">
         <div>
-          <div className="font-semibold text-foreground">{id.split(" ")[0]} {id.split(" ")[1]}</div>
-          <div className="text-xs text-foreground/70">credits: {String(credits).padStart(2, "0")}</div>
+          <div className="text-base font-semibold tracking-tight text-slate-900 dark:text-foreground">{id.split(" ")[0]} {id.split(" ")[1]}</div>
+          <div className="mt-0.5 text-xs text-slate-500 dark:text-foreground/70">credits: {String(credits).padStart(2, "0")}</div>
         </div>
         {credits >= 20 && <span className="text-[16px]" style={{ color: "var(--footer)" }} title="Heavy load">❗</span>}
       </div>
 
       {/* Drop area */}
       <div
-        className="mt-3 rounded-lg border border-dashed border-border h-40 overflow-y-auto flex flex-col items-center justify-center gap-2"
-        style={{ backgroundColor: "color-mix(in oklab, var(--surface), var(--background) 35%)" }}
+        className="mt-4 flex h-40 flex-col items-center justify-center gap-2 overflow-y-auto rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/70 dark:border-border dark:bg-background/60"
         onDragOver={(e) => e.preventDefault()}
         onDrop={(e) => {
           e.preventDefault();
@@ -120,19 +122,22 @@ const TermColumn: React.FC<{
         }}
       >
         {items.length === 0 && (
-          <div className="text-sm" style={{ color: "var(--foreground)", opacity: 0.6 }}>
+          <div className="text-sm text-slate-400 dark:text-foreground/60">
             Drop some classes here!
           </div>
         )}
-        <ul className="space-y-2 w-full p-2">
+        <ul className="w-full space-y-2 p-1.5">
           {items.map((c) => (
-            <li key={c.key} className="flex items-center justify-between rounded-md bg-background dark:bg-slate-600 px-2 py-2 border border-border">
-              <div className="text-md text-foreground truncate" title={`${c.id} : ${c.title}`}>
-                <b>{c.id}</b> : {c.title}
+            <li key={c.key} className="group flex items-center justify-between rounded-xl border border-indigo-100 bg-gradient-to-br from-indigo-50 to-purple-50/50 px-2.5 py-2 shadow-sm shadow-indigo-500/5 dark:border-indigo-900/40 dark:from-indigo-900/30 dark:to-purple-900/25">
+              <div className="flex min-w-0 items-start gap-2.5">
+                <GripVertical className="mt-0.5 h-4 w-4 shrink-0 text-indigo-400 transition-colors group-hover:text-indigo-600 dark:text-indigo-300 dark:group-hover:text-indigo-200" />
+                <div className="truncate text-sm text-slate-800 dark:text-foreground" title={`${c.id} : ${c.title}`}>
+                  <b>{c.id}</b> : {c.title}
+                </div>
               </div>
               <div className="flex items-center gap-2">
                 <button
-                  className="text-xs items-center justify-center rounded w-6 h-6 text-foreground"
+                  className="flex h-6 w-6 items-center justify-center rounded-lg text-xs text-slate-500 opacity-0 transition-all hover:bg-red-100 hover:text-red-600 group-hover:opacity-100 dark:text-foreground/80 dark:hover:bg-red-950/40"
                   onClick={() => onRemove(id, c.key)}
                 >
                   ✕
@@ -146,27 +151,41 @@ const TermColumn: React.FC<{
   );
 };
 
-const CatalogCard: React.FC<{ c: Course }>= ({ c }) => (
-  <div
-    className="rounded-md border border-border bg-background dark:bg-slate-600 px-3 py-2 text-foreground cursor-grab select-none"
-    draggable
-    onDragStart={(e) => e.dataTransfer.setData("text/plain", JSON.stringify(c))}
-    title={`${c.id} • ${c.title}`}
-  >
-    <div className="text-sm font-medium truncate">{c.id} : {c.title}</div>
-    <div className="text-xs text-gray-500 dark:text-gray-300">{c.credits} credits</div>
-  </div>
-);
+const CatalogCard: React.FC<{ c: Course }>= ({ c }) => {
+  const [isDragging, setIsDragging] = useState(false);
+  return (
+    <div
+      className={`group cursor-grab select-none rounded-xl border border-indigo-100 bg-gradient-to-br from-indigo-50 to-purple-50/50 px-3 py-2.5 text-foreground transition-all hover:shadow-md hover:shadow-indigo-500/10 dark:border-indigo-900/40 dark:from-indigo-900/30 dark:to-purple-900/25 ${
+        isDragging ? "scale-95 opacity-55" : "opacity-100"
+      }`}
+      draggable
+      onDragStart={(e) => {
+        setIsDragging(true);
+        e.dataTransfer.setData("text/plain", JSON.stringify(c));
+      }}
+      onDragEnd={() => setIsDragging(false)}
+      title={`${c.id} • ${c.title}`}
+    >
+      <div className="flex items-start gap-2.5">
+        <GripVertical className={`mt-0.5 h-4 w-4 shrink-0 transition-colors ${isDragging ? "text-blue-700 dark:text-blue-300" : "text-indigo-400 group-hover:text-indigo-600 dark:text-indigo-300 dark:group-hover:text-indigo-200"}`} />
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-sm font-semibold text-slate-900 dark:text-foreground">{c.id} : {c.title}</div>
+          <div className="text-xs text-slate-500 dark:text-foreground/70">{c.credits} credits</div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const RightSidebar: React.FC<{ }> = () => (
   <aside className="w-full lg:w-80 shrink-0 lg:sticky lg:top-2 lg:h-[calc(100vh-16px)] overflow-auto space-y-4">
     {requirementBuckets.map((b, i) => (
-      <div key={i} className="rounded-lg border border-border bg-surface">
-        <div className="px-3 py-2 border-b border-border text-foreground flex items-center justify-between">
+      <div key={i} className="rounded-2xl border border-slate-200/70 bg-white shadow-sm shadow-slate-900/5 dark:border-border dark:bg-surface">
+        <div className="flex items-center justify-between border-b border-slate-200/70 px-4 py-3 text-slate-900 dark:border-border dark:text-foreground">
           <span>{b.title}</span>
           {b.pickOne && <span className="text-xs" style={{ color: "var(--foreground)", opacity: 0.7 }}>(pick one)</span>}
         </div>
-        <div className="p-2 space-y-2">
+        <div className="space-y-2 p-3">
           {b.items.map((c) => (
             <CatalogCard key={c.id} c={c} />
           ))}
@@ -203,22 +222,22 @@ export default function FourYearPlannerPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/40 text-foreground dark:from-background dark:via-background dark:to-background">
       <HeaderBar total={totalCredits} onSave={handleSave} onAdd={handleAdd} />
 
-      <div className="mx-auto max-w-7xl px-3 py-4 grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4">
+      <div className="mx-auto grid max-w-7xl grid-cols-1 gap-6 px-4 py-6 lg:grid-cols-[1fr_320px]">
         {/* Left: terms grid */}
         <main className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             {terms.map((t) => (
               <TermColumn key={t} id={t} items={plan[t]} onDropCourse={handleDrop} onRemove={handleRemove} />
             ))}
           </div>
 
           {/* Notes card */}
-          <div className="rounded-lg border border-border bg-surface p-4">
-            <div className="text-sm font-medium mb-2" style={{ color: "var(--foreground)" }}>NOTES</div>
-            <ul className="text-sm" style={{ color: "var(--foreground)", opacity: 0.75 }}>
+          <div className="rounded-2xl border border-slate-200/70 bg-white p-4 shadow-sm shadow-slate-900/5 dark:border-border dark:bg-surface">
+            <div className="mb-2 text-sm font-semibold tracking-wide text-slate-900 dark:text-foreground">NOTES</div>
+            <ul className="text-sm text-slate-600 dark:text-foreground/75">
               <li>All computer science majors must declare a concentration sophomore year.</li>
               <li>Meet with your advisor to confirm your four-year plan and requirements.</li>
               <li>YACS is not responsible for scheduling mishaps.</li>
@@ -231,13 +250,13 @@ export default function FourYearPlannerPage() {
       </div>
 
       {/* Bottom catalog scroller */}
-      <div className="sticky bottom-0 bg-header border-t border-border">
-        <div className="mx-auto max-w-7xl px-3 py-2">
-          <div className="flex items-center justify-between mb-2">
-            <div className="text-sm" style={{ color: "var(--foreground)", opacity: 0.9 }}>Catalog (drag to term)</div>
+      <div className="sticky bottom-0 border-t border-border bg-header/80 backdrop-blur-xl">
+        <div className="mx-auto max-w-7xl px-3 py-3">
+          <div className="mb-2 flex items-center justify-between">
+            <div className="text-sm font-medium text-slate-700 dark:text-foreground/90">Catalog (drag to term)</div>
             <input
               placeholder="Search catalog…"
-              className="px-2 py-1 rounded-md bg-input text-[color:var(--input-foreground)] border border-border text-sm"
+              className="rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2 text-sm text-slate-700 outline-none transition-all placeholder:text-slate-400 focus:border-indigo-300 focus:bg-white focus:ring-4 focus:ring-indigo-100 dark:border-border dark:bg-input dark:text-[color:var(--input-foreground)] dark:placeholder:text-foreground/60"
               onChange={(e) => {
                 const q = e.target.value.toLowerCase();
                 const items = document.querySelectorAll<HTMLElement>("[data-catalog-item]");
