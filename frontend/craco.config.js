@@ -10,6 +10,7 @@ module.exports = {
     configure: {
       moduleNameMapper: {
         "^@/(.*)$": "<rootDir>/src/$1",
+        "^react-router-dom$": "<rootDir>/src/testing/mocks/react-router-dom.tsx",
       },
     },
   },

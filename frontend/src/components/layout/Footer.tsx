@@ -34,14 +34,14 @@ function Footer() {
         {/* link columns */}
         <nav className="col-span-6 grid grid-cols-2 gap-6">
           <ul className="space-y-2">
-            <li><Link className="text-sm tracking-wider hover:underline" to="/schedule">schedule</Link></li>
+            <li><Link className="text-sm tracking-wider hover:underline" to="/app">schedule</Link></li>
             <li><Link className="text-sm tracking-wider hover:underline" to="/explore">explore</Link></li>
             <li><Link className="text-sm tracking-wider hover:underline" to="/finals">finals</Link></li>
             <li><Link className="text-sm tracking-wider hover:underline" to="/professors">professors</Link></li>
             <li><Link className="text-sm tracking-wider hover:underline" to="/pathways">pathways</Link></li>
             <li><Link className="text-sm tracking-wider hover:underline" to="/prerequisites">prerequisites</Link></li>
-            <li><Link className="text-sm tracking-wider hover:underline" to="/planner">degree planner</Link></li>
-            <li><Link className="text-sm tracking-wider hover:underline" to="/account">my account</Link></li>
+            <li><Link className="text-sm tracking-wider hover:underline" to="/app/planner">degree planner</Link></li>
+            <li><Link className="text-sm tracking-wider hover:underline" to="/app/profile">my account</Link></li>
           </ul>
 
           <ul className="space-y-2">

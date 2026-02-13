@@ -1,9 +1,11 @@
 import React from "react";
+import { useAuth } from "@/features/auth/hooks/useAuth";
 
 export default function ProfilePage() {
+  const { user: authUser } = useAuth();
   const user = {
-    name: "Maggie Trebilcock",
-    email: "trebim2@rpi.edu",
+    name: authUser?.name ?? "Student User",
+    email: authUser?.email ?? "student@rpi.edu",
     cohort: "2023",
     majors: ["Computer Science"],
     minors: "N/A",
