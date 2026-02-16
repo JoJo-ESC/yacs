@@ -28,6 +28,25 @@ def get_db():
 router = APIRouter(prefix="/api", tags=["Courses"])
 
 
+def build_course_list_response(
+    courses,
+    *,
+    page: int,
+    per_page: int,
+    total: int,
+) -> CourseListResponse:
+    """Create a CourseListResponse with consistent pagination metadata."""
+    return CourseListResponse(
+        data=[CourseResponse.model_validate(c) for c in courses],
+        pagination=PaginationMeta(
+            page=page,
+            per_page=per_page,
+            total=total,
+            total_pages=(total + per_page - 1) // per_page,
+        ),
+    )
+
+
 @router.get('/courses', response_model=CourseListResponse)
 async def get_courses(
     page: int = Query(1, ge=1, description="Page number"),
@@ -38,14 +57,11 @@ async def get_courses(
     """Get all courses with pagination."""
     courses, total = course_service.get_all_courses(db, page, per_page, semester)
 
-    return CourseListResponse(
-        data=[CourseResponse.model_validate(c) for c in courses],
-        pagination=PaginationMeta(
-            page=page,
-            per_page=per_page,
-            total=total,
-            total_pages=(total + per_page - 1) // per_page
-        )
+    return build_course_list_response(
+        courses,
+        page=page,
+        per_page=per_page,
+        total=total,
     )
 
 
@@ -60,14 +76,11 @@ async def search_courses(
     """Search courses by name or course code."""
     courses, total = course_service.search_courses(db, q, page, per_page, semester)
 
-    return CourseListResponse(
-        data=[CourseResponse.model_validate(c) for c in courses],
-        pagination=PaginationMeta(
-            page=page,
-            per_page=per_page,
-            total=total,
-            total_pages=(total + per_page - 1) // per_page
-        )
+    return build_course_list_response(
+        courses,
+        page=page,
+        per_page=per_page,
+        total=total,
     )
 
 
@@ -96,14 +109,11 @@ async def get_courses_by_department(
     """Get courses by department."""
     courses, total = course_service.get_courses_by_department(db, dept, page, per_page, semester)
 
-    return CourseListResponse(
-        data=[CourseResponse.model_validate(c) for c in courses],
-        pagination=PaginationMeta(
-            page=page,
-            per_page=per_page,
-            total=total,
-            total_pages=(total + per_page - 1) // per_page
-        )
+    return build_course_list_response(
+        courses,
+        page=page,
+        per_page=per_page,
+        total=total,
     )
 
 

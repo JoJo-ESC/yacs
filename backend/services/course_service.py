@@ -1,10 +1,21 @@
 # backend/services/course_service.py
 
 from sqlalchemy.orm import Session
-from sqlalchemy import func, or_
+from sqlalchemy import or_
 from typing import List, Optional, Tuple
 
 from models.course import Course
+
+
+def _order_course_query(query):
+    """Apply a deterministic ordering for paginated course queries."""
+    return query.order_by(
+        Course.term.desc(),
+        Course.subject.asc(),
+        Course.course_number.asc(),
+        Course.section.asc(),
+        Course.id.asc(),
+    )
 
 
 def get_all_courses(
@@ -21,6 +32,8 @@ def get_all_courses(
 
     if semester:
         query = query.filter(Course.term == semester)
+
+    query = _order_course_query(query)
 
     total = query.count()
     courses = query.offset((page - 1) * per_page).limit(per_page).all()
@@ -57,6 +70,8 @@ def search_courses(
     if semester:
         query = query.filter(Course.term == semester)
 
+    query = _order_course_query(query)
+
     total = query.count()
     courses = query.offset((page - 1) * per_page).limit(per_page).all()
 
@@ -88,6 +103,8 @@ def get_courses_by_department(
 
     if semester:
         query = query.filter(Course.term == semester)
+
+    query = _order_course_query(query)
 
     total = query.count()
     courses = query.offset((page - 1) * per_page).limit(per_page).all()
