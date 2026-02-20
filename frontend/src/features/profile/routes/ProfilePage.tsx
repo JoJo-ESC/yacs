@@ -1,8 +1,9 @@
 import React from "react";
 import { Edit } from "lucide-react";
+import { useState } from "react";
 
 export default function ProfilePage() {
-  const user = {
+  const [user, setUser] = useState ({
     name: "Maggie Trebilcock",
     email: "trebim2@rpi.edu",
     cohort: "2023",
@@ -11,10 +12,17 @@ export default function ProfilePage() {
     pathway: "Philosophy & Logic",
     semesters: ["SPRING 2025"],
     degreePlans: ["Plan A", "Plan B"],
-  };
+  });
 
   const getInitials = (name: string) =>
     name.split(" ").map(n => n[0]).join("").toUpperCase();
+
+  const handleEditProfile = () => {
+    const newName = prompt("Enter new name: ", user.name);
+    if (newName) {
+      setUser({...user, name: newName})
+    }
+  };
 
   return (
     <div className="flex-grow p-6 bg-background text-foreground min-h-screen">
@@ -39,7 +47,7 @@ export default function ProfilePage() {
                   Cohort: {user.cohort}
                 </span>
 
-                <button className="w-full border rounded-md py-2 text-sm flex items-center justify-center gap-2 hover:bg-gray-50">
+                <button onClick = {handleEditProfile} className="w-full border rounded-md py-2 text-sm flex items-center justify-center gap-2 hover:bg-gray-50">
                   <Edit className="size-4" />
                   Edit Profile
                 </button>
