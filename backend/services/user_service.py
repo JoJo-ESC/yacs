@@ -1,11 +1,43 @@
+from models import SessionLocal
+from models.user import User
+from services.password_service import hash_password
+
+
 def create_user(user_data: dict):
-    """Placeholder logic to create a new user."""
-    print(f"DATABASE: Creating user '{user_data['username']}'...")
-    # In a real app, you would add the user to the database here.
-    return {"status": "success", "message": f"User {user_data['username']} created."}
+    """Create a user account in the database."""
+    db = SessionLocal()
+    try:
+        email = user_data["email"].strip().lower()
+        existing = db.query(User).filter(User.email == email).first()
+        if existing is not None:
+            return {"success": False, "status": "error", "message": "Email already in use."}
+
+        new_user = User(
+            name=user_data["name"].strip(),
+            email=email,
+            phone=user_data.get("phone", "").strip(),
+            password_hash=hash_password(user_data["password"]),
+            major=user_data.get("major", "Undeclared").strip() or "Undeclared",
+            degree=user_data.get("degree", "BS").strip() or "BS",
+        )
+        db.add(new_user)
+        db.commit()
+        db.refresh(new_user)
+        return {"success": True, "status": "success", "message": "User created.", "user_id": new_user.id}
+    finally:
+        db.close()
+
 
 def delete_current_user(user_id: int):
-    """Placeholder logic to delete a user."""
-    print(f"DATABASE: Deleting user with ID {user_id}...")
-    # In a real app, you would delete the user from the database here.
-    return {"status": "success", "message": "User deleted."}
+    """Delete a user by ID."""
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.id == user_id).first()
+        if user is None:
+            return {"success": False, "status": "error", "message": "User not found."}
+
+        db.delete(user)
+        db.commit()
+        return {"success": True, "status": "success", "message": "User deleted."}
+    finally:
+        db.close()

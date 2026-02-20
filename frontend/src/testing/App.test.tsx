@@ -9,22 +9,16 @@ const mockFetch = () =>
     text: () => Promise.resolve(""),
   });
 
-const originalFetch = global.fetch;
-
 beforeAll(() => {
   global.fetch = mockFetch as unknown as typeof fetch;
 });
 
-afterAll(() => {
-  global.fetch = originalFetch;
-});
-
-test("renders app shell", () => {
+test("renders app shell", async () => {
   render(
     <AppProviders>
       <AppRoutes />
     </AppProviders>
   );
 
-  expect(screen.getByText(/yacs/i)).toBeInTheDocument();
+  expect(await screen.findByRole("button", { name: /continue as guest/i })).toBeInTheDocument();
 });

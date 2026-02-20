@@ -22,10 +22,10 @@ export default function LandingAuthPage() {
   const [name, setName] = useState("");
 
   useEffect(() => {
-    if (isAuthenticated || isGuest) {
+    if (isAuthenticated) {
       navigate("/app", { replace: true });
     }
-  }, [isAuthenticated, isGuest, navigate]);
+  }, [isAuthenticated, navigate]);
 
   useEffect(() => {
     clearError();

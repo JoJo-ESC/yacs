@@ -1,4 +1,4 @@
-import React, { createContext, useMemo, useState } from "react";
+import React, { createContext, useState } from "react";
 import { loginUser, logoutUser, signupUser } from "@/features/auth/api/authApi";
 
 type AuthState = "anonymous" | "guest" | "authenticated";
@@ -244,22 +244,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const clearError = () => setError(null);
 
-  const value = useMemo<AuthContextValue>(
-    () => ({
-      state,
-      user,
-      isAuthenticated: state === "authenticated",
-      isGuest: state === "guest",
-      isBusy,
-      error,
-      clearError,
-      login,
-      signup,
-      logout,
-      continueAsGuest,
-    }),
-    [state, user, isBusy, error]
-  );
+  const value: AuthContextValue = {
+    state,
+    user,
+    isAuthenticated: state === "authenticated",
+    isGuest: state === "guest",
+    isBusy,
+    error,
+    clearError,
+    login,
+    signup,
+    logout,
+    continueAsGuest,
+  };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
