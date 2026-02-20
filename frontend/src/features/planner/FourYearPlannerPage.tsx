@@ -69,7 +69,7 @@ const HeaderBar: React.FC<{ total: number; max?: number; onSave: () => void; onA
       <div className="h-full rounded-full bg-gradient-to-r from-blue-500 to-blue-700 transition-all duration-500 ease-out" style={{ width: `${Math.min((total / max) * 100, 100)}%` }} />
     </div>
     <div className="mt-3 flex items-center justify-between">
-      <span className="text-sm font-medium text-slate-700 dark:text-foreground/90">{total} / {max} credits</span>
+      <span className="text-sm font-medium text-slate-700 dark:text-foreground">{total} / {max} credits</span>
       <div className="flex gap-3">
         <button
           onClick={onAdd}
@@ -98,7 +98,7 @@ const TermColumn: React.FC<{
 }> = ({ id, items, onDropCourse, onRemove }) => {
   const credits = termCredits(items);
   return (
-    <div className="min-h-[160px] rounded-2xl border border-slate-200/70 bg-white p-5 shadow-sm shadow-slate-900/5 dark:border-border dark:bg-surface">
+    <div className="min-h-[160px] rounded-2xl border border-slate-200/70 bg-white p-5 shadow-sm shadow-slate-900/5 dark:border-zinc-800 dark:bg-gradient-to-br dark:from-zinc-900 dark:to-zinc-950">
       <div className="flex items-baseline justify-between">
         <div>
           <div className="text-base font-semibold tracking-tight text-slate-900 dark:text-foreground">{id.split(" ")[0]} {id.split(" ")[1]}</div>
@@ -109,7 +109,7 @@ const TermColumn: React.FC<{
 
       {/* Drop area */}
       <div
-        className="mt-4 flex h-40 flex-col items-center justify-center gap-2 overflow-y-auto rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/70 dark:border-border dark:bg-background/60"
+        className="mt-4 flex h-40 flex-col items-center justify-center gap-2 overflow-y-auto rounded-xl border-2 border-dashed border-slate-200/80 bg-indigo-50/40 dark:border-zinc-800 dark:bg-zinc-950/70"
         onDragOver={(e) => e.preventDefault()}
         onDrop={(e) => {
           e.preventDefault();
@@ -122,13 +122,13 @@ const TermColumn: React.FC<{
         }}
       >
         {items.length === 0 && (
-          <div className="text-sm text-slate-400 dark:text-foreground/60">
+          <div className="text-sm text-slate-500 dark:text-slate-400">
             Drop some classes here!
           </div>
         )}
         <ul className="w-full space-y-2 p-1.5">
           {items.map((c) => (
-            <li key={c.key} className="group flex items-center justify-between rounded-xl border border-indigo-100 bg-gradient-to-br from-indigo-50 to-purple-50/50 px-2.5 py-2 shadow-sm shadow-indigo-500/5 dark:border-indigo-900/40 dark:from-indigo-900/30 dark:to-purple-900/25">
+            <li key={c.key} className="group flex items-center justify-between rounded-xl border border-indigo-100 bg-gradient-to-br from-indigo-50 to-purple-50/50 px-2.5 py-2 shadow-sm shadow-indigo-500/5 dark:border-zinc-800 dark:from-zinc-900 dark:to-zinc-950">
               <div className="flex min-w-0 items-start gap-2.5">
                 <GripVertical className="mt-0.5 h-4 w-4 shrink-0 text-indigo-400 transition-colors group-hover:text-indigo-600 dark:text-indigo-300 dark:group-hover:text-indigo-200" />
                 <div className="truncate text-sm text-slate-800 dark:text-foreground" title={`${c.id} : ${c.title}`}>
@@ -155,7 +155,7 @@ const CatalogCard: React.FC<{ c: Course }>= ({ c }) => {
   const [isDragging, setIsDragging] = useState(false);
   return (
     <div
-      className={`group cursor-grab select-none rounded-xl border border-indigo-100 bg-gradient-to-br from-indigo-50 to-purple-50/50 px-3 py-2.5 text-foreground transition-all hover:shadow-md hover:shadow-indigo-500/10 dark:border-indigo-900/40 dark:from-indigo-900/30 dark:to-purple-900/25 ${
+      className={`group cursor-grab select-none rounded-xl border border-indigo-100 bg-gradient-to-br from-indigo-50 to-purple-50/50 px-3 py-2.5 text-foreground transition-all hover:shadow-md hover:shadow-indigo-500/10 dark:border-zinc-800 dark:from-zinc-900 dark:to-zinc-950 ${
         isDragging ? "scale-95 opacity-55" : "opacity-100"
       }`}
       draggable
@@ -180,8 +180,8 @@ const CatalogCard: React.FC<{ c: Course }>= ({ c }) => {
 const RightSidebar: React.FC<{ }> = () => (
   <aside className="w-full lg:w-80 shrink-0 lg:sticky lg:top-2 lg:h-[calc(100vh-16px)] overflow-auto space-y-4">
     {requirementBuckets.map((b, i) => (
-      <div key={i} className="rounded-2xl border border-slate-200/70 bg-white shadow-sm shadow-slate-900/5 dark:border-border dark:bg-surface">
-        <div className="flex items-center justify-between border-b border-slate-200/70 px-4 py-3 text-slate-900 dark:border-border dark:text-foreground">
+      <div key={i} className="rounded-2xl border border-slate-200/70 bg-white shadow-sm shadow-slate-900/5 dark:border-zinc-800 dark:bg-gradient-to-br dark:from-zinc-900 dark:to-zinc-950">
+        <div className="flex items-center justify-between border-b border-slate-200/70 px-4 py-3 text-slate-900 dark:border-zinc-800 dark:text-foreground">
           <span>{b.title}</span>
           {b.pickOne && <span className="text-xs" style={{ color: "var(--foreground)", opacity: 0.7 }}>(pick one)</span>}
         </div>
@@ -235,7 +235,7 @@ export default function FourYearPlannerPage() {
           </div>
 
           {/* Notes card */}
-          <div className="rounded-2xl border border-slate-200/70 bg-white p-4 shadow-sm shadow-slate-900/5 dark:border-border dark:bg-surface">
+          <div className="rounded-2xl border border-slate-200/70 bg-white p-4 shadow-sm shadow-slate-900/5 dark:border-zinc-800 dark:bg-gradient-to-br dark:from-zinc-900 dark:to-zinc-950">
             <div className="mb-2 text-sm font-semibold tracking-wide text-slate-900 dark:text-foreground">NOTES</div>
             <ul className="text-sm text-slate-600 dark:text-foreground/75">
               <li>All computer science majors must declare a concentration sophomore year.</li>
@@ -250,13 +250,13 @@ export default function FourYearPlannerPage() {
       </div>
 
       {/* Bottom catalog scroller */}
-      <div className="sticky bottom-0 border-t border-border bg-header/80 backdrop-blur-xl">
+      <div className="sticky bottom-0 border-t border-border bg-background/95 backdrop-blur-md">
         <div className="mx-auto max-w-7xl px-3 py-3">
           <div className="mb-2 flex items-center justify-between">
             <div className="text-sm font-medium text-slate-700 dark:text-foreground/90">Catalog (drag to term)</div>
             <input
               placeholder="Search catalog…"
-              className="rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2 text-sm text-slate-700 outline-none transition-all placeholder:text-slate-400 focus:border-indigo-300 focus:bg-white focus:ring-4 focus:ring-indigo-100 dark:border-border dark:bg-input dark:text-[color:var(--input-foreground)] dark:placeholder:text-foreground/60"
+              className="rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2 text-sm text-slate-700 outline-none transition-all placeholder:text-slate-400 focus:border-indigo-300 focus:bg-white focus:ring-4 focus:ring-indigo-100 dark:border-zinc-800 dark:bg-zinc-900/80 dark:text-foreground dark:placeholder:text-zinc-400 dark:focus:border-zinc-700 dark:focus:ring-zinc-800/40"
               onChange={(e) => {
                 const q = e.target.value.toLowerCase();
                 const items = document.querySelectorAll<HTMLElement>("[data-catalog-item]");

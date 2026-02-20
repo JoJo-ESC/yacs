@@ -4,7 +4,7 @@ import WeekScheduler from "@/components/schedule/WeekScheduler";
 
 export default function HomePage() {
   return (
-    <main className="flex-1 p-4">
+    <main className="flex-1 p-4 space-y-10 pb-10">
       <WeekScheduler events={[]} startHour={8} endHour={20} showWeekend={false} />
       <ScheduleList />
     </main>
