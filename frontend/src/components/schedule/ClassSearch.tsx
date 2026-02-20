@@ -4,8 +4,8 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import { Search as SearchIcon, X as XIcon, Check as CheckIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
-import { useSchedule } from "../context/schedule-context";
-import type { Course, Meeting } from "../types/schedule";
+import { useSchedule } from "@/context/schedule-context";
+import type { Course, Meeting } from "@/types/schedule";
 
 function pickDefaultMeetings(c: Course): Meeting[] {
   const chosen = new Map<string, Meeting>();

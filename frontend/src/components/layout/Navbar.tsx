@@ -1,7 +1,6 @@
 import React from "react";
 import { Bars3Icon } from "@heroicons/react/24/solid";
-import { Save, Star } from "lucide-react";
-import ClassSearch from "@/features/schedule/components/ClassSearch";
+import ClassSearch from "@/components/schedule/ClassSearch";
 import ThemeToggle from "@/components/theme/ThemeToggle";
 import { NavLink } from "react-router-dom";
 
