@@ -8,7 +8,7 @@ type TermId = `${"FALL"|"SPRING"|"SUMMER"} ${number}`;
 type RequirementItem = {
   label: string;
   credits: string;
-  kind: "required" | "choice" | "elective" | "track" | "bucket";
+  kind: "required" | "choice" | "elective" | "track";
 };
 type TermTemplate = { label: string; items: RequirementItem[] };
 type YearTemplate = { label: string; terms: TermTemplate[] };
@@ -318,7 +318,6 @@ function requirementKindClass(kind: RequirementItem["kind"]) {
   if (kind === "required") return "bg-emerald-500/20 text-emerald-700 border-emerald-700/70 dark:text-emerald-300";
   if (kind === "choice") return "bg-amber-500/20 text-amber-700 border-amber-700/70 dark:text-amber-300";
   if (kind === "track") return "bg-blue-500/20 text-blue-700 border-blue-700/70 dark:text-blue-300";
-  if (kind === "bucket") return "bg-violet-500/20 text-violet-700 border-violet-700/70 dark:text-violet-300";
   return "bg-zinc-500/20 text-zinc-700 border-zinc-700/70 dark:text-zinc-300";
 }
 
@@ -465,8 +464,8 @@ const RightSidebar: React.FC<{ }> = () => {
                         className="flex items-start justify-between gap-2 rounded-lg border border-zinc-200/80 px-2 py-2 dark:border-zinc-800"
                       >
                         <div className="text-xs text-slate-700 dark:text-zinc-200">{req}</div>
-                        <span className={`rounded-md border px-1.5 py-0.5 text-[10px] uppercase tracking-wide ${requirementKindClass("bucket")}`}>
-                          bucket
+                        <span className={`rounded-md border px-1.5 py-0.5 text-[10px] uppercase tracking-wide ${requirementKindClass("required")}`}>
+                          required
                         </span>
                       </div>
                     ))}
