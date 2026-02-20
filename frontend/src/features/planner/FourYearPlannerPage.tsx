@@ -5,6 +5,26 @@ import { GripVertical, Plus, Save } from "lucide-react";
 type Course = { id: string; title: string; credits: number; };
 type PlacedCourse = Course & { key: string };
 type TermId = `${"FALL"|"SPRING"|"SUMMER"} ${number}`;
+type RequirementItem = {
+  label: string;
+  credits: string;
+  kind: "required" | "choice" | "elective" | "track" | "bucket";
+};
+type TermTemplate = { label: string; items: RequirementItem[] };
+type YearTemplate = { label: string; terms: TermTemplate[] };
+type MajorTemplate = {
+  id: string;
+  name: string;
+  entry: string;
+  years: YearTemplate[];
+};
+type MinorTemplate = {
+  id: string;
+  name: string;
+  targetCredits: string;
+  requirementTypes: string[];
+  courses: Course[];
+};
 
 const catalog: Course[] = [
   { id: "CSCI-1100", title: "Computer Science 1", credits: 4 },
@@ -17,29 +37,146 @@ const catalog: Course[] = [
   { id: "IHSS-1200", title: "First-Year Writing", credits: 4 },
 ];
 
-const requirementBuckets: { title: string; pickOne?: boolean; items: Course[] }[] = [
+const majorTemplates: MajorTemplate[] = [{
+  id: "csci-f25",
+  name: "Computer Science (F25/S26 Entry)",
+  entry: "Fall 2025 / Spring 2026",
+  years: [
+    {
+      label: "First Year",
+      terms: [
+        {
+          label: "Fall 2025",
+          items: [
+            { label: "CSCI-1100 Computer Science I", credits: "4", kind: "required" },
+            { label: "MATH-1010 Calculus I", credits: "4", kind: "required" },
+            { label: "PHYS-1100 Physics I", credits: "4", kind: "choice" },
+            { label: "HASS Elective", credits: "4", kind: "elective" },
+          ],
+        },
+        {
+          label: "Spring 2026",
+          items: [
+            { label: "CSCI-1200 Data Structures", credits: "4", kind: "required" },
+            { label: "MATH-1020 Calculus II", credits: "4", kind: "required" },
+            { label: "BIOL-1010 Intro to Biology", credits: "3", kind: "choice" },
+            { label: "BIOL-1015/1016 Biology Lab", credits: "1", kind: "choice" },
+            { label: "HASS Elective", credits: "4", kind: "elective" },
+          ],
+        },
+      ],
+    },
+    {
+      label: "Second Year",
+      terms: [
+        {
+          label: "Fall 2026",
+          items: [
+            { label: "CSCI-2200 Foundations of CS", credits: "4", kind: "required" },
+            { label: "CSCI-2300/2800 Architecture & OS", credits: "4", kind: "required" },
+            { label: "MATH-2010 Multivariable Calc", credits: "4", kind: "required" },
+            { label: "HASS Elective", credits: "4", kind: "elective" },
+            { label: "RCOS / URP", credits: "2-4", kind: "elective" },
+          ],
+        },
+        {
+          label: "Spring 2027",
+          items: [
+            { label: "CSCI-2300 Intro to Algorithms", credits: "4", kind: "required" },
+            { label: "CSCI-2600 Principles of Software", credits: "4", kind: "required" },
+            { label: "Math/Science Track Option", credits: "4", kind: "track" },
+            { label: "HASS Elective", credits: "4", kind: "elective" },
+            { label: "ADMN-1030 ARCH Exploration", credits: "0", kind: "required" },
+          ],
+        },
+      ],
+    },
+    {
+      label: "Third Year",
+      terms: [
+        {
+          label: "Arch Summer 2027",
+          items: [
+            { label: "CSCI 4000-level Track Course", credits: "4", kind: "track" },
+            { label: "HASS Elective", credits: "4", kind: "elective" },
+            { label: "Free Elective", credits: "4", kind: "elective" },
+            { label: "Free Elective", credits: "4", kind: "elective" },
+          ],
+        },
+        {
+          label: "Fall 2027 or Spring 2028",
+          items: [
+            { label: "CSCI 4000-level Track Course", credits: "4", kind: "track" },
+            { label: "Science Option", credits: "4", kind: "track" },
+            { label: "HASS Elective", credits: "4", kind: "elective" },
+            { label: "Free Elective", credits: "4", kind: "elective" },
+          ],
+        },
+      ],
+    },
+    {
+      label: "Fourth Year",
+      terms: [
+        {
+          label: "Fall 2028",
+          items: [
+            { label: "CSCI 4000-level Track Course", credits: "4", kind: "track" },
+            { label: "CSCI 4000-level Track Course", credits: "4", kind: "track" },
+            { label: "Free Elective", credits: "4", kind: "elective" },
+            { label: "Free Elective", credits: "4", kind: "elective" },
+          ],
+        },
+        {
+          label: "Spring 2029",
+          items: [
+            { label: "CSCI 4000-level Track Course", credits: "4", kind: "track" },
+            { label: "CSCI 4000-level Track Course", credits: "4", kind: "track" },
+            { label: "Free Elective", credits: "4", kind: "elective" },
+            { label: "Free Elective", credits: "4", kind: "elective" },
+          ],
+        },
+      ],
+    },
+  ],
+}];
+
+const minorTemplates: MinorTemplate[] = [
   {
-    title: "Computer Science major",
-    items: [
-      { id: "CSCI-2200", title: "Foundations of CS", credits: 4 },
-      { id: "CSCI-2500", title: "Computer Organization", credits: 4 },
-      { id: "CSCI-2600", title: "Principles of Software", credits: 4 },
+    id: "phil",
+    name: "Philosophy Minor",
+    targetCredits: "12-16",
+    requirementTypes: [
+      "Intro course",
+      "Logic requirement",
+      "History requirement",
+      "Ethics requirement",
+      "Two upper-level electives",
+      "Capstone/seminar option",
     ],
-  },
-  {
-    title: "(PICK ONE) Physics 1",
-    pickOne: true,
-    items: [
-      { id: "PHYS-1100", title: "Physics 1", credits: 4 },
-      { id: "PHYS-1010", title: "Physics 1 (Alt)", credits: 4 },
-    ],
-  },
-  {
-    title: "Philosophy minor",
-    items: [
+    courses: [
       { id: "PHIL-2100", title: "Intro to Philosophy", credits: 4 },
       { id: "PHIL-2140", title: "Logic", credits: 4 },
       { id: "PHIL-4220", title: "Ethics", credits: 4 },
+      { id: "PHIL-4XXX", title: "Upper-level Philosophy Elective", credits: 4 },
+    ],
+  },
+  {
+    id: "econ",
+    name: "Economics Minor",
+    targetCredits: "12-16",
+    requirementTypes: [
+      "Microeconomics",
+      "Macroeconomics",
+      "Statistics/econometrics",
+      "Two upper-level ECON electives",
+      "Policy/theory distribution",
+      "Advisor-approved elective",
+    ],
+    courses: [
+      { id: "ECON-2010", title: "Intermediate Microeconomics", credits: 4 },
+      { id: "ECON-2020", title: "Intermediate Macroeconomics", credits: 4 },
+      { id: "ECON-4130", title: "Econometrics", credits: 4 },
+      { id: "ECON-4XXX", title: "Upper-level ECON Elective", credits: 4 },
     ],
   },
 ];
@@ -177,23 +314,212 @@ const CatalogCard: React.FC<{ c: Course }>= ({ c }) => {
   );
 };
 
-const RightSidebar: React.FC<{ }> = () => (
-  <aside className="w-full lg:w-80 shrink-0 lg:sticky lg:top-2 lg:h-[calc(100vh-16px)] overflow-auto space-y-4">
-    {requirementBuckets.map((b, i) => (
-      <div key={i} className="rounded-2xl border border-slate-200/70 bg-white shadow-sm shadow-slate-900/5 dark:border-zinc-800 dark:bg-gradient-to-br dark:from-zinc-900 dark:to-zinc-950">
-        <div className="flex items-center justify-between border-b border-slate-200/70 px-4 py-3 text-slate-900 dark:border-zinc-800 dark:text-foreground">
-          <span>{b.title}</span>
-          {b.pickOne && <span className="text-xs" style={{ color: "var(--foreground)", opacity: 0.7 }}>(pick one)</span>}
-        </div>
-        <div className="space-y-2 p-3">
-          {b.items.map((c) => (
-            <CatalogCard key={c.id} c={c} />
-          ))}
+function requirementKindClass(kind: RequirementItem["kind"]) {
+  if (kind === "required") return "bg-emerald-500/20 text-emerald-700 border-emerald-700/70 dark:text-emerald-300";
+  if (kind === "choice") return "bg-amber-500/20 text-amber-700 border-amber-700/70 dark:text-amber-300";
+  if (kind === "track") return "bg-blue-500/20 text-blue-700 border-blue-700/70 dark:text-blue-300";
+  if (kind === "bucket") return "bg-violet-500/20 text-violet-700 border-violet-700/70 dark:text-violet-300";
+  return "bg-zinc-500/20 text-zinc-700 border-zinc-700/70 dark:text-zinc-300";
+}
+
+const RightSidebar: React.FC<{ }> = () => {
+  const [tab, setTab] = useState<"requirements" | "catalog">("requirements");
+  const [query, setQuery] = useState("");
+  const NONE_MAJOR_ID = "__none_major__";
+  const NONE_MINOR_ID = "__none_minor__";
+  const [selectedMajorId, setSelectedMajorId] = useState<string>(majorTemplates[0]?.id ?? "");
+  const [selectedMinorId, setSelectedMinorId] = useState<string>(minorTemplates[0]?.id ?? "");
+
+  const filteredCatalog = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return catalog;
+    return catalog.filter((c) => `${c.id} ${c.title}`.toLowerCase().includes(q));
+  }, [query]);
+  const selectedMajor = useMemo(
+    () => majorTemplates.find((m) => m.id === selectedMajorId),
+    [selectedMajorId]
+  );
+  const selectedMinor = useMemo(
+    () => minorTemplates.find((m) => m.id === selectedMinorId),
+    [selectedMinorId]
+  );
+
+  return (
+    <aside className="w-full lg:w-96 shrink-0 lg:sticky lg:top-2 lg:h-[calc(100vh-16px)] overflow-auto space-y-4">
+      <div className="rounded-2xl border border-slate-200/70 bg-white p-2 shadow-sm shadow-slate-900/5 dark:border-zinc-800 dark:bg-gradient-to-br dark:from-zinc-900 dark:to-zinc-950">
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => setTab("requirements")}
+            className={`rounded-xl px-3 py-2 text-sm font-medium transition ${
+              tab === "requirements"
+                ? "bg-indigo-600 text-white"
+                : "bg-slate-100 text-slate-700 dark:bg-zinc-900 dark:text-zinc-300"
+            }`}
+          >
+            Requirements
+          </button>
+          <button
+            type="button"
+            onClick={() => setTab("catalog")}
+            className={`rounded-xl px-3 py-2 text-sm font-medium transition ${
+              tab === "catalog"
+                ? "bg-indigo-600 text-white"
+                : "bg-slate-100 text-slate-700 dark:bg-zinc-900 dark:text-zinc-300"
+            }`}
+          >
+            Catalog
+          </button>
         </div>
       </div>
-    ))}
-  </aside>
-);
+
+      {tab === "requirements" ? (
+        <div className="space-y-4">
+          <div className="rounded-2xl border border-slate-200/70 bg-white p-4 shadow-sm shadow-slate-900/5 dark:border-zinc-800 dark:bg-gradient-to-br dark:from-zinc-900 dark:to-zinc-950">
+            <div className="text-xs uppercase tracking-wider text-slate-500 dark:text-zinc-400">Major Template</div>
+            <select
+              value={selectedMajorId}
+              onChange={(e) => setSelectedMajorId(e.target.value)}
+              className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2 text-sm text-slate-700 outline-none transition-all focus:border-indigo-300 focus:bg-white focus:ring-4 focus:ring-indigo-100 dark:border-zinc-800 dark:bg-zinc-900/80 dark:text-foreground dark:focus:border-zinc-700 dark:focus:ring-zinc-800/40"
+            >
+              <option value={NONE_MAJOR_ID}>(None)</option>
+              {majorTemplates.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.name}
+                </option>
+              ))}
+            </select>
+            {selectedMajor && (
+              <div className="mt-2 text-sm text-slate-600 dark:text-zinc-400">Entry: {selectedMajor.entry}</div>
+            )}
+          </div>
+
+          {selectedMajor ? (
+            selectedMajor.years.map((year) => (
+              <div
+                key={year.label}
+                className="rounded-2xl border border-slate-200/70 bg-white shadow-sm shadow-slate-900/5 dark:border-zinc-800 dark:bg-gradient-to-br dark:from-zinc-900 dark:to-zinc-950"
+              >
+                <div className="border-b border-slate-200/70 px-4 py-3 text-slate-900 dark:border-zinc-800 dark:text-foreground">
+                  <div className="text-base font-semibold">{year.label}</div>
+                </div>
+                <div className="space-y-3 p-3">
+                  {year.terms.map((term) => (
+                    <div key={term.label} className="rounded-xl border border-slate-200/70 p-3 dark:border-zinc-800">
+                      <div className="mb-2 text-sm font-semibold text-slate-800 dark:text-zinc-200">{term.label}</div>
+                      <div className="space-y-2">
+                        {term.items.map((item, idx) => (
+                          <div key={`${term.label}-${idx}`} className="flex items-start justify-between gap-2 rounded-lg border border-zinc-200/80 px-2 py-2 dark:border-zinc-800">
+                            <div className="text-xs text-slate-700 dark:text-zinc-200">{item.label}</div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-slate-500 dark:text-zinc-400">{item.credits}</span>
+                              <span className={`rounded-md border px-1.5 py-0.5 text-[10px] uppercase tracking-wide ${requirementKindClass(item.kind)}`}>
+                                {item.kind}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-4 text-sm text-slate-500 dark:border-zinc-700 dark:bg-gradient-to-br dark:from-zinc-900 dark:to-zinc-950 dark:text-zinc-400">
+              Select a major template to view year-by-year requirements.
+            </div>
+          )}
+
+          <div className="rounded-2xl border border-slate-200/70 bg-white p-4 shadow-sm shadow-slate-900/5 dark:border-zinc-800 dark:bg-gradient-to-br dark:from-zinc-900 dark:to-zinc-950">
+            <div className="text-xs uppercase tracking-wider text-slate-500 dark:text-zinc-400">Minor Template</div>
+            <select
+              value={selectedMinorId}
+              onChange={(e) => setSelectedMinorId(e.target.value)}
+              className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2 text-sm text-slate-700 outline-none transition-all focus:border-indigo-300 focus:bg-white focus:ring-4 focus:ring-indigo-100 dark:border-zinc-800 dark:bg-zinc-900/80 dark:text-foreground dark:focus:border-zinc-700 dark:focus:ring-zinc-800/40"
+            >
+              <option value={NONE_MINOR_ID}>(None)</option>
+              {minorTemplates.map((minor) => (
+                <option key={minor.id} value={minor.id}>
+                  {minor.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {selectedMinor && (
+            <div className="rounded-2xl border border-slate-200/70 bg-white shadow-sm shadow-slate-900/5 dark:border-zinc-800 dark:bg-gradient-to-br dark:from-zinc-900 dark:to-zinc-950">
+              <div className="border-b border-slate-200/70 px-4 py-3 text-slate-900 dark:border-zinc-800 dark:text-foreground">
+                <div className="flex items-center justify-between">
+                  <div className="text-base font-semibold">{selectedMinor.name}</div>
+                  <div className="text-xs text-slate-500 dark:text-zinc-400">{selectedMinor.targetCredits} credits</div>
+                </div>
+              </div>
+              <div className="space-y-4 p-3">
+                <div className="rounded-xl border border-slate-200/70 p-3 dark:border-zinc-800">
+                  <div className="mb-2 text-xs uppercase tracking-wider text-slate-500 dark:text-zinc-400">Required Buckets</div>
+                  <div className="space-y-2">
+                    {selectedMinor.requirementTypes.map((req) => (
+                      <div
+                        key={req}
+                        className="flex items-start justify-between gap-2 rounded-lg border border-zinc-200/80 px-2 py-2 dark:border-zinc-800"
+                      >
+                        <div className="text-xs text-slate-700 dark:text-zinc-200">{req}</div>
+                        <span className={`rounded-md border px-1.5 py-0.5 text-[10px] uppercase tracking-wide ${requirementKindClass("bucket")}`}>
+                          bucket
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-slate-200/70 p-3 dark:border-zinc-800">
+                  <div className="mb-2 text-xs uppercase tracking-wider text-slate-500 dark:text-zinc-400">Drag Minor Courses</div>
+                  <div className="space-y-2">
+                    {selectedMinor.courses.map((course) => (
+                      <CatalogCard key={course.id} c={course} />
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {!selectedMinor && (
+            <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-4 text-sm text-slate-500 dark:border-zinc-700 dark:bg-gradient-to-br dark:from-zinc-900 dark:to-zinc-950 dark:text-zinc-400">
+              Select a minor template to view required buckets and draggable minor courses.
+            </div>
+          )}
+
+        </div>
+      ) : (
+        <div className="rounded-2xl border border-slate-200/70 bg-white shadow-sm shadow-slate-900/5 dark:border-zinc-800 dark:bg-gradient-to-br dark:from-zinc-900 dark:to-zinc-950">
+          <div className="border-b border-slate-200/70 px-4 py-3 dark:border-zinc-800">
+            <div className="text-base font-semibold text-slate-900 dark:text-foreground">All Catalog Courses</div>
+            <div className="mt-2">
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search by course id or title..."
+                className="w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2 text-sm text-slate-700 outline-none transition-all placeholder:text-slate-400 focus:border-indigo-300 focus:bg-white focus:ring-4 focus:ring-indigo-100 dark:border-zinc-800 dark:bg-zinc-900/80 dark:text-foreground dark:placeholder:text-zinc-400 dark:focus:border-zinc-700 dark:focus:ring-zinc-800/40"
+              />
+            </div>
+          </div>
+          <div className="max-h-[70vh] space-y-2 overflow-auto p-3">
+            {filteredCatalog.map((c) => (
+              <CatalogCard key={c.id} c={c} />
+            ))}
+            {filteredCatalog.length === 0 && (
+              <div className="rounded-xl border border-dashed border-slate-300 p-4 text-sm text-slate-500 dark:border-zinc-700 dark:text-zinc-400">
+                No matching courses.
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </aside>
+  );
+};
 
 // ---------------------- Main Page ----------------------
 const STORAGE_KEY = "four_year_plan_v1";
@@ -225,7 +551,7 @@ export default function FourYearPlannerPage() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/40 text-foreground dark:from-background dark:via-background dark:to-background">
       <HeaderBar total={totalCredits} onSave={handleSave} onAdd={handleAdd} />
 
-      <div className="mx-auto grid max-w-7xl grid-cols-1 gap-6 px-4 py-6 lg:grid-cols-[1fr_320px]">
+      <div className="mx-auto grid max-w-7xl grid-cols-1 gap-6 px-4 py-6 lg:grid-cols-[1fr_380px]">
         {/* Left: terms grid */}
         <main className="space-y-4">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -245,36 +571,8 @@ export default function FourYearPlannerPage() {
           </div>
         </main>
 
-        {/* Right: requirements / draggable catalog */}
+        {/* Right: requirements + catalog tabs */}
         <RightSidebar />
-      </div>
-
-      {/* Bottom catalog scroller */}
-      <div className="sticky bottom-0 border-t border-border bg-background/95 backdrop-blur-md">
-        <div className="mx-auto max-w-7xl px-3 py-3">
-          <div className="mb-2 flex items-center justify-between">
-            <div className="text-sm font-medium text-slate-700 dark:text-foreground/90">Catalog (drag to term)</div>
-            <input
-              placeholder="Search catalog…"
-              className="rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2 text-sm text-slate-700 outline-none transition-all placeholder:text-slate-400 focus:border-indigo-300 focus:bg-white focus:ring-4 focus:ring-indigo-100 dark:border-zinc-800 dark:bg-zinc-900/80 dark:text-foreground dark:placeholder:text-zinc-400 dark:focus:border-zinc-700 dark:focus:ring-zinc-800/40"
-              onChange={(e) => {
-                const q = e.target.value.toLowerCase();
-                const items = document.querySelectorAll<HTMLElement>("[data-catalog-item]");
-                items.forEach((el) => {
-                  const text = (el.dataset.text || "").toLowerCase();
-                  el.style.display = text.includes(q) ? "" : "none";
-                });
-              }}
-            />
-          </div>
-          <div className="grid grid-flow-col auto-cols-[260px] gap-2 overflow-x-auto pb-2">
-            {catalog.map((c) => (
-              <div key={c.id} data-catalog-item data-text={`${c.id} ${c.title}`}>
-                <CatalogCard c={c} />
-              </div>
-            ))}
-          </div>
-        </div>
       </div>
     </div>
   );
