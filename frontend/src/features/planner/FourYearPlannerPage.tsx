@@ -22,8 +22,18 @@ type MinorTemplate = {
   id: string;
   name: string;
   targetCredits: string;
-  requirementTypes: string[];
-  courses: Course[];
+  description?: string;
+  requirementSections: { heading: string; items: RequirementItem[] }[];
+};
+type PathwayTemplate = {
+  id: string;
+  name: string;
+  targetCredits: string;
+  description: string;
+  introRequirement?: RequirementItem;
+  remainingCreditRule: string;
+  sampleCourses: Course[];
+  compatibleMinorIds: string[];
 };
 
 const catalog: Course[] = [
@@ -145,39 +155,70 @@ const minorTemplates: MinorTemplate[] = [
     id: "phil",
     name: "Philosophy Minor",
     targetCredits: "12-16",
-    requirementTypes: [
-      "Intro course",
-      "Logic requirement",
-      "History requirement",
-      "Ethics requirement",
-      "Two upper-level electives",
-      "Capstone/seminar option",
-    ],
-    courses: [
-      { id: "PHIL-2100", title: "Intro to Philosophy", credits: 4 },
-      { id: "PHIL-2140", title: "Logic", credits: 4 },
-      { id: "PHIL-4220", title: "Ethics", credits: 4 },
-      { id: "PHIL-4XXX", title: "Upper-level Philosophy Elective", credits: 4 },
+    description: "Students complete 12-16 credits in Philosophy with foundation and upper-level coverage.",
+    requirementSections: [
+      {
+        heading: "Required",
+        items: [
+          { label: "PHIL 2100 - Intro to Philosophy", credits: "4", kind: "required" },
+          { label: "PHIL 2140 - Logic", credits: "4", kind: "required" },
+          { label: "One ethics-focused PHIL course", credits: "4", kind: "required" },
+        ],
+      },
+      {
+        heading: "Remaining credits from the following options",
+        items: [
+          { label: "Any 4000-level PHIL course", credits: "4", kind: "choice" },
+          { label: "Advisor-approved PHIL seminar or capstone", credits: "4", kind: "choice" },
+        ],
+      },
     ],
   },
   {
     id: "econ",
     name: "Economics Minor",
-    targetCredits: "12-16",
-    requirementTypes: [
-      "Microeconomics",
-      "Macroeconomics",
-      "Statistics/econometrics",
-      "Two upper-level ECON electives",
-      "Policy/theory distribution",
-      "Advisor-approved elective",
+    targetCredits: "16",
+    description: "Students must complete 16 credits for the Economics Minor.",
+    requirementSections: [
+      {
+        heading: "Required",
+        items: [
+          { label: "INQR 1200 - Principles of Economics or ECON 1200 - Introductory Economics", credits: "4", kind: "required" },
+          { label: "ECON 2010 - Intermediate Microeconomic Theory", credits: "4", kind: "required" },
+        ],
+      },
+      {
+        heading: "Remaining credits from the following options",
+        items: [
+          { label: "Any 2000-level Economics course", credits: "4", kind: "choice" },
+          { label: "Any 4000-level Economics course", credits: "4", kind: "choice" },
+        ],
+      },
     ],
-    courses: [
-      { id: "ECON-2010", title: "Intermediate Microeconomics", credits: 4 },
-      { id: "ECON-2020", title: "Intermediate Macroeconomics", credits: 4 },
-      { id: "ECON-4130", title: "Econometrics", credits: 4 },
-      { id: "ECON-4XXX", title: "Upper-level ECON Elective", credits: 4 },
+  },
+];
+
+const pathwayTemplates: PathwayTemplate[] = [
+  {
+    id: "econ-pathway",
+    name: "Economics Pathway",
+    targetCredits: "12",
+    description:
+      "Economics is the study of human behavior, incentives, markets, and governments. Students learn models of decision-making, market dynamics, policy-making, globalization, and finance.",
+    introRequirement: {
+      label: "INQR 1200 (or transfer credit for ECON 1200) is required.",
+      credits: "4",
+      kind: "required",
+    },
+    remainingCreditRule:
+      "Choose remaining credits from acceptable ECON 2000/4000-level courses, excluding ECON 2940 and ECON 2941.",
+    sampleCourses: [
+      { id: "ECON-2010", title: "Intermediate Microeconomic Theory", credits: 4 },
+      { id: "ECON-2020", title: "Intermediate Macroeconomic Theory", credits: 4 },
+      { id: "ECON-2100", title: "Economic Data Analysis and Applications", credits: 4 },
+      { id: "ECON-4570", title: "Econometrics", credits: 4 },
     ],
+    compatibleMinorIds: ["econ"],
   },
 ];
 
@@ -185,6 +226,10 @@ const minorTemplates: MinorTemplate[] = [
 function uid(prefix = "c"): string { return `${prefix}_${Math.random().toString(36).slice(2, 9)}`; }
 function courseToPlaced(c: Course): PlacedCourse { return { ...c, key: uid("pc") }; }
 function termCredits(list: PlacedCourse[]): number { return list.reduce((s, c) => s + c.credits, 0); }
+function firstInteger(value: string): number | null {
+  const match = value.match(/\d+/);
+  return match ? Number(match[0]) : null;
+}
 
 // simple 4-year skeleton
 function defaultTerms(startFallYear = 2023): TermId[] {
@@ -321,13 +366,27 @@ function requirementKindClass(kind: RequirementItem["kind"]) {
   return "bg-zinc-500/20 text-zinc-700 border-zinc-700/70 dark:text-zinc-300";
 }
 
+const RequirementRow: React.FC<{ item: RequirementItem }> = ({ item }) => (
+  <div className="flex items-start justify-between gap-2 rounded-lg border border-zinc-200/80 px-2 py-2 dark:border-zinc-800">
+    <div className="text-xs text-slate-700 dark:text-zinc-200">{item.label}</div>
+    <div className="flex items-center gap-2">
+      <span className="text-xs text-slate-500 dark:text-zinc-400">{item.credits}</span>
+      <span className={`rounded-md border px-1.5 py-0.5 text-[10px] uppercase tracking-wide ${requirementKindClass(item.kind)}`}>
+        {item.kind}
+      </span>
+    </div>
+  </div>
+);
+
 const RightSidebar: React.FC<{ }> = () => {
   const [tab, setTab] = useState<"requirements" | "catalog">("requirements");
   const [query, setQuery] = useState("");
   const NONE_MAJOR_ID = "__none_major__";
   const NONE_MINOR_ID = "__none_minor__";
+  const NONE_PATHWAY_ID = "__none_pathway__";
   const [selectedMajorId, setSelectedMajorId] = useState<string>(majorTemplates[0]?.id ?? "");
   const [selectedMinorId, setSelectedMinorId] = useState<string>(minorTemplates[0]?.id ?? "");
+  const [selectedPathwayId, setSelectedPathwayId] = useState<string>(pathwayTemplates[0]?.id ?? "");
 
   const filteredCatalog = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -342,6 +401,22 @@ const RightSidebar: React.FC<{ }> = () => {
     () => minorTemplates.find((m) => m.id === selectedMinorId),
     [selectedMinorId]
   );
+  const selectedPathway = useMemo(
+    () => pathwayTemplates.find((p) => p.id === selectedPathwayId),
+    [selectedPathwayId]
+  );
+  const compatibleMinors = useMemo(
+    () => minorTemplates.filter((minor) => selectedPathway?.compatibleMinorIds.includes(minor.id)),
+    [selectedPathway]
+  );
+  const pathwayRemainingCredits = useMemo(() => {
+    if (!selectedPathway) return "";
+    const targetCredits = firstInteger(selectedPathway.targetCredits);
+    const introCredits = selectedPathway.introRequirement ? firstInteger(selectedPathway.introRequirement.credits) : null;
+    if (targetCredits === null) return selectedPathway.targetCredits;
+    if (introCredits === null) return String(targetCredits);
+    return String(Math.max(targetCredits - introCredits, 0));
+  }, [selectedPathway]);
 
   return (
     <aside className="w-full lg:w-96 shrink-0 lg:sticky lg:top-2 lg:h-[calc(100vh-16px)] overflow-auto space-y-4">
@@ -408,15 +483,7 @@ const RightSidebar: React.FC<{ }> = () => {
                       <div className="mb-2 text-sm font-semibold text-slate-800 dark:text-zinc-200">{term.label}</div>
                       <div className="space-y-2">
                         {term.items.map((item, idx) => (
-                          <div key={`${term.label}-${idx}`} className="flex items-start justify-between gap-2 rounded-lg border border-zinc-200/80 px-2 py-2 dark:border-zinc-800">
-                            <div className="text-xs text-slate-700 dark:text-zinc-200">{item.label}</div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs text-slate-500 dark:text-zinc-400">{item.credits}</span>
-                              <span className={`rounded-md border px-1.5 py-0.5 text-[10px] uppercase tracking-wide ${requirementKindClass(item.kind)}`}>
-                                {item.kind}
-                              </span>
-                            </div>
-                          </div>
+                          <RequirementRow key={`${term.label}-${idx}`} item={item} />
                         ))}
                       </div>
                     </div>
@@ -427,6 +494,86 @@ const RightSidebar: React.FC<{ }> = () => {
           ) : (
             <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-4 text-sm text-slate-500 dark:border-zinc-700 dark:bg-gradient-to-br dark:from-zinc-900 dark:to-zinc-950 dark:text-zinc-400">
               Select a major template to view year-by-year requirements.
+            </div>
+          )}
+
+          <div className="rounded-2xl border border-slate-200/70 bg-white p-4 shadow-sm shadow-slate-900/5 dark:border-zinc-800 dark:bg-gradient-to-br dark:from-zinc-900 dark:to-zinc-950">
+            <div className="text-xs uppercase tracking-wider text-slate-500 dark:text-zinc-400">HASS Pathway</div>
+            <select
+              value={selectedPathwayId}
+              onChange={(e) => setSelectedPathwayId(e.target.value)}
+              className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2 text-sm text-slate-700 outline-none transition-all focus:border-indigo-300 focus:bg-white focus:ring-4 focus:ring-indigo-100 dark:border-zinc-800 dark:bg-zinc-900/80 dark:text-foreground dark:focus:border-zinc-700 dark:focus:ring-zinc-800/40"
+            >
+              <option value={NONE_PATHWAY_ID}>(None)</option>
+              {pathwayTemplates.map((pathway) => (
+                <option key={pathway.id} value={pathway.id}>
+                  {pathway.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {selectedPathway ? (
+            <div className="rounded-2xl border border-slate-200/70 bg-white shadow-sm shadow-slate-900/5 dark:border-zinc-800 dark:bg-gradient-to-br dark:from-zinc-900 dark:to-zinc-950">
+              <div className="border-b border-slate-200/70 px-4 py-3 text-slate-900 dark:border-zinc-800 dark:text-foreground">
+                <div className="flex items-center justify-between">
+                  <div className="text-base font-semibold">{selectedPathway.name}</div>
+                  <div className="text-xs text-slate-500 dark:text-zinc-400">{selectedPathway.targetCredits} credits</div>
+                </div>
+              </div>
+              <div className="space-y-3 p-3">
+                <p className="text-sm text-slate-700 dark:text-zinc-300">{selectedPathway.description}</p>
+                {selectedPathway.introRequirement && (
+                  <RequirementRow item={selectedPathway.introRequirement} />
+                )}
+                <RequirementRow
+                  item={{
+                    label: `Remaining credits rule: ${selectedPathway.remainingCreditRule}`,
+                    credits: pathwayRemainingCredits,
+                    kind: "choice",
+                  }}
+                />
+                <div className="rounded-xl border border-slate-200/70 p-3 dark:border-zinc-800">
+                  <div className="mb-2 text-xs uppercase tracking-wider text-slate-500 dark:text-zinc-400">Sample Courses</div>
+                  <div className="space-y-2">
+                    {selectedPathway.sampleCourses.map((course) => (
+                      <RequirementRow
+                        key={course.id}
+                        item={{
+                          label: `${course.id} - ${course.title}`,
+                          credits: String(course.credits),
+                          kind: "choice",
+                        }}
+                      />
+                    ))}
+                  </div>
+                </div>
+                <div className="rounded-xl border border-slate-200/70 p-3 dark:border-zinc-800">
+                  <div className="mb-2 text-xs uppercase tracking-wider text-slate-500 dark:text-zinc-400">Compatible Minor</div>
+                  {compatibleMinors.length > 0 ? (
+                    <div className="space-y-2">
+                      {compatibleMinors.map((minor) => (
+                        <RequirementRow
+                          key={minor.id}
+                          item={{
+                            label: `${minor.name} (often one additional course beyond pathway credits)`,
+                            credits: "4",
+                            kind: "elective",
+                          }}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-xs text-slate-700 dark:text-zinc-200">
+                      No compatible minors configured for this pathway.
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-4 text-sm text-slate-500 dark:border-zinc-700 dark:bg-gradient-to-br dark:from-zinc-900 dark:to-zinc-950 dark:text-zinc-400">
+              Select a pathway to view 12-credit requirement details and compatible minors.
             </div>
           )}
 
@@ -455,30 +602,21 @@ const RightSidebar: React.FC<{ }> = () => {
                 </div>
               </div>
               <div className="space-y-4 p-3">
-                <div className="rounded-xl border border-slate-200/70 p-3 dark:border-zinc-800">
-                  <div className="mb-2 text-xs uppercase tracking-wider text-slate-500 dark:text-zinc-400">Required Buckets</div>
-                  <div className="space-y-2">
-                    {selectedMinor.requirementTypes.map((req) => (
-                      <div
-                        key={req}
-                        className="flex items-start justify-between gap-2 rounded-lg border border-zinc-200/80 px-2 py-2 dark:border-zinc-800"
-                      >
-                        <div className="text-xs text-slate-700 dark:text-zinc-200">{req}</div>
-                        <span className={`rounded-md border px-1.5 py-0.5 text-[10px] uppercase tracking-wide ${requirementKindClass("required")}`}>
-                          required
-                        </span>
-                      </div>
-                    ))}
+                {selectedMinor.description && (
+                  <p className="text-sm text-slate-700 dark:text-zinc-300">{selectedMinor.description}</p>
+                )}
+                {selectedMinor.requirementSections.map((section) => (
+                  <div key={section.heading} className="rounded-xl border border-slate-200/70 p-3 dark:border-zinc-800">
+                    <div className="mb-2 text-sm font-semibold text-slate-900 dark:text-zinc-100">{section.heading}</div>
+                    <div className="space-y-2">
+                      {section.items.map((item) => (
+                        <RequirementRow key={`${section.heading}-${item.label}`} item={item} />
+                      ))}
+                    </div>
                   </div>
-                </div>
-
-                <div className="rounded-xl border border-slate-200/70 p-3 dark:border-zinc-800">
-                  <div className="mb-2 text-xs uppercase tracking-wider text-slate-500 dark:text-zinc-400">Drag Minor Courses</div>
-                  <div className="space-y-2">
-                    {selectedMinor.courses.map((course) => (
-                      <CatalogCard key={course.id} c={course} />
-                    ))}
-                  </div>
+                ))}
+                <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50/50 p-3 text-xs text-slate-600 dark:border-zinc-700 dark:bg-zinc-900/40 dark:text-zinc-300">
+                  To add minor courses to your plan, use the Catalog tab and drag courses into terms.
                 </div>
               </div>
             </div>
@@ -486,7 +624,7 @@ const RightSidebar: React.FC<{ }> = () => {
 
           {!selectedMinor && (
             <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-4 text-sm text-slate-500 dark:border-zinc-700 dark:bg-gradient-to-br dark:from-zinc-900 dark:to-zinc-950 dark:text-zinc-400">
-              Select a minor template to view required buckets and draggable minor courses.
+              Select a minor template to view requirement details.
             </div>
           )}
 
@@ -527,6 +665,9 @@ type PlanState = Record<TermId, PlacedCourse[]>;
 export default function FourYearPlannerPage() {
   const terms = useMemo(() => defaultTerms(2023), []);
   const [plan, setPlan] = useState<PlanState>(() => {
+    if (typeof window === "undefined") {
+      return Object.fromEntries(terms.map((t) => [t, []])) as PlanState;
+    }
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) { try { return JSON.parse(raw); } catch {} }
     const empty: PlanState = Object.fromEntries(terms.map((t) => [t, []])) as PlanState;
@@ -535,7 +676,10 @@ export default function FourYearPlannerPage() {
     return empty;
   });
 
-  useEffect(() => { localStorage.setItem(STORAGE_KEY, JSON.stringify(plan)); }, [plan]);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(plan));
+  }, [plan]);
   const totalCredits = useMemo(() => Object.values(plan).flat().reduce((s, c) => s + c.credits, 0), [plan]);
 
   function handleDrop(term: TermId, c: Course)   { setPlan((p) => ({ ...p, [term]: [...p[term], courseToPlaced(c)] })); }
@@ -543,7 +687,7 @@ export default function FourYearPlannerPage() {
   function handleSave() { alert("Plan saved locally (localStorage)"); }
   function handleAdd()  {
     const firstEmpty = terms.find((t) => plan[t].length === 0) ?? terms[0];
-    handleDrop(firstEmpty as TermId, catalog[0]);
+    handleDrop(firstEmpty, catalog[0]);
   }
 
   return (
