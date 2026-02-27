@@ -3,7 +3,13 @@ import { env } from "@/config";
 type ApiEnvelope = {
   success?: boolean;
   status?: string;
+  code?: string;
   message?: string;
+  user?: {
+    user_id: number;
+    email: string;
+    name: string;
+  };
 };
 
 export type LoginRequest = {
@@ -81,5 +87,11 @@ export function signupUser(payload: SignupRequest) {
 export function logoutUser() {
   return sendJson("/api/session", {
     method: "DELETE",
+  });
+}
+
+export function getCurrentSessionUser() {
+  return sendJson("/api/session/me", {
+    method: "GET",
   });
 }

@@ -28,6 +28,15 @@ async def log_in(request: Request, credentials: SessionPydantic):
     return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content=result)
 
 
+@router.get('/session/me')
+def get_current_session(request: Request):
+    """Return the currently authenticated user, if any."""
+    result = auth_service.get_current_user_session(request.session)
+    if result.get("success"):
+        return JSONResponse(status_code=status.HTTP_200_OK, content=result)
+    return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content=result)
+
+
 @router.delete('/session')
 def log_out(request: Request):
     """Log the current user out."""

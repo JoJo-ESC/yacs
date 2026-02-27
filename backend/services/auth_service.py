@@ -96,7 +96,16 @@ def log_user_in(credentials: dict, session: dict, client_ip: str | None = None):
             db.commit()
 
         _reset_attempts(throttle_key)
-        return {"success": True, "status": "success", "message": "Login successful."}
+        return {
+            "success": True,
+            "status": "success",
+            "message": "Login successful.",
+            "user": {
+                "user_id": user.id,
+                "email": user.email,
+                "name": user.name,
+            },
+        }
     finally:
         db.close()
 
@@ -107,3 +116,35 @@ def log_user_out(session: dict):
         session.clear()
         return {"success": True, "status": "success", "message": "Logout successful."}
     return {"success": False, "status": "error", "code": "no_active_session", "message": "No active session."}
+
+
+def get_current_user_session(session: dict):
+    """Return the current authenticated user from server-side session data."""
+    session_user = session.get("user")
+    if not session_user:
+        return {"success": False, "status": "error", "code": "not_authenticated", "message": "No active session."}
+
+    user_id = session_user.get("user_id")
+    if not user_id:
+        session.clear()
+        return {"success": False, "status": "error", "code": "not_authenticated", "message": "No active session."}
+
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.id == user_id).first()
+        if user is None:
+            session.clear()
+            return {"success": False, "status": "error", "code": "not_authenticated", "message": "No active session."}
+
+        return {
+            "success": True,
+            "status": "success",
+            "message": "Session active.",
+            "user": {
+                "user_id": user.id,
+                "email": user.email,
+                "name": user.name,
+            },
+        }
+    finally:
+        db.close()
