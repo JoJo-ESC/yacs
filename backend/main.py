@@ -9,6 +9,14 @@ from models import init_db
 from utils import load_secrets
 
 
+def _as_bool(value, default=False):
+    if value is None:
+        return default
+    if isinstance(value, bool):
+        return value
+    return str(value).strip().lower() in {"1", "true", "yes", "on"}
+
+
 # --- Lifespan (startup/shutdown events) ---
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -23,7 +31,13 @@ app = FastAPI(lifespan=lifespan)
 
 # --- Add Middleware ---
 secrets = load_secrets()
-app.add_middleware(SessionMiddleware, secret_key=secrets.get("SECRET_KEY", "dev_secret_key"))
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=secrets.get("SECRET_KEY", "dev_secret_key"),
+    same_site=secrets.get("SESSION_SAME_SITE", "lax"),
+    https_only=_as_bool(secrets.get("SESSION_HTTPS_ONLY"), default=False),
+    max_age=int(secrets.get("SESSION_MAX_AGE_SECONDS", 12 * 60 * 60)),
+)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000"],
