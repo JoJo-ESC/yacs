@@ -35,7 +35,7 @@ def get_all_courses(
 
     query = _order_course_query(query)
 
-    total = query.count()
+    total = query.order_by(None).count()
     courses = query.offset((page - 1) * per_page).limit(per_page).all()
 
     return courses, total
@@ -72,7 +72,7 @@ def search_courses(
 
     query = _order_course_query(query)
 
-    total = query.count()
+    total = query.order_by(None).count()
     courses = query.offset((page - 1) * per_page).limit(per_page).all()
 
     return courses, total
@@ -106,7 +106,7 @@ def get_courses_by_department(
 
     query = _order_course_query(query)
 
-    total = query.count()
+    total = query.order_by(None).count()
     courses = query.offset((page - 1) * per_page).limit(per_page).all()
 
     return courses, total
