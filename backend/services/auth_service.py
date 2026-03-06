@@ -3,7 +3,7 @@ def log_user_in(credentials: dict, session: dict):
     # Here, you would check the username and password against the database.
     if credentials['password'] == "test_password":
         # On successful login, store user info in the session.
-        user_info = {'user_id': 1, 'username': credentials['username']}
+        user_info = {'user_id': 1, 'email': credentials['email']}
         session['user'] = user_info
         return {"success": True, "message": "Login successful."}
     else:

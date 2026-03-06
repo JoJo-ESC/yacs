@@ -1,6 +1,6 @@
-fastapi
+fastapi>=0.104,<1
 uvicorn[standard]
-pydantic
+pydantic>=2,<3
 itsdangerous
 sqlalchemy
 psycopg2-binary
