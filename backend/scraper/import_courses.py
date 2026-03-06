@@ -9,6 +9,7 @@ import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 from models import SessionLocal, Course, init_db
+from terms import get_active_term_codes
 
 
 def load_json_file(filepath: str) -> list:
@@ -51,7 +52,12 @@ def main():
     parser = argparse.ArgumentParser(description='Import course data from JSON files into database')
     parser.add_argument(
         '--term',
-        help='Specific term to import (e.g., 202501). If not specified, imports all terms.',
+        help='Specific term to import (e.g., 202501).',
+    )
+    parser.add_argument(
+        '--all',
+        action='store_true',
+        help='Import all terms on disk (use for initial setup or full refresh).',
     )
     args = parser.parse_args()
 
@@ -64,8 +70,11 @@ def main():
     # Get list of files to import
     if args.term:
         files = [f'sis9_courses_{args.term}.json']
-    else:
+    elif args.all:
         files = sorted([f for f in os.listdir(data_dir) if f.endswith('.json')])
+    else:
+        active_codes = get_active_term_codes()
+        files = [f'sis9_courses_{code}.json' for code in sorted(active_codes)]
 
     db = SessionLocal()
     total = 0
