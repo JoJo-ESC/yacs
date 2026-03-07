@@ -33,7 +33,7 @@ export default function ProfilePage() {
           <div className="space-y-6">
 
             {/* Profile Card */}
-            <div className="border rounded-xl p-6 bg-white shadow-sm">
+            <div className="border rounded-xl p-6 bg-white dark:bg-slate-900 shadow-sm">
               <div className="flex flex-col items-center text-center">
 
                 <div className="w-32 h-32 rounded-full bg-purple-600 flex items-center justify-center text-white text-3xl mb-4">
@@ -41,13 +41,13 @@ export default function ProfilePage() {
                 </div>
 
                 <h2 className="text-2xl mb-1">{user.name}</h2>
-                <p className="text-gray-500 text-sm mb-1">{user.email}</p>
+                <p className="text-gray-500 dark:text-gray-400 text-sm mb-1">{user.email}</p>
 
-                <span className="px-3 py-1 bg-gray-100 rounded-full text-sm mb-4">
+                <span className="px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded-full text-sm mb-4">
                   Cohort: {user.cohort}
                 </span>
 
-                <button onClick = {handleEditProfile} className="w-full border rounded-md py-2 text-sm flex items-center justify-center gap-2 hover:bg-gray-50">
+                <button onClick = {handleEditProfile} className="w-full border rounded-md py-2 text-sm flex items-center justify-center gap-2 hover:bg-gray-50 hover:dark:bg-slate-800">
                   <Edit className="size-4" />
                   Edit Profile
                 </button>
@@ -56,7 +56,7 @@ export default function ProfilePage() {
             </div>
 
             {/* Academic Info */}
-            <div className="border rounded-xl p-6 bg-white shadow-sm">
+            <div className="border rounded-xl p-6 bg-white dark:bg-slate-900 shadow-sm">
               <h3 className="font-semibold mb-4">Academic Information</h3>
 
               <div className="space-y-4">
@@ -64,9 +64,9 @@ export default function ProfilePage() {
                 <div>
                   <p className="text-sm text-gray-500 mb-2">Major(s)</p>
                   {user.majors.map((major, i) => (
-                    <div key={i} className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-2">
-                      <p className="font-medium text-blue-900">{major}</p>
-                      <p className="text-xs text-blue-700">Systems and Software</p>
+                    <div key={i} className="bg-blue-50 border dark:bg-slate-700 border-blue-200 rounded-lg p-3 mb-2">
+                      <p className="font-medium text-blue-900 dark:text-blue-300">{major}</p>
+                      <p className="text-xs text-blue-700 dark:text-blue-400">Systems and Software</p>
                     </div>
                   ))}
                 </div>
@@ -87,7 +87,7 @@ export default function ProfilePage() {
             </div>
 
             {/* Friends */}
-            <div className="border rounded-xl p-6 bg-white shadow-sm">
+            <div className="border rounded-xl p-6 bg-white dark:bg-slate-900 shadow-sm">
               <h3 className="font-semibold mb-2">My Friends</h3>
               <p className="text-sm text-gray-500">No friends added yet</p>
             </div>
@@ -98,7 +98,7 @@ export default function ProfilePage() {
           <div className="lg:col-span-2 space-y-6">
 
             {/* Semesters */}
-            <div className="border rounded-xl p-6 bg-white shadow-sm">
+            <div className="border rounded-xl p-6 bg-white dark:bg-slate-900 shadow-sm">
               <div className="flex justify-between mb-4">
                 <h3 className="font-semibold">My Semesters</h3>
                 <button className="border px-3 py-1 rounded text-sm hover:bg-gray-50">
@@ -125,7 +125,7 @@ export default function ProfilePage() {
             </div>
 
             {/* Degree Plans */}
-            <div className="border rounded-xl p-6 bg-white shadow-sm">
+            <div className="border rounded-xl p-6 bg-white dark:bg-slate-900 shadow-sm">
               <div className="flex justify-between mb-4">
                 <h3 className="font-semibold">My Degree Plans</h3>
                 <button className="border px-3 py-1 rounded text-sm hover:bg-gray-50">
