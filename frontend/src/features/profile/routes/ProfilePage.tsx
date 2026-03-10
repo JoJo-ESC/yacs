@@ -18,12 +18,17 @@ export default function ProfilePage() {
     name.split(" ").map(n => n[0]).join("").toUpperCase();
 
   const handleEditProfile = () => {
-    const newName = prompt("Enter new name: ", user.name);
-    if (newName) {
-      setUser({...user, name: newName})
-    }
+    const newName = prompt("Enter new name:", user.name);
+    const newEmail = prompt("Enter new email:", user.email);
+
+    setUser({
+      ...user,
+      name: newName || user.name,
+      email: newEmail || user.email,
+    });
   };
 
+  
   return (
     <div className="flex-grow p-6 bg-background text-foreground min-h-screen">
       <div className="max-w-7xl mx-auto">
