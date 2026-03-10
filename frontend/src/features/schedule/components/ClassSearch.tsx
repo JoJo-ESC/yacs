@@ -24,7 +24,7 @@ export function ClassSearch({
   itemHeight?: number;
   listMaxHeight?: number;
 }) {
-  const { catalog, addCourse, hasCourse } = useSchedule();
+  const { catalog, addCourse, hasCourse, loading } = useSchedule();
 
   const [open, setOpen] = React.useState(false);
   const [query, setQuery] = React.useState("");
@@ -118,6 +118,11 @@ export function ClassSearch({
               width: '100%'
             }}
           >
+            {loading ? (
+              <div className="flex justify-center py-4"> 
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900"></div>
+              </div> 
+            ) : (
             <div
               style={{
                 height: `${rowVirtualizer.getTotalSize()}px`,
@@ -167,6 +172,7 @@ export function ClassSearch({
                 );
               })}
             </div>
+            )}
           </div>
           {filtered.length === maxResults && (
             <div className="px-3 py-1 text-xs opacity-70 border-t border-border">

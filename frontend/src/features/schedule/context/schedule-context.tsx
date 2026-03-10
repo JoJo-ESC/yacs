@@ -23,6 +23,7 @@ const SelectionContext = createContext<SelectionCtx | undefined>(undefined);
 type CatalogCtx = {
   catalog: Course[];
   loadCsv: (path: string) => Promise<void>;
+  loading: boolean;
 };
 
 const CatalogContext = createContext<CatalogCtx | undefined>(undefined);
@@ -56,17 +57,27 @@ export function ScheduleProvider({ children }: { children: React.ReactNode }) {
   );
 
   const [catalog, setCatalog] = useState<Course[]>([]);
+  const [loading, setLoading] = React.useState(false) //boolean flag
 
   const loadCsv = useCallback(async (path: string) => {
-    const text = await fetchText(path);
+    setLoading(true);
 
-    startTransition(() => {
-      const parsed = parseCoursesFromCsvText(text);
-      setCatalog(parsed);
-    });
+    try {
+      const text = await fetchText(path);
+      //await new Promise(res => setTimeout(res, 5000));  <- force spinner to appear, rn it doesn't bc data being pulled from local src (no loading necessary)
+      startTransition(() => {
+        const parsed = parseCoursesFromCsvText(text);
+        setCatalog(parsed);
+      });
+    } catch (err){
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+
   }, []);
 
-  const catalogValue = useMemo<CatalogCtx>(() => ({ catalog, loadCsv }), [catalog, loadCsv]);
+  const catalogValue = useMemo<CatalogCtx>(() => ({ catalog, loadCsv, loading }), [catalog, loadCsv, loading]);
 
   return (
     <CatalogContext.Provider value={catalogValue}>
