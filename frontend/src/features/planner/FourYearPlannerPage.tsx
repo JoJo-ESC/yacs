@@ -246,7 +246,10 @@ function defaultTerms(startFallYear = 2023): TermId[] {
 // ---------------------- Components ----------------------
 const HeaderBar: React.FC<{ total: number; max?: number; onSave: () => void; onAdd: () => void; }>
 = ({ total, max = 128, onSave, onAdd }) => (
-  <div className="sticky top-[68px] z-30 border-b border-slate-200/60 bg-white/85 px-3 py-3 backdrop-blur-xl shadow-sm shadow-slate-900/5 dark:border-border dark:bg-header/90">
+  <div
+    className="sticky z-30 border-b border-slate-200/60 bg-white/85 px-3 py-3 backdrop-blur-xl shadow-sm shadow-slate-900/5 dark:border-border dark:bg-header/90"
+    style={{ top: "var(--navbar-height, 68px)" }}
+  >
     <div className="h-3 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-muted">
       <div className="h-full rounded-full bg-gradient-to-r from-blue-500 to-blue-700 transition-all duration-500 ease-out" style={{ width: `${Math.min((total / max) * 100, 100)}%` }} />
     </div>
