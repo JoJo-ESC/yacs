@@ -1,5 +1,6 @@
 import React, { useMemo, useState, useEffect } from "react";
 import { GripVertical, Plus, Save } from "lucide-react";
+import { firstInteger } from "./lib/creditParsing";
 
 // ---------------------- Types ----------------------
 type Course = { id: string; title: string; credits: number; };
@@ -226,10 +227,6 @@ const pathwayTemplates: PathwayTemplate[] = [
 function uid(prefix = "c"): string { return `${prefix}_${Math.random().toString(36).slice(2, 9)}`; }
 function courseToPlaced(c: Course): PlacedCourse { return { ...c, key: uid("pc") }; }
 function termCredits(list: PlacedCourse[]): number { return list.reduce((s, c) => s + c.credits, 0); }
-function firstInteger(value: string): number | null {
-  const match = value.match(/\d+/);
-  return match ? Number(match[0]) : null;
-}
 
 // simple 4-year skeleton
 function defaultTerms(startFallYear = 2023): TermId[] {
@@ -665,18 +662,40 @@ const RightSidebar: React.FC<{ }> = () => {
 const STORAGE_KEY = "four_year_plan_v1";
 type PlanState = Record<TermId, PlacedCourse[]>;
 
+function createEmptyPlan(terms: TermId[]): PlanState {
+  return Object.fromEntries(terms.map((t) => [t, [] as PlacedCourse[]])) as PlanState;
+}
+
+function createDemoPlan(terms: TermId[]): PlanState {
+  const empty = createEmptyPlan(terms);
+  empty["FALL 2023"] = [courseToPlaced(catalog[0]), courseToPlaced(catalog[2]), courseToPlaced(catalog[5])];
+  empty["SPRING 2024"] = [courseToPlaced(catalog[1]), courseToPlaced(catalog[3])];
+  return empty;
+}
+
+function normalizeStoredPlan(terms: TermId[], parsed: unknown): PlanState {
+  const base = createEmptyPlan(terms);
+  if (!parsed || typeof parsed !== "object") return base;
+  const stored = parsed as Record<string, unknown>;
+  for (const term of terms) {
+    if (Array.isArray(stored[term])) {
+      base[term] = stored[term] as PlacedCourse[];
+    }
+  }
+  return base;
+}
+
 export default function FourYearPlannerPage() {
   const terms = useMemo(() => defaultTerms(2023), []);
   const [plan, setPlan] = useState<PlanState>(() => {
-    if (typeof window === "undefined") {
-      return Object.fromEntries(terms.map((t) => [t, []])) as PlanState;
-    }
+    if (typeof window === "undefined") return createDemoPlan(terms);
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) { try { return JSON.parse(raw); } catch {} }
-    const empty: PlanState = Object.fromEntries(terms.map((t) => [t, []])) as PlanState;
-    empty["FALL 2023"] = [courseToPlaced(catalog[0]), courseToPlaced(catalog[2]), courseToPlaced(catalog[5])];
-    empty["SPRING 2024"] = [courseToPlaced(catalog[1]), courseToPlaced(catalog[3])];
-    return empty;
+    if (raw) {
+      try {
+        return normalizeStoredPlan(terms, JSON.parse(raw));
+      } catch {}
+    }
+    return createDemoPlan(terms);
   });
 
   useEffect(() => {
