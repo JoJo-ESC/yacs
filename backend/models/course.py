@@ -1,4 +1,5 @@
-from sqlalchemy import Column, String, Integer, Text                     
+from sqlalchemy import Column, String, Integer, Text
+from sqlalchemy.orm import relationship
 from .database import Base                                                        
                                                                                     
                                                                                     
@@ -25,4 +26,6 @@ class Course(Base):
     # Section info                                                                
     section = Column(String(10))            # sequenceNumber                      
     schedule_type = Column(String(50))      # scheduleTypeDescription             
-    instructional_method = Column(String(10))  
+    instructional_method = Column(String(10))
+
+    meeting_times = relationship('MeetingTime', back_populates='course', cascade='all, delete-orphan')
