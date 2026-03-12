@@ -6,9 +6,9 @@ import React, {
   useCallback,
   startTransition,
 } from "react";
-import type { Course } from "../types/schedule";
+import type { Course } from "@/types/schedule";
 import { fetchText } from "@/api";
-import { parseCoursesFromCsvText } from "../utils/parseSchedule";
+import { parseCoursesFromCsvText } from "@/lib/schedule/parseSchedule";
 
 type SelectionCtx = {
   courses: Course[];

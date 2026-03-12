@@ -1,6 +1,6 @@
-// src/features/schedule/utils/parseSchedule.ts
+// src/lib/schedule/parseSchedule.ts
 import Papa from "papaparse";
-import type { Course, Meeting } from "../types/schedule";
+import type { Course, Meeting } from "@/types/schedule";
 
 type RawRow = {
   course_name: string;
