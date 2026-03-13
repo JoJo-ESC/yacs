@@ -12,6 +12,8 @@ export default function ProfilePage() {
     pathway: "Philosophy & Logic",
     semesters: ["SPRING 2025"],
     degreePlans: ["Plan A", "Plan B"],
+    profileImage: null
+
   });
 
   const getInitials = (name: string) =>
