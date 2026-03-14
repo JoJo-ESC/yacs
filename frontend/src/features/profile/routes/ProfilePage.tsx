@@ -30,6 +30,25 @@ export default function ProfilePage() {
     });
   };
 
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+
+    if (!file) return;
+    const imageURL = URL.createObjectURL(file);
+    
+    setUser({
+      ...user,
+      profileImage: imageURL
+    });
+  };
+
+const handleResetImage = () => {
+  setUser({
+    ...user,
+    profileImage: null
+  });
+};
+
   
   return (
     <div className="flex-grow p-6 bg-background text-foreground min-h-screen">
