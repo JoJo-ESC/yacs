@@ -12,7 +12,7 @@ export default function ProfilePage() {
     pathway: "Philosophy & Logic",
     semesters: ["SPRING 2025"],
     degreePlans: ["Plan A", "Plan B"],
-    profileImage: null
+    profileImage: null as string | null
 
   });
 
@@ -62,8 +62,16 @@ const handleResetImage = () => {
             <div className="border rounded-xl p-6 bg-white dark:bg-slate-900 shadow-sm">
               <div className="flex flex-col items-center text-center">
 
-                <div className="w-32 h-32 rounded-full bg-purple-600 flex items-center justify-center text-white text-3xl mb-4">
-                  {getInitials(user.name)}
+                <div className="w-32 h-32 rounded-full overflow-hidden bg-purple-600 flex items-center justify-center text-white text-3xl mb-4">
+                  {user.profileImage ? (
+                    <img
+                      src={user.profileImage}
+                      alt="Profile"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    getInitials(user.name)
+                  )}
                 </div>
 
                 <h2 className="text-2xl mb-1">{user.name}</h2>
@@ -76,6 +84,23 @@ const handleResetImage = () => {
                 <button onClick = {handleEditProfile} className="w-full border rounded-md py-2 text-sm flex items-center justify-center gap-2 hover:bg-gray-50 hover:dark:bg-slate-800">
                   <Edit className="size-4" />
                   Edit Profile
+                </button>
+                
+                <label className="w-full border rounded-md py-2 text-sm flex items-center justify-center gap-2 hover:bg-gray-50 hover:dark:bg-slate-800 cursor-pointer">
+                  Upload Picture
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleImageUpload}
+                  />
+                </label>
+
+                <button
+                  onClick={handleResetImage}
+                  className="w-full border rounded-md py-2 text-sm hover:bg-gray-50 hover:dark:bg-slate-800"
+                >
+                  Reset Picture
                 </button>
 
               </div>
