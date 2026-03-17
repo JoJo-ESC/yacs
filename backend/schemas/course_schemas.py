@@ -4,6 +4,30 @@ from pydantic import BaseModel
 from typing import List, Optional
 
 
+class MeetingTimeResponse(BaseModel):
+    """Single meeting time for a course section."""
+    id: int
+    monday: bool = False
+    tuesday: bool = False
+    wednesday: bool = False
+    thursday: bool = False
+    friday: bool = False
+    saturday: bool = False
+    sunday: bool = False
+    begin_time: Optional[str] = None
+    end_time: Optional[str] = None
+    building: Optional[str] = None
+    building_description: Optional[str] = None
+    room: Optional[str] = None
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
+    meeting_schedule_type: Optional[str] = None
+    instructor_name: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
 class CourseResponse(BaseModel):
     """Single course response."""
     id: int
@@ -21,6 +45,7 @@ class CourseResponse(BaseModel):
     section: Optional[str] = None
     schedule_type: Optional[str] = None
     instructional_method: Optional[str] = None
+    meeting_times: List[MeetingTimeResponse] = []
 
     class Config:
         from_attributes = True  # Allows converting SQLAlchemy models

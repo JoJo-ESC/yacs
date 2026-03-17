@@ -1,6 +1,6 @@
 # backend/services/course_service.py
 
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 from sqlalchemy import or_
 from typing import List, Optional, Tuple
 
@@ -28,7 +28,7 @@ def get_all_courses(
     Get all courses with pagination and optional semester filter.
     Returns (courses, total_count).
     """
-    query = db.query(Course)
+    query = db.query(Course).options(selectinload(Course.meeting_times))
 
     if semester:
         query = query.filter(Course.term == semester)
@@ -43,7 +43,7 @@ def get_all_courses(
 
 def get_course_by_id(db: Session, course_id: int) -> Optional[Course]:
     """Get a single course by ID."""
-    return db.query(Course).filter(Course.id == course_id).first()
+    return db.query(Course).options(selectinload(Course.meeting_times)).filter(Course.id == course_id).first()
 
 
 def search_courses(
@@ -59,7 +59,7 @@ def search_courses(
     """
     search_pattern = f"%{query_str}%"
 
-    query = db.query(Course).filter(
+    query = db.query(Course).options(selectinload(Course.meeting_times)).filter(
         or_(
             Course.course_title.ilike(search_pattern),
             Course.course_number.ilike(search_pattern),
@@ -99,7 +99,7 @@ def get_courses_by_department(
     Get courses filtered by department.
     Returns (courses, total_count).
     """
-    query = db.query(Course).filter(Course.subject == department)
+    query = db.query(Course).options(selectinload(Course.meeting_times)).filter(Course.subject == department)
 
     if semester:
         query = query.filter(Course.term == semester)

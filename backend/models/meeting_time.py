@@ -9,7 +9,7 @@ class MeetingTime(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
 
     # Foreign key back to the course section
-    course_id = Column(Integer, ForeignKey('course.id'), nullable=False, index=True)
+    crn = Column(String(10), ForeignKey('course.crn'), nullable=False, index=True)
 
     # Days of week
     monday = Column(Boolean, default=False)
