@@ -229,6 +229,64 @@ const handleResetImage = () => {
           </div>
         </div>
       </div>
+
+      {/** Edit Profile UI */}
+      {isEditing && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-lg w-96">
+
+            <h2 className="text-xl font-semibold mb-4">Edit Profile</h2>
+
+            <div className="space-y-4">
+              <input
+                type="text"
+                value={formData.name}
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
+                className="w-full border rounded p-2"
+                placeholder="Name"
+              />
+
+              <input
+                type="email"
+                value={formData.email}
+                onChange={(e) =>
+                  setFormData({ ...formData, email: e.target.value })
+                }
+                className="w-full border rounded p-2"
+                placeholder="Email"
+              />
+            </div>
+
+            <div className="flex justify-center gap-2 mt-6">
+              <button
+                onClick={handleCancel}
+                className="px-4 py-2 border rounded"
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={handleSave}
+                className="px-4 py-2 bg-blue-500 text-white rounded"
+              >
+                Save
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
     </div>
+
+    
+    
+
+
+  
+
   );
+  
 }
+
