@@ -16,19 +16,41 @@ export default function ProfilePage() {
 
   });
 
+  {/*edit profile boolean*/}
+  const [isEditing, setIsEditing] = useState(false);
+
+  {/*edit profile temporary data*/}
+  const [formData, setFormData] = useState({
+    name: user.name,
+    email: user.email
+  });
+  
+
   const getInitials = (name: string) =>
     name.split(" ").map(n => n[0]).join("").toUpperCase();
 
   const handleEditProfile = () => {
-    const newName = prompt("Enter new name:", user.name);
-    const newEmail = prompt("Enter new email:", user.email);
-
-    setUser({
-      ...user,
-      name: newName || user.name,
-      email: newEmail || user.email,
-    });
+    setFormData({
+      name: user.name,
+      email: user.email
+  });
+    setIsEditing(true);
   };
+
+  {/*save and cancel functions*/}
+  const handleSave = () => {
+  setUser({
+    ...user,
+    name: formData.name,
+    email: formData.email
+  });
+  setIsEditing(false);
+};
+
+const handleCancel = () => {
+  setIsEditing(false);
+};
+
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -87,7 +109,7 @@ const handleResetImage = () => {
                 </button>
                 
                 <label className="w-full border rounded-md py-2 text-sm flex items-center justify-center gap-2 hover:bg-gray-50 hover:dark:bg-slate-800 cursor-pointer">
-                  Upload Picture
+                  {/*Upload Picture */}
                   <input
                     type="file"
                     accept="image/*"
@@ -100,7 +122,7 @@ const handleResetImage = () => {
                   onClick={handleResetImage}
                   className="w-full border rounded-md py-2 text-sm hover:bg-gray-50 hover:dark:bg-slate-800"
                 >
-                  Reset Picture
+                  {/* Reset Picture */}
                 </button>
 
               </div>
