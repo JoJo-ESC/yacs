@@ -1,5 +1,5 @@
 import React, { useMemo, useRef, useEffect } from "react";
-import { useSchedule } from "@/context/schedule-context";
+import { useSchedule } from "@/context/schedule/schedule-context";
 import type { Course } from "@/types/schedule";
 
 export type DayIndex = 0 | 1 | 2 | 3 | 4 | 5 | 6; // 0=Mon, 6=Sun

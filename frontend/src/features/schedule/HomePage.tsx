@@ -1,6 +1,6 @@
 import React from "react";
-import ScheduleList from "@/components/schedule/ScheduleList";
-import WeekScheduler from "@/components/schedule/WeekScheduler";
+import ScheduleList from "@/features/schedule/components/ScheduleList";
+import WeekScheduler from "@/features/schedule/components/WeekScheduler";
 
 export default function HomePage() {
   return (

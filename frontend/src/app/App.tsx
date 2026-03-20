@@ -2,7 +2,7 @@ import React from "react";
 import { Outlet } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import CatalogLoader from "@/components/schedule/CatalogLoader";
+import CatalogLoader from "@/features/schedule/components/CatalogLoader";
 import { appConfig } from "@/config";
 
 export default function App() {

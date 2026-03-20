@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect } from "react";
 import { GripVertical, Plus, Save } from "lucide-react";
-import { firstInteger } from "./lib/creditParsing";
+import { firstInteger } from "@/lib/planner/creditParsing";
 
 // ---------------------- Types ----------------------
 type Course = { id: string; title: string; credits: number; };

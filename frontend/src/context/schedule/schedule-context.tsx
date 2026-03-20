@@ -23,6 +23,8 @@ const SelectionContext = createContext<SelectionCtx | undefined>(undefined);
 type CatalogCtx = {
   catalog: Course[];
   loadCsv: (path: string) => Promise<void>;
+  catalogLoading: boolean;
+  catalogError: string | null;
 };
 
 const CatalogContext = createContext<CatalogCtx | undefined>(undefined);
@@ -56,17 +58,32 @@ export function ScheduleProvider({ children }: { children: React.ReactNode }) {
   );
 
   const [catalog, setCatalog] = useState<Course[]>([]);
+  const [catalogLoading, setCatalogLoading] = useState(true);
+  const [catalogError, setCatalogError] = useState<string | null>(null);
 
   const loadCsv = useCallback(async (path: string) => {
-    const text = await fetchText(path);
+    setCatalogLoading(true);
+    setCatalogError(null);
 
-    startTransition(() => {
-      const parsed = parseCoursesFromCsvText(text);
-      setCatalog(parsed);
-    });
+    try {
+      const text = await fetchText(path);
+
+      startTransition(() => {
+        const parsed = parseCoursesFromCsvText(text);
+        setCatalog(parsed);
+      });
+    } catch (error: unknown) {
+      setCatalogError(error instanceof Error ? error.message : "Failed to load course catalog");
+      throw error;
+    } finally {
+      setCatalogLoading(false);
+    }
   }, []);
 
-  const catalogValue = useMemo<CatalogCtx>(() => ({ catalog, loadCsv }), [catalog, loadCsv]);
+  const catalogValue = useMemo<CatalogCtx>(
+    () => ({ catalog, loadCsv, catalogLoading, catalogError }),
+    [catalog, loadCsv, catalogLoading, catalogError],
+  );
 
   return (
     <CatalogContext.Provider value={catalogValue}>

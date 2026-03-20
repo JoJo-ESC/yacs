@@ -1,6 +1,6 @@
 import * as React from "react";
 import type { JSX } from "react";
-import { useSchedule } from "@/context/schedule-context";
+import { useSchedule } from "@/context/schedule/schedule-context";
 import type { Course, Meeting } from "@/types/schedule";
 import { Button } from "@/components/ui/button";
 import { hasScheduleConflict } from "@/lib/schedule/schedule";

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { fetchText } from "@/api";
-import { parseCoursesFromCsvText } from "@/lib/schedule/parseSchedule";
 import type { Course } from "@/types/schedule";
+import { parseCoursesFromCsvText } from "@/lib/schedule/parseSchedule";
 
 export function useCourses(csvPath = "/fall-2024.csv") {
   const [courses, setCourses] = useState<Course[]>([]);

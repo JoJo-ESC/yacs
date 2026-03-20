@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useSchedule } from "@/context/schedule-context";
+import { useSchedule } from "@/context/schedule/schedule-context";
 
 export default function CatalogLoader({ path = "/test-schedule.csv" }: { path?: string }) {
   const { loadCsv } = useSchedule();

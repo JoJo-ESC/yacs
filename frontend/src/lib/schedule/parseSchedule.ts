@@ -1,4 +1,3 @@
-// src/lib/schedule/parseSchedule.ts
 import Papa from "papaparse";
 import type { Course, Meeting } from "@/types/schedule";
 
