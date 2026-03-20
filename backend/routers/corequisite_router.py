@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from schemas.api_models import CourseCorequisiteCreate
+from schemas.corequisite_schemas import CourseCorequisiteCreate
 from services import corequisite_service
 from models import SessionLocal
 

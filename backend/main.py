@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from starlette.middleware.sessions import SessionMiddleware
 
-from routers import user_router, auth_router, corequisite_router
+from routers import user_router, auth_router, corequisite_router, course_router
 from models import init_db
 from utils import load_secrets
 
@@ -28,6 +28,7 @@ app.add_middleware(SessionMiddleware, secret_key=secrets.get("SECRET_KEY", "dev_
 app.include_router(user_router.router)
 app.include_router(auth_router.router)
 app.include_router(corequisite_router.router)
+app.include_router(course_router.router)
 
 
 # --- Root Endpoint ---

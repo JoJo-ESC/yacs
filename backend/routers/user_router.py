@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Request, Response
 
-from schemas.api_models import UserPydantic
+from schemas.user_schemas import UserPydantic
 from services import user_service
 
 router = APIRouter(prefix="/api", tags=["Users"])
