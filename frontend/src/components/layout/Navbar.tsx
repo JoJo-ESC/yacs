@@ -1,10 +1,12 @@
 import React from "react";
 import { Bars3Icon } from "@heroicons/react/24/solid";
-import ClassSearch from "@/components/schedule/ClassSearch";
+import ClassSearch from "@/features/schedule/components/ClassSearch";
 import ThemeToggle from "@/components/theme/ThemeToggle";
-import { NavLink } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 
 function Navbar() {
+  const location = useLocation();
+  const isBrowseRoute = location.pathname === "/" || location.pathname.startsWith("/courses");
   const link = ({ isActive }: { isActive: boolean }) =>
     `px-4 h-11 inline-flex items-center rounded-xl text-sm font-medium transition-colors ${
       isActive
@@ -22,8 +24,21 @@ function Navbar() {
             </div>
           </div>
           <div className="invisible flex h-11 items-center gap-2 sm:visible">
+            <NavLink
+              to="/"
+              className={() =>
+                `px-4 h-11 inline-flex items-center rounded-xl text-sm font-medium transition-colors ${
+                  isBrowseRoute
+                    ? "text-indigo-700 bg-indigo-50 dark:text-indigo-300 dark:bg-indigo-950/40"
+                    : "text-slate-700 hover:bg-slate-100 dark:text-foreground dark:hover:bg-muted"
+                }`
+              }
+              end
+            >
+              Browse
+            </NavLink>
             <NavLink to="/planner" className={link}>4-Year Plan</NavLink>
-            <NavLink to="/" className={link} end>Schedule</NavLink>
+            <NavLink to="/schedule" className={link}>Schedule</NavLink>
             <NavLink to="/profile" className={link}>Profile</NavLink>
 
             <ThemeToggle />

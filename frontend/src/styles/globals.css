@@ -1,3 +1,5 @@
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -31,15 +33,24 @@
 
   html, body {
     @apply bg-background text-foreground;
+    font-family: "Manrope", ui-sans-serif, system-ui, sans-serif;
     margin: 0;
     padding: 0;
   }
 
   * { @apply border-border; }
+
+  mark {
+    color: inherit;
+  }
 }
 
 @layer utilities {
   .bg-surface { background-color: var(--surface); }
+
+  .font-display {
+    font-family: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  }
 }
 
 .scrollbar-hide::-webkit-scrollbar {
