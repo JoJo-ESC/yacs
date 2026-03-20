@@ -1,4 +1,4 @@
-import { buildScheduleIcs, buildSchedulePrintHtml } from "@/features/schedule/utils/exportSchedule";
+import { buildScheduleIcs, buildScheduleImageSvg, buildSchedulePrintHtml } from "@/features/schedule/utils/exportSchedule";
 import type { Course } from "@/features/schedule/types/schedule";
 
 const courses: Course[] = [
@@ -54,4 +54,16 @@ test("builds printable schedule html for pdf export", () => {
   expect(html).toContain("Mon, Wed, Fri");
   expect(html).toContain("09:00AM - 09:50AM");
   expect(html).toContain("DCC 308");
+});
+
+test("builds schedule svg markup for png export", () => {
+  const svg = buildScheduleImageSvg(courses);
+
+  expect(svg).toContain("<svg");
+  expect(svg).toContain("YACS Schedule Export");
+  expect(svg).toContain("CSCI-1100");
+  expect(svg).toContain("Computer Science 1");
+  expect(svg).toContain("Mon, Wed, Fri");
+  expect(svg).toContain("09:00AM - 09:50AM");
+  expect(svg).toContain("DCC 308");
 });
