@@ -4,7 +4,7 @@ import { useSchedule } from "../context/schedule-context";
 import type { Course, Meeting } from "../types/schedule";
 import { Button } from "@/components/ui/button";
 import { hasScheduleConflict } from "../utils/schedule";
-import { downloadScheduleIcs, downloadSchedulePng, printSchedulePdf } from "../utils/exportSchedule";
+import { copyScheduleAsText, downloadScheduleIcs, downloadSchedulePng, printSchedulePdf } from "../utils/exportSchedule";
 import { cn } from "@/lib/utils";
 import { 
   Clock, 
@@ -328,6 +328,7 @@ export default function ScheduleList(): JSX.Element {
   }, [courses]);
 
   const [open, setOpen] = React.useState<Record<string, boolean>>({});
+  const [copyStatus, setCopyStatus] = React.useState<"idle" | "copied">("idle");
   const toggleOpen = (id: string) =>
     setOpen((prev) => ({ ...prev, [id]: !prev[id] }));
 
@@ -353,6 +354,19 @@ export default function ScheduleList(): JSX.Element {
         </div>
         {displayCourses.length > 0 && (
           <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                void copyScheduleAsText(displayCourses).then(() => {
+                  setCopyStatus("copied");
+                  window.setTimeout(() => setCopyStatus("idle"), 2000);
+                });
+              }}
+              className="border-border text-muted-foreground hover:bg-surface hover:text-foreground"
+            >
+              {copyStatus === "copied" ? "Copied" : "Copy text"}
+            </Button>
             <Button
               variant="outline"
               size="sm"
@@ -390,6 +404,9 @@ export default function ScheduleList(): JSX.Element {
           </div>
         )}
       </div>
+      {copyStatus === "copied" && (
+        <p className="text-sm text-foreground/70">Schedule copied to your clipboard.</p>
+      )}
 
       {catalogLoading ? (
         <div className="flex flex-col gap-4">

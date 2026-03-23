@@ -394,3 +394,44 @@ export async function downloadSchedulePng(courses: Course[]) {
     window.URL.revokeObjectURL(svgUrl);
   }
 }
+
+export function buildScheduleText(courses: Course[]) {
+  const semester = courses.flatMap((course) => course.meetings.map((meeting) => meeting.semester)).find(Boolean);
+  const lines = [
+    "YACS Schedule Export",
+    semester || "Selected courses",
+    `${courses.length} ${courses.length === 1 ? "course" : "courses"}`,
+    "",
+  ];
+
+  for (const course of courses) {
+    lines.push(`${course.id} - ${course.title}`);
+    for (const meeting of course.meetings) {
+      lines.push(
+        `  ${meeting.type} ${meeting.section} | ${formatMeetingDays(meeting.days)} | ${meeting.start} - ${meeting.end} | ${meeting.location || "TBA"} | ${meeting.instructor || "TBA"}`
+      );
+    }
+    lines.push("");
+  }
+
+  return lines.join("\n").trim();
+}
+
+export async function copyScheduleAsText(courses: Course[]) {
+  const text = buildScheduleText(courses);
+
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(text);
+    return;
+  }
+
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  textarea.setAttribute("readonly", "true");
+  textarea.style.position = "absolute";
+  textarea.style.left = "-9999px";
+  document.body.appendChild(textarea);
+  textarea.select();
+  document.execCommand("copy");
+  document.body.removeChild(textarea);
+}

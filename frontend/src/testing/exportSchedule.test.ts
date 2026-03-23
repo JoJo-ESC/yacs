@@ -1,4 +1,4 @@
-import { buildScheduleIcs, buildScheduleImageSvg, buildSchedulePrintHtml } from "@/features/schedule/utils/exportSchedule";
+import { buildScheduleIcs, buildScheduleImageSvg, buildSchedulePrintHtml, buildScheduleText } from "@/features/schedule/utils/exportSchedule";
 import type { Course } from "@/features/schedule/types/schedule";
 
 const courses: Course[] = [
@@ -66,4 +66,13 @@ test("builds schedule svg markup for png export", () => {
   expect(svg).toContain("Mon, Wed, Fri");
   expect(svg).toContain("09:00AM - 09:50AM");
   expect(svg).toContain("DCC 308");
+});
+
+test("builds plain text schedule output for clipboard export", () => {
+  const text = buildScheduleText(courses);
+
+  expect(text).toContain("YACS Schedule Export");
+  expect(text).toContain("FALL 2024");
+  expect(text).toContain("CSCI-1100 - Computer Science 1");
+  expect(text).toContain("LEC 01 | Mon, Wed, Fri | 09:00AM - 09:50AM | DCC 308 | Dr. Alan Turing");
 });
