@@ -64,6 +64,17 @@ test("shows the generic error page when a route crashes", () => {
   consoleErrorSpy.mockRestore();
 });
 
+test("renders the finals page shell", async () => {
+  render(
+    <AppProviders>
+      <AppRoutes initialEntries={["/finals"]} />
+    </AppProviders>
+  );
+
+  expect(await screen.findByRole("heading", { name: /final exam schedule/i })).toBeInTheDocument();
+  expect(screen.getByText(/frontend shell is in place now/i)).toBeInTheDocument();
+});
+
 test("shows a loading spinner while courses load", async () => {
   const originalFetch = global.fetch;
   global.fetch = jest.fn(() => new Promise(() => undefined)) as unknown as typeof fetch;

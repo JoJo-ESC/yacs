@@ -3,6 +3,7 @@ import { BrowserRouter, MemoryRouter, Route, Routes } from "react-router-dom";
 import App from "@/app/App";
 import LoginPage from "@/features/auth/routes/LoginPage";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import FinalsPage from "@/features/finals/routes/FinalsPage";
 import HomePage from "@/features/schedule/routes/HomePage";
 import FourYearPlannerPage from "@/features/planner/routes/FourYearPlannerPage";
 import ProfilePage from "@/features/profile/routes/ProfilePage";
@@ -22,6 +23,7 @@ export function AppRoutes({ initialEntries }: AppRoutesProps) {
         <Routes>
           <Route path="/" element={<App />}>
             <Route index element={<HomePage />} />
+            <Route path="finals" element={<FinalsPage />} />
             <Route path="login" element={<LoginPage />} />
             <Route path="planner" element={<FourYearPlannerPage />} />
             <Route path="profile" element={<ProfilePage />} />
