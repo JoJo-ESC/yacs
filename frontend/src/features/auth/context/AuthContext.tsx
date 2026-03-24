@@ -238,15 +238,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsBusy(true);
 
     try {
-      upsertMockAccount(input);
-    } catch (signupError) {
-      setError(signupError instanceof Error ? signupError.message : "Unable to create account.");
-      setIsBusy(false);
-      return false;
-    }
+      const signupResponse = await signupUser(input);
+      console.log("Signup response:", signupResponse);
+      if (!signupResponse.ok || !signupResponse.success) {
+        console.log("Setting error:", signupResponse.message);
+        const errorMessage = signupResponse.message ?? "Unable to create account.";
+        setError(errorMessage);
+        window.alert("Signup failed: " + errorMessage);
+        setIsBusy(false);
+        return false;
+      }
 
-    try {
-      await signupUser(input);
+      // Signup succeeded, now log in
+      try {
+        upsertMockAccount(input);
+      } catch (mockError) {
+        // Mock account error is non-fatal
+        console.warn("Mock account upsert failed:", mockError);
+      }
+
       const loginResponse = await loginUser({
         email: input.email,
         password: input.password,
@@ -267,13 +277,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         source: "local",
       });
       return true;
-    } catch {
-      setAuthenticated({
-        name: input.name,
-        email: input.email,
-        source: "local",
-      });
-      return true;
+    } catch (error) {
+      console.log("Signup error:", error);
+      setError(error instanceof Error ? error.message : "Network error during signup.");
+      return false;
     } finally {
       setIsBusy(false);
     }
