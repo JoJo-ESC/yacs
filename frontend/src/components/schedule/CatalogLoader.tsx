@@ -1,10 +1,10 @@
 import { useEffect } from "react";
 import { useSchedule } from "@/context/schedule-context";
 
-export default function CatalogLoader({ path = "/test-schedule.csv" }: { path?: string }) {
-  const { loadCsv } = useSchedule();
+export default function CatalogLoader({ semester }: { semester?: string }) {
+  const { loadCatalog } = useSchedule();
   useEffect(() => {
-    loadCsv(path).catch(console.error);
-  }, [loadCsv, path]);
-  return null; 
+    loadCatalog(semester).catch(console.error);
+  }, [loadCatalog, semester]);
+  return null;
 }
