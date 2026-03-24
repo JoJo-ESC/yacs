@@ -1,6 +1,7 @@
 import React from "react";
 import { Bars3Icon } from "@heroicons/react/24/solid";
 import ClassSearch from "@/features/schedule/components/ClassSearch";
+import { SubjectNavSearch } from "@/features/courses/components/SubjectNavSearch";
 import ThemeToggle from "@/components/theme/ThemeToggle";
 import { NavLink, useLocation } from "react-router-dom";
 
@@ -19,8 +20,14 @@ function Navbar() {
         <div className="flex items-center justify-between px-4 py-3">
           <div className="flex min-w-0 items-center gap-4 md:gap-8">
             <a href="/" className="text-xl font-semibold tracking-tight text-slate-900 dark:text-foreground">YACS</a>
-            <div className="w-full max-w-md">
-              <ClassSearch />
+            <div className="w-full max-w-2xl">
+              {isBrowseRoute ? (
+                <SubjectNavSearch />
+              ) : (
+                <div className="max-w-md">
+                  <ClassSearch />
+                </div>
+              )}
             </div>
           </div>
           <div className="invisible flex h-11 items-center gap-2 sm:visible">

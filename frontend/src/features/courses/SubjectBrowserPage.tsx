@@ -4,7 +4,6 @@ import { SubjectBrowserSkeleton } from "@/features/courses/components/SubjectBro
 import { SubjectCard } from "@/features/courses/components/SubjectCard";
 import { SubjectFilterBar } from "@/features/courses/components/SubjectFilterBar";
 import { SubjectQuickOpenDialog } from "@/features/courses/components/SubjectQuickOpenDialog";
-import { SubjectSearchBar } from "@/features/courses/components/SubjectSearchBar";
 import {
   ALL_SUBJECTS_CATEGORY,
   filterSubjects,
@@ -15,14 +14,15 @@ import {
   type SubjectFilterCategory,
 } from "@/lib/courses/subjects";
 import { useSubjects } from "@/hooks/courses/useSubjects";
+import { useSearchParams } from "react-router-dom";
 
 export default function SubjectBrowserPage() {
   const { subjects, loading, error } = useSubjects();
   const { catalog } = useCatalog();
-  const [query, setQuery] = React.useState("");
+  const [searchParams] = useSearchParams();
+  const query = searchParams.get("q") ?? "";
   const deferredQuery = React.useDeferredValue(query);
   const [activeCategory, setActiveCategory] = React.useState<SubjectFilterCategory>(ALL_SUBJECTS_CATEGORY);
-  const [featuredOnly, setFeaturedOnly] = React.useState(false);
   const [isQuickFindOpen, setIsQuickFindOpen] = React.useState(false);
 
   React.useEffect(() => {
@@ -46,8 +46,8 @@ export default function SubjectBrowserPage() {
   const courseCounts = React.useMemo(() => getCourseCountBySubject(catalog), [catalog]);
   const categoryCounts = React.useMemo(() => getCategoryCounts(subjects), [subjects]);
   const filteredResults = React.useMemo(
-    () => filterSubjects(subjects, deferredQuery, activeCategory, featuredOnly),
-    [subjects, deferredQuery, activeCategory, featuredOnly],
+    () => filterSubjects(subjects, deferredQuery, activeCategory),
+    [subjects, deferredQuery, activeCategory],
   );
   const groupedSubjects = React.useMemo(() => getGroupedSubjects(subjects), [subjects]);
   const activeCategoryLabel =
@@ -56,17 +56,13 @@ export default function SubjectBrowserPage() {
     () =>
       groupedSubjects
         .filter((group) => activeCategory === ALL_SUBJECTS_CATEGORY || group.category.id === activeCategory)
-        .map((group) => ({
-          ...group,
-          subjects: featuredOnly ? group.subjects.filter((subject) => subject.featured) : group.subjects,
-        }))
         .filter((group) => group.subjects.length > 0),
-    [groupedSubjects, activeCategory, featuredOnly],
+    [groupedSubjects, activeCategory],
   );
 
   return (
     <main className="relative flex-1 overflow-x-hidden bg-slate-50 pb-16 text-slate-900 dark:bg-zinc-950 dark:text-slate-100">
-      <div className="relative mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 pb-10 pt-8 sm:px-6 lg:px-8">
+      <div className="relative mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 pb-10 pt-4 sm:px-6 lg:px-8">
 
         {loading ? (
           <SubjectBrowserSkeleton />
@@ -79,20 +75,10 @@ export default function SubjectBrowserPage() {
           </section>
         ) : (
           <>
-            <section className="w-full">
-              <SubjectSearchBar
-                query={query}
-                onQueryChange={setQuery}
-                onOpenQuickFind={() => setIsQuickFindOpen(true)}
-              />
-            </section>
-
             <SubjectFilterBar
               categories={categoryCounts}
               activeCategory={activeCategory}
               onCategoryChange={setActiveCategory}
-              featuredOnly={featuredOnly}
-              onFeaturedOnlyChange={setFeaturedOnly}
             />
 
             {deferredQuery.trim() ? (
@@ -143,7 +129,7 @@ export default function SubjectBrowserPage() {
                       No subjects match the current filters.
                     </p>
                     <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-500 dark:text-slate-400">
-                      Clear the featured filter or switch categories to keep exploring departments.
+                      Switch categories or search by code or name to keep exploring departments.
                     </p>
                   </div>
                 ) : null}

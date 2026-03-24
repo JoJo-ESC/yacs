@@ -1,5 +1,5 @@
 import * as React from "react";
-import { ArrowLeft, BookOpenText, Grid2X2, Sparkles } from "lucide-react";
+import { ArrowLeft, BookOpenText, Grid2X2 } from "lucide-react";
 import { Link, Navigate, useParams } from "react-router-dom";
 import { useSchedule } from "@/context/schedule/schedule-context";
 import { SubjectCourseList } from "@/features/courses/components/SubjectCourseList";
@@ -69,7 +69,7 @@ export default function SubjectCoursesPage() {
               </div>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-1">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
               <div className="rounded-[28px] border border-slate-200/80 bg-white/92 p-5 dark:border-slate-800 dark:bg-slate-950/88">
                 <BookOpenText className="h-5 w-5 text-sky-600 dark:text-sky-300" />
                 <div className="mt-6 text-3xl font-semibold tracking-tight">
@@ -81,11 +81,6 @@ export default function SubjectCoursesPage() {
                 <Grid2X2 className="h-5 w-5 text-emerald-600 dark:text-emerald-300" />
                 <div className="mt-6 text-3xl font-semibold tracking-tight">{subjectCourses.length}</div>
                 <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Visible listings for the current catalog snapshot.</p>
-              </div>
-              <div className="rounded-[28px] border border-slate-200/80 bg-white/92 p-5 dark:border-slate-800 dark:bg-slate-950/88">
-                <Sparkles className="h-5 w-5 text-amber-500 dark:text-amber-300" />
-                <div className="mt-6 text-3xl font-semibold tracking-tight">{subject?.featured ? "Yes" : "No"}</div>
-                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Popular subject spotlight status for the browser.</p>
               </div>
             </div>
           </div>

@@ -25,13 +25,6 @@ export function getSubjectCategories(): SubjectCategory[] {
   return SUBJECT_CATEGORIES;
 }
 
-export function getFeaturedSubjects(subjects: Subject[], limit = 6) {
-  return [...subjects]
-    .filter((subject) => subject.featured)
-    .sort((left, right) => (right.popularity ?? 0) - (left.popularity ?? 0))
-    .slice(0, limit);
-}
-
 export function getCategoryMeta(categoryId: SubjectCategoryId) {
   return SUBJECT_CATEGORIES.find((category) => category.id === categoryId);
 }
@@ -47,11 +40,7 @@ export function searchSubjects(subjects: Subject[], query: string): SubjectSearc
   const normalizedQuery = normalize(query);
   if (!normalizedQuery) {
     return [...subjects]
-      .sort((left, right) => {
-        const popularityDiff = (right.popularity ?? 0) - (left.popularity ?? 0);
-        if (popularityDiff !== 0) return popularityDiff;
-        return left.code.localeCompare(right.code);
-      })
+      .sort((left, right) => left.code.localeCompare(right.code))
       .map((subject) => ({ subject, score: 0 }));
   }
 
@@ -82,26 +71,13 @@ export function searchSubjects(subjects: Subject[], query: string): SubjectSearc
     .filter((result) => result.score > 0)
     .sort((left, right) => {
       if (right.score !== left.score) return right.score - left.score;
-      const popularityDiff = (right.subject.popularity ?? 0) - (left.subject.popularity ?? 0);
-      if (popularityDiff !== 0) return popularityDiff;
       return left.subject.code.localeCompare(right.subject.code);
     });
 }
 
-export function filterSubjects(
-  subjects: Subject[],
-  query: string,
-  activeCategory: SubjectFilterCategory,
-  featuredOnly = false,
-) {
+export function filterSubjects(subjects: Subject[], query: string, activeCategory: SubjectFilterCategory) {
   const baseSubjects = subjects.filter((subject) => {
-    if (activeCategory !== ALL_SUBJECTS_CATEGORY && subject.category !== activeCategory) {
-      return false;
-    }
-    if (featuredOnly && !subject.featured) {
-      return false;
-    }
-    return true;
+    return activeCategory === ALL_SUBJECTS_CATEGORY || subject.category === activeCategory;
   });
 
   return searchSubjects(baseSubjects, query);
@@ -113,11 +89,7 @@ export function getGroupedSubjects(subjects: Subject[]) {
       category,
       subjects: subjects
         .filter((subject) => subject.category === category.id)
-        .sort((left, right) => {
-          const popularityDiff = (right.popularity ?? 0) - (left.popularity ?? 0);
-          if (popularityDiff !== 0) return popularityDiff;
-          return left.code.localeCompare(right.code);
-        }),
+        .sort((left, right) => left.code.localeCompare(right.code)),
     }))
     .filter((group) => group.subjects.length > 0);
 }

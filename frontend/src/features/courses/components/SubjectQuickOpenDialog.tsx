@@ -1,5 +1,5 @@
 import * as React from "react";
-import { GraduationCap, Hash, Sparkles } from "lucide-react";
+import { GraduationCap, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
   CommandDialog,
@@ -8,7 +8,6 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-  CommandShortcut,
 } from "@/components/ui/command";
 import type { Subject } from "@/types/courses";
 import { getCategoryMeta } from "@/lib/courses/subjects";
@@ -25,10 +24,6 @@ export function SubjectQuickOpenDialog({
   subjects,
 }: SubjectQuickOpenDialogProps) {
   const navigate = useNavigate();
-  const featuredSubjects = React.useMemo(
-    () => subjects.filter((subject) => subject.featured).slice(0, 8),
-    [subjects],
-  );
 
   return (
     <CommandDialog
@@ -50,38 +45,6 @@ export function SubjectQuickOpenDialog({
         <CommandEmpty className="rounded-2xl border border-dashed border-slate-200 px-4 py-10 text-slate-500 dark:border-slate-800 dark:text-slate-400">
           No subjects matched. Try a code like <span className="font-semibold text-slate-900 dark:text-white">MATH</span> or a name like <span className="font-semibold text-slate-900 dark:text-white">Computer Science</span>.
         </CommandEmpty>
-        <CommandGroup heading="Popular picks">
-          {featuredSubjects.map((subject) => {
-            const category = getCategoryMeta(subject.category);
-            return (
-              <CommandItem
-                key={subject.id}
-                value={`${subject.code} ${subject.name} ${subject.aliases?.join(" ") ?? ""}`}
-                onSelect={() => {
-                  navigate(`/courses/${subject.code}`);
-                  onOpenChange(false);
-                }}
-                className="rounded-2xl px-3 py-3 text-slate-800 data-[selected=true]:bg-sky-50 data-[selected=true]:text-sky-950 dark:text-slate-100 dark:data-[selected=true]:bg-sky-950/60 dark:data-[selected=true]:text-sky-100"
-              >
-                <div className="flex flex-1 items-center gap-3">
-                  <div className="rounded-xl bg-slate-100 p-2 dark:bg-slate-800">
-                    <Hash className="h-4 w-4 text-slate-500 dark:text-slate-300" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="font-semibold">
-                      {subject.code} <span className="text-slate-400">·</span> {subject.name}
-                    </div>
-                    <div className="truncate text-xs text-slate-500 dark:text-slate-400">
-                      {category?.label}
-                    </div>
-                  </div>
-                </div>
-                <CommandShortcut>Open</CommandShortcut>
-              </CommandItem>
-            );
-          })}
-        </CommandGroup>
-
         <CommandGroup heading="All subjects">
           {subjects.map((subject) => {
             const category = getCategoryMeta(subject.category);
