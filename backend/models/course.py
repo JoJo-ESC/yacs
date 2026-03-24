@@ -1,9 +1,8 @@
 from sqlalchemy import Column, String, Integer, Text
 from sqlalchemy.orm import relationship
 from .database import Base                                                        
-                                                                                    
-                                                                                    
-class Course(Base):                                                               
+                                                                                                                                                                     
+class Course(Base):                                                                 
     __tablename__ = 'course'                                                      
                                                                                 
     id = Column(Integer, primary_key=True)  # From JSON "id" field                
