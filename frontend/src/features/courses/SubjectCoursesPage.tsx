@@ -27,8 +27,7 @@ export default function SubjectCoursesPage() {
   }
 
   return (
-    <main className="relative flex-1 overflow-x-hidden bg-[linear-gradient(180deg,_#f8fbff_0%,_#ffffff_100%)] pb-16 dark:bg-[linear-gradient(180deg,_#020617_0%,_#07111f_46%,_#020617_100%)]">
-      <div className="absolute inset-x-0 top-0 h-80 bg-[radial-gradient(circle_at_top_left,_rgba(14,165,233,0.16),_transparent_34%),radial-gradient(circle_at_top_right,_rgba(251,191,36,0.18),_transparent_24%)] dark:bg-[radial-gradient(circle_at_top_left,_rgba(56,189,248,0.18),_transparent_34%),radial-gradient(circle_at_top_right,_rgba(251,191,36,0.14),_transparent_24%)]" />
+    <main className="relative flex-1 overflow-x-hidden bg-[radial-gradient(circle_at_top_left,_rgba(147,197,253,0.12),_transparent_22%),radial-gradient(circle_at_top_right,_rgba(176,129,89,0.12),_transparent_20%),linear-gradient(180deg,_#fffefd_0%,_#fffdfa_38%,_#ffffff_100%)] pb-16 dark:bg-[radial-gradient(circle_at_top_left,_rgba(56,189,248,0.16),_transparent_26%),radial-gradient(circle_at_top_right,_rgba(161,98,7,0.18),_transparent_24%),linear-gradient(180deg,_#120d09_0%,_#16110d_42%,_#09090b_100%)]">
       <div className="relative mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 pb-10 pt-8 sm:px-6 lg:px-8">
         <section className="overflow-hidden rounded-[40px] border border-white/80 bg-white/82 p-8 shadow-[0_28px_100px_-56px_rgba(15,23,42,0.45)] backdrop-blur dark:border-slate-800/80 dark:bg-slate-950/72">
           <Link

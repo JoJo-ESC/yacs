@@ -3,6 +3,7 @@ import { Bars3Icon } from "@heroicons/react/24/solid";
 import ClassSearch from "@/features/schedule/components/ClassSearch";
 import { SubjectNavSearch } from "@/features/courses/components/SubjectNavSearch";
 import ThemeToggle from "@/components/theme/ThemeToggle";
+import { BrandLogo } from "@/components/layout/BrandLogo";
 import { NavLink, useLocation } from "react-router-dom";
 
 function Navbar() {
@@ -19,7 +20,7 @@ function Navbar() {
       <div className="sticky top-0 z-40 border-b border-slate-200/70 bg-white/85 text-input-foreground backdrop-blur-xl shadow-sm shadow-slate-900/5 dark:border-border dark:bg-header/90">
         <div className="flex items-center justify-between px-4 py-3">
           <div className="flex min-w-0 items-center gap-4 md:gap-8">
-            <a href="/" className="text-xl font-semibold tracking-tight text-slate-900 dark:text-foreground">YACS</a>
+            <BrandLogo imageClassName="h-11" />
             <div className="w-full max-w-2xl">
               {isBrowseRoute ? (
                 <SubjectNavSearch />
