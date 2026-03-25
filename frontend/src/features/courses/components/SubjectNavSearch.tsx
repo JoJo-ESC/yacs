@@ -32,7 +32,7 @@ export function SubjectNavSearch() {
           value={query}
           onChange={updateQuery}
           onClear={() => updateQuery("")}
-          placeholder="Search classes"
+          placeholder="Search classes..."
           ariaLabel="Search subjects by subject code or name"
       />
     </div>

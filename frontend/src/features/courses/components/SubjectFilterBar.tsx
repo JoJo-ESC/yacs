@@ -16,13 +16,13 @@ export function SubjectFilterBar({
   onCategoryChange,
 }: SubjectFilterBarProps) {
   return (
-    <div className="flex flex-col gap-3 rounded-[28px] border border-slate-200/70 bg-white/90 p-4 shadow-sm shadow-slate-900/5 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/90">
+    <div className="flex flex-col gap-3 rounded-[28px] border border-slate-200/80 bg-white p-4 shadow-[0_18px_45px_-36px_rgba(15,23,42,0.12)] backdrop-blur dark:border-[#303030] dark:bg-[#1a1a1a] dark:shadow-[0_18px_45px_-28px_rgba(0,0,0,0.7)]">
       <div>
         <div>
-          <p className="font-display text-lg font-semibold tracking-tight text-slate-950 dark:text-white">
+          <p className="font-display text-lg font-semibold tracking-tight text-slate-950 dark:text-neutral-50">
             Filter subjects
           </p>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
+          <p className="text-sm text-slate-500 dark:text-neutral-400">
             Filters combine with search instantly.
           </p>
         </div>
@@ -33,10 +33,10 @@ export function SubjectFilterBar({
           type="button"
           onClick={() => onCategoryChange(ALL_SUBJECTS_CATEGORY)}
           className={cn(
-            "inline-flex shrink-0 items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400",
+            "inline-flex shrink-0 items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4b28d] dark:focus-visible:ring-[rgba(122,82,48,0.45)]",
             activeCategory === ALL_SUBJECTS_CATEGORY
-              ? "border-slate-300 bg-slate-100 text-slate-900 dark:border-zinc-700 dark:bg-zinc-800 dark:text-slate-100"
-              : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-slate-300 dark:hover:border-zinc-700 dark:hover:bg-zinc-800",
+              ? "border-[#dfc9ae] bg-[#f8f2ea] text-[#7a5230] dark:border-[#6d4f36] dark:bg-[#3a281d] dark:text-[#f4e6d6]"
+              : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 dark:border-[#343434] dark:bg-[#222222] dark:text-neutral-300 dark:hover:border-[#4a4a4a] dark:hover:bg-[#2a2a2a]",
           )}
         >
           All subjects
@@ -47,14 +47,14 @@ export function SubjectFilterBar({
             type="button"
             onClick={() => onCategoryChange(category.id)}
             className={cn(
-              "inline-flex shrink-0 items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400",
+              "inline-flex shrink-0 items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4b28d] dark:focus-visible:ring-[rgba(122,82,48,0.45)]",
               activeCategory === category.id
-                ? "border-slate-300 bg-slate-100 text-slate-900 dark:border-zinc-700 dark:bg-zinc-800 dark:text-slate-100"
-                : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-slate-300 dark:hover:border-zinc-700 dark:hover:bg-zinc-800",
+                ? "border-[#dfc9ae] bg-[#f8f2ea] text-[#7a5230] dark:border-[#6d4f36] dark:bg-[#3a281d] dark:text-[#f4e6d6]"
+                : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 dark:border-[#343434] dark:bg-[#222222] dark:text-neutral-300 dark:hover:border-[#4a4a4a] dark:hover:bg-[#2a2a2a]",
             )}
           >
             {category.shortLabel}
-            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-bold text-slate-500 dark:bg-slate-800 dark:text-slate-300">
+            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-bold text-slate-500 dark:bg-[#303030] dark:text-neutral-300">
               {count}
             </span>
           </button>

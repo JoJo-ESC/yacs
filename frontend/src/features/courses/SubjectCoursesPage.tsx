@@ -88,7 +88,7 @@ export default function SubjectCoursesPage() {
         {catalogLoading ? (
           <div className="grid gap-4 animate-pulse">
             {Array.from({ length: 4 }).map((_, index) => (
-              <div key={index} className="h-48 rounded-[28px] border border-slate-200/80 bg-white/80 dark:border-slate-800 dark:bg-slate-950/70" />
+              <div key={index} className="h-48 rounded-[28px] border border-slate-200/80 bg-white/80 dark:border-[#303030] dark:bg-[#1a1a1a]" />
             ))}
           </div>
         ) : catalogError ? (

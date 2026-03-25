@@ -61,7 +61,7 @@ export default function SubjectBrowserPage() {
   );
 
   return (
-    <main className="relative flex-1 overflow-x-hidden bg-slate-50 pb-16 text-slate-900 dark:bg-zinc-950 dark:text-slate-100">
+    <main className="relative flex-1 overflow-x-hidden bg-white pb-16 text-[#2b1f17] dark:bg-black dark:text-[#f4ece2]">
       <div className="relative mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 pb-10 pt-4 sm:px-6 lg:px-8">
 
         {loading ? (
@@ -85,21 +85,21 @@ export default function SubjectBrowserPage() {
               <section className="space-y-5">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                   <div>
-                    <h2 className="font-display text-3xl font-semibold tracking-tight text-slate-950 dark:text-white">
+                    <h2 className="font-display text-3xl font-semibold tracking-tight text-[#2d1f15] dark:text-[#faf2ea]">
                       {filteredResults.length} match{filteredResults.length === 1 ? "" : "es"} in {activeCategoryLabel}
                     </h2>
                   </div>
-                  <p className="max-w-2xl text-sm text-slate-500 dark:text-slate-400">
+                  <p className="max-w-2xl text-sm text-[#837466] dark:text-[#c7b8a9]">
                     Matching across subject code, name, school, and aliases.
                   </p>
                 </div>
 
                 {filteredResults.length === 0 ? (
-                  <div className="rounded-[32px] border border-dashed border-slate-300 bg-white/70 px-6 py-16 text-center dark:border-slate-700 dark:bg-slate-950/60">
-                    <p className="font-display text-2xl font-semibold tracking-tight text-slate-950 dark:text-white">
+                  <div className="rounded-[32px] border border-dashed border-[#e4d8c9] bg-white px-6 py-16 text-center dark:border-[#433128] dark:bg-[#171210]/70">
+                    <p className="font-display text-2xl font-semibold tracking-tight text-[#2d1f15] dark:text-[#faf2ea]">
                       No subjects matched “{query.trim()}”.
                     </p>
-                    <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-500 dark:text-slate-400">
+                    <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-[#837466] dark:text-[#c7b8a9]">
                       Try a broader keyword, a department code like ECSE, or change the active filters.
                     </p>
                   </div>
@@ -124,11 +124,11 @@ export default function SubjectBrowserPage() {
             ) : (
               <div className="space-y-10">
                 {visibleGroups.length === 0 ? (
-                  <div className="rounded-[32px] border border-dashed border-slate-300 bg-white/70 px-6 py-16 text-center dark:border-slate-700 dark:bg-slate-950/60">
-                    <p className="font-display text-2xl font-semibold tracking-tight text-slate-950 dark:text-white">
+                  <div className="rounded-[32px] border border-dashed border-[#e4d8c9] bg-white px-6 py-16 text-center dark:border-[#433128] dark:bg-[#171210]/70">
+                    <p className="font-display text-2xl font-semibold tracking-tight text-[#2d1f15] dark:text-[#faf2ea]">
                       No subjects match the current filters.
                     </p>
-                    <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-500 dark:text-slate-400">
+                    <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-[#837466] dark:text-[#c7b8a9]">
                       Switch categories or search by code or name to keep exploring departments.
                     </p>
                   </div>
@@ -138,11 +138,11 @@ export default function SubjectBrowserPage() {
                   <section key={group.category.id} className="space-y-5">
                     <div className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
                       <div>
-                        <h2 className="font-display text-3xl font-semibold tracking-tight text-slate-950 dark:text-white">
+                        <h2 className="font-display text-3xl font-semibold tracking-tight text-[#2d1f15] dark:text-[#faf2ea]">
                           {group.category.label}
                         </h2>
                       </div>
-                      <p className="max-w-2xl text-sm text-slate-500 dark:text-slate-400">
+                      <p className="max-w-2xl text-sm text-[#837466] dark:text-[#c7b8a9]">
                         {group.category.description}
                       </p>
                     </div>

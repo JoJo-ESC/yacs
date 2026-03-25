@@ -16,7 +16,7 @@ function BrandLogoImage({ imageClassName }: Pick<BrandLogoProps, "imageClassName
         className={cn("block h-10 w-auto dark:hidden", imageClassName)}
       />
       <img
-        src="/logo/white-for-web.png"
+        src="/logo/color-sticker.png"
         alt="YACS logo"
         className={cn("hidden h-10 w-auto dark:block", imageClassName)}
       />

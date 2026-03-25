@@ -36,13 +36,13 @@ export function NavbarSearchField({
   return (
     <label
       className={cn(
-        "flex w-full items-center gap-4 rounded-[24px] border border-slate-200 bg-slate-50 px-5 py-3 text-slate-900 transition-shadow",
-        "focus-within:border-slate-400 focus-within:ring-4 focus-within:ring-slate-200",
-        "dark:border-zinc-800 dark:bg-zinc-900 dark:text-slate-100 dark:focus-within:border-slate-600 dark:focus-within:ring-zinc-800",
+        "flex w-full items-center gap-4 rounded-[24px] border border-slate-200 bg-white px-5 py-3 text-slate-800 transition-shadow",
+        "focus-within:border-[#caa57a] focus-within:ring-4 focus-within:ring-[#f5eadb]",
+        "dark:border-[#3a3a3a] dark:bg-[#181818] dark:text-neutral-100 dark:focus-within:border-[#8c6542] dark:focus-within:ring-[rgba(122,82,48,0.25)]",
       )}
       htmlFor={id}
     >
-      <Search className="h-5 w-5 shrink-0 text-slate-400 dark:text-slate-300" aria-hidden="true" />
+      <Search className="h-5 w-5 shrink-0 text-slate-400 dark:text-neutral-500" aria-hidden="true" />
       <input
         id={id}
         ref={inputRef}
@@ -51,7 +51,7 @@ export function NavbarSearchField({
         onChange={(event) => onChange(event.target.value)}
         onFocus={onFocus}
         onKeyDown={onKeyDown}
-        className="min-w-0 flex-1 bg-transparent text-base font-medium outline-none placeholder:text-slate-400"
+        className="min-w-0 flex-1 bg-transparent text-base font-medium outline-none placeholder:text-slate-400 dark:placeholder:text-neutral-500"
         placeholder={placeholder}
         aria-label={ariaLabel}
         aria-expanded={ariaExpanded}
@@ -66,7 +66,7 @@ export function NavbarSearchField({
             event.preventDefault();
             onClear();
           }}
-          className="rounded-full p-2 text-slate-500 transition-colors hover:bg-white hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 dark:hover:bg-zinc-800 dark:hover:text-white"
+          className="rounded-full p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#caa57a] dark:text-neutral-500 dark:hover:bg-[#262626] dark:hover:text-neutral-100"
           aria-label="Clear search"
         >
           <X className="h-4 w-4" />
