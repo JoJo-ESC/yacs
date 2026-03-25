@@ -27,12 +27,12 @@ export default function SubjectCoursesPage() {
   }
 
   return (
-    <main className="relative flex-1 overflow-x-hidden bg-[radial-gradient(circle_at_top_left,_rgba(147,197,253,0.12),_transparent_22%),radial-gradient(circle_at_top_right,_rgba(176,129,89,0.12),_transparent_20%),linear-gradient(180deg,_#fffefd_0%,_#fffdfa_38%,_#ffffff_100%)] pb-16 dark:bg-[radial-gradient(circle_at_top_left,_rgba(56,189,248,0.16),_transparent_26%),radial-gradient(circle_at_top_right,_rgba(161,98,7,0.18),_transparent_24%),linear-gradient(180deg,_#120d09_0%,_#16110d_42%,_#09090b_100%)]">
+    <main className="relative flex-1 overflow-x-hidden bg-[radial-gradient(circle_at_top_right,_rgba(176,129,89,0.1),_transparent_20%),linear-gradient(180deg,_#fffefd_0%,_#fffdfa_38%,_#ffffff_100%)] pb-16 dark:bg-none dark:bg-black">
       <div className="relative mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 pb-10 pt-8 sm:px-6 lg:px-8">
-        <section className="overflow-hidden rounded-[40px] border border-white/80 bg-white/82 p-8 shadow-[0_28px_100px_-56px_rgba(15,23,42,0.45)] backdrop-blur dark:border-slate-800/80 dark:bg-slate-950/72">
+        <section className="overflow-hidden rounded-[40px] border border-white/80 bg-white/82 p-8 shadow-[0_28px_100px_-56px_rgba(15,23,42,0.45)] backdrop-blur dark:border-[#3a3a3a] dark:bg-[#1f1f1f]">
           <Link
             to="/courses"
-            className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-slate-700 dark:hover:bg-slate-800"
+            className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:border-slate-300 hover:bg-slate-50 dark:border-[#6d4f36] dark:bg-[#3a281d] dark:text-[#f4e6d6] dark:hover:bg-[#422f22]"
           >
             <ArrowLeft className="h-4 w-4" />
             Back to subject browser
@@ -40,7 +40,7 @@ export default function SubjectCoursesPage() {
 
           <div className="mt-6 grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
             <div className="max-w-3xl">
-              <p className="inline-flex items-center rounded-full bg-sky-50 px-4 py-2 text-xs font-bold uppercase tracking-[0.24em] text-sky-700 dark:bg-sky-950/70 dark:text-sky-200">
+              <p className="inline-flex items-center rounded-full border border-[#dfc9ae] bg-[#f8f2ea] px-4 py-2 text-xs font-bold uppercase tracking-[0.24em] text-[#7a5230] dark:border-[#6d4f36] dark:bg-[#3a281d] dark:text-[#f4e6d6]">
                 {subject?.code ?? subjectCode}
               </p>
               <h1 className="font-display mt-5 text-4xl font-semibold tracking-[-0.04em] text-slate-950 sm:text-5xl dark:text-white">
@@ -51,16 +51,16 @@ export default function SubjectCoursesPage() {
                   "Browse live course listings for this subject and add classes directly into your schedule."}
               </p>
               <div className="mt-5 flex flex-wrap gap-2">
-                <span className="rounded-full bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                <span className="rounded-full bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-700 dark:bg-[#2b2b2b] dark:text-neutral-200">
                   {category?.label ?? "Subject area"}
                 </span>
-                <span className="rounded-full bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                <span className="rounded-full bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-700 dark:bg-[#2b2b2b] dark:text-neutral-200">
                   {subject?.school ?? "RPI"}
                 </span>
                 {subject?.aliases?.slice(0, 3).map((alias) => (
                   <span
                     key={alias}
-                    className="rounded-full bg-white px-3 py-1 text-sm font-medium text-slate-500 ring-1 ring-slate-200 dark:bg-slate-900 dark:text-slate-400 dark:ring-slate-700"
+                    className="rounded-full bg-white px-3 py-1 text-sm font-medium text-slate-500 ring-1 ring-slate-200 dark:bg-[#262626] dark:text-neutral-300 dark:ring-[#3a3a3a]"
                   >
                     {alias}
                   </span>
@@ -69,14 +69,14 @@ export default function SubjectCoursesPage() {
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
-              <div className="rounded-[28px] border border-slate-200/80 bg-white/92 p-5 dark:border-slate-800 dark:bg-slate-950/88">
+              <div className="rounded-[28px] border border-slate-200/80 bg-white/92 p-5 dark:border-[#3a3a3a] dark:bg-[#262626]">
                 <BookOpenText className="h-5 w-5 text-sky-600 dark:text-sky-300" />
                 <div className="mt-6 text-3xl font-semibold tracking-tight">
                   {subject ? courseCounts[subject.code] ?? 0 : 0}
                 </div>
                 <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Catalog courses currently mapped to this subject.</p>
               </div>
-              <div className="rounded-[28px] border border-slate-200/80 bg-white/92 p-5 dark:border-slate-800 dark:bg-slate-950/88">
+              <div className="rounded-[28px] border border-slate-200/80 bg-white/92 p-5 dark:border-[#3a3a3a] dark:bg-[#262626]">
                 <Grid2X2 className="h-5 w-5 text-emerald-600 dark:text-emerald-300" />
                 <div className="mt-6 text-3xl font-semibold tracking-tight">{subjectCourses.length}</div>
                 <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Visible listings for the current catalog snapshot.</p>
@@ -88,7 +88,7 @@ export default function SubjectCoursesPage() {
         {catalogLoading ? (
           <div className="grid gap-4 animate-pulse">
             {Array.from({ length: 4 }).map((_, index) => (
-              <div key={index} className="h-48 rounded-[28px] border border-slate-200/80 bg-white/80 dark:border-[#303030] dark:bg-[#1a1a1a]" />
+              <div key={index} className="h-48 rounded-[28px] border border-slate-200/80 bg-white/80 dark:border-[#3a3a3a] dark:bg-[#262626]" />
             ))}
           </div>
         ) : catalogError ? (

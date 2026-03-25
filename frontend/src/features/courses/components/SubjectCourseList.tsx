@@ -42,15 +42,15 @@ export function SubjectCourseList({ courses }: SubjectCourseListProps) {
         return (
           <article
             key={course.id}
-            className="rounded-[28px] border border-slate-200/80 bg-white/90 p-5 shadow-[0_20px_60px_-42px_rgba(15,23,42,0.45)] dark:border-slate-800 dark:bg-slate-950/85"
+            className="rounded-[28px] border border-slate-200/80 bg-white/95 p-5 shadow-[0_20px_60px_-42px_rgba(15,23,42,0.14)] dark:border-[#3a3a3a] dark:bg-[#262626]"
           >
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-3">
-                  <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em] text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                  <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em] text-slate-600 dark:bg-[#2f2f2f] dark:text-neutral-200">
                     {course.id}
                   </span>
-                  <span className="rounded-full bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-700 dark:bg-sky-950/60 dark:text-sky-200">
+                  <span className="rounded-full border border-[#dfc9ae] bg-[#f8f2ea] px-3 py-1 text-xs font-semibold text-[#7a5230] dark:border-[#6d4f36] dark:bg-[#3a281d] dark:text-[#f4e6d6]">
                     {course.credits} credit{course.credits === 1 ? "" : "s"}
                   </span>
                 </div>
@@ -62,11 +62,11 @@ export function SubjectCourseList({ courses }: SubjectCourseListProps) {
                 </p>
 
                 <div className="mt-4 flex flex-wrap gap-3 text-sm text-slate-500 dark:text-slate-400">
-                  <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 dark:bg-slate-800">
+                  <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 dark:bg-[#2f2f2f]">
                     <CalendarDays className="h-4 w-4" />
                     {course.meetings.length} meeting option{course.meetings.length === 1 ? "" : "s"}
                   </span>
-                  <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 dark:bg-slate-800">
+                  <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 dark:bg-[#2f2f2f]">
                     <Users className="h-4 w-4" />
                     {course.enrolled}/{course.maxEnroll} enrolled
                   </span>
@@ -80,8 +80,8 @@ export function SubjectCourseList({ courses }: SubjectCourseListProps) {
                 className={cn(
                   "rounded-full px-5 font-semibold",
                   isAdded
-                    ? "border border-slate-200 bg-slate-100 text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400"
-                    : "bg-slate-950 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-200",
+                    ? "border border-slate-200 bg-slate-100 text-slate-500 dark:border-[#3a3a3a] dark:bg-[#2f2f2f] dark:text-neutral-300"
+                    : "border border-[#dfc9ae] bg-[#f8f2ea] text-[#7a5230] hover:bg-[#f4ebe0] dark:border-[#6d4f36] dark:bg-[#3a281d] dark:text-[#f4e6d6] dark:hover:bg-[#422f22]",
                 )}
               >
                 <Plus className="h-4 w-4" />

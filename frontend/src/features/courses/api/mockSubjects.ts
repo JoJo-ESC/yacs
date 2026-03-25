@@ -201,7 +201,7 @@ export const MOCK_SUBJECTS: Subject[] = [
   },
   {
     id: "chme",
-    code: "CHEN",
+    code: "CHME",
     name: "Chemical Engineering",
     category: "engineering",
     school: ENGR,

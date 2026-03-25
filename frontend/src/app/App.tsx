@@ -20,7 +20,7 @@ export default function App() {
           "flex-1 pt-24 sm:pt-28",
           isSubjectBrowserRoute && "bg-white dark:bg-black",
           isSubjectDetailRoute &&
-            "bg-[radial-gradient(circle_at_top_left,_rgba(147,197,253,0.12),_transparent_22%),radial-gradient(circle_at_top_right,_rgba(176,129,89,0.12),_transparent_20%),linear-gradient(180deg,_#fffefd_0%,_#fffdfa_38%,_#ffffff_100%)] dark:bg-[radial-gradient(circle_at_top_left,_rgba(56,189,248,0.16),_transparent_26%),radial-gradient(circle_at_top_right,_rgba(161,98,7,0.18),_transparent_24%),linear-gradient(180deg,_#120d09_0%,_#16110d_42%,_#09090b_100%)]",
+            "bg-[radial-gradient(circle_at_top_right,_rgba(176,129,89,0.1),_transparent_20%),linear-gradient(180deg,_#fffefd_0%,_#fffdfa_38%,_#ffffff_100%)] dark:bg-none dark:bg-black",
         )}
       >
         <Outlet />
