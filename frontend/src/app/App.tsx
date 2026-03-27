@@ -3,12 +3,11 @@ import { Outlet } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import CatalogLoader from "@/components/schedule/CatalogLoader";
-import { appConfig } from "@/config";
 
 export default function App() {
   return (
     <div className="min-h-screen flex flex-col">
-      <CatalogLoader path={appConfig.catalogCsvPath} />
+      <CatalogLoader />
       <Navbar />
       <Outlet /> 
       <Footer />
