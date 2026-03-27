@@ -72,7 +72,7 @@ test("renders the finals page shell", async () => {
   );
 
   expect(await screen.findByRole("heading", { name: /final exam schedule/i })).toBeInTheDocument();
-  expect(screen.getByText(/frontend shell is in place now/i)).toBeInTheDocument();
+  expect(screen.getByText(/uses placeholder finals data on the frontend for now/i)).toBeInTheDocument();
 });
 
 test("shows a loading spinner while courses load", async () => {

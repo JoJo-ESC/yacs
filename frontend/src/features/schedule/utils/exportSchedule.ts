@@ -1,4 +1,5 @@
 import type { Course, Meeting } from "../types/schedule";
+import type { FinalExam } from "@/features/finals/utils/finalsSchedule";
 
 const DAY_TO_ICS: Record<string, string> = {
   M: "MO",
@@ -49,6 +50,11 @@ function formatUtcTimestamp(date: Date) {
     pad(date.getUTCSeconds()),
     "Z",
   ].join("");
+}
+
+function parseIsoDateTime(value: string) {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
 }
 
 function parseDate(value?: string) {
@@ -146,6 +152,40 @@ export function buildScheduleIcs(courses: Course[]) {
   ].join("\r\n");
 }
 
+export function buildFinalsIcs(finals: FinalExam[]) {
+  const stamp = formatUtcTimestamp(new Date());
+  const events = finals
+    .map((exam) => {
+      const start = parseIsoDateTime(exam.startDateTime);
+      const end = parseIsoDateTime(exam.endDateTime);
+      if (!start || !end) return null;
+
+      return [
+        "BEGIN:VEVENT",
+        `UID:${exam.courseId}-final-${formatLocalDateTime(start)}@yacs`,
+        `DTSTAMP:${stamp}`,
+        `SUMMARY:${escapeIcsText(`${exam.courseId} Final Exam`)}`,
+        `DESCRIPTION:${escapeIcsText(`${exam.courseTitle}${exam.notes ? ` - ${exam.notes}` : ""}`)}`,
+        `LOCATION:${escapeIcsText(exam.location || "TBA")}`,
+        `DTSTART:${formatLocalDateTime(start)}`,
+        `DTEND:${formatLocalDateTime(end)}`,
+        "END:VEVENT",
+      ].join("\r\n");
+    })
+    .filter((event): event is string => Boolean(event));
+
+  return [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//YACS//Finals Export//EN",
+    "CALSCALE:GREGORIAN",
+    "METHOD:PUBLISH",
+    ...events,
+    "END:VCALENDAR",
+    "",
+  ].join("\r\n");
+}
+
 function slugify(value: string) {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 }
@@ -179,6 +219,22 @@ export function downloadScheduleIcs(courses: Course[]) {
   const url = window.URL.createObjectURL(blob);
   const firstSemester = courses.flatMap((course) => course.meetings.map((meeting) => meeting.semester)).find(Boolean);
   const filename = firstSemester ? `yacs-schedule-${slugify(firstSemester)}.ics` : "yacs-schedule.ics";
+
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  window.URL.revokeObjectURL(url);
+}
+
+export function downloadFinalsIcs(finals: FinalExam[]) {
+  const ics = buildFinalsIcs(finals);
+  const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+  const url = window.URL.createObjectURL(blob);
+  const firstSemester = finals.map((exam) => exam.semester).find(Boolean);
+  const filename = firstSemester ? `yacs-finals-${slugify(firstSemester)}.ics` : "yacs-finals.ics";
 
   const link = document.createElement("a");
   link.href = url;

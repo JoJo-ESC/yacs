@@ -1,4 +1,5 @@
-import { buildScheduleIcs, buildScheduleImageSvg, buildSchedulePrintHtml, buildScheduleText } from "@/features/schedule/utils/exportSchedule";
+import { buildFinalsIcs, buildScheduleIcs, buildScheduleImageSvg, buildSchedulePrintHtml, buildScheduleText } from "@/features/schedule/utils/exportSchedule";
+import type { FinalExam } from "@/features/finals/utils/finalsSchedule";
 import type { Course } from "@/features/schedule/types/schedule";
 
 const courses: Course[] = [
@@ -75,4 +76,27 @@ test("builds plain text schedule output for clipboard export", () => {
   expect(text).toContain("FALL 2024");
   expect(text).toContain("CSCI-1100 - Computer Science 1");
   expect(text).toContain("LEC 01 | Mon, Wed, Fri | 09:00AM - 09:50AM | DCC 308 | Dr. Alan Turing");
+});
+
+test("builds finals ics events for finals export", () => {
+  const finals: FinalExam[] = [
+    {
+      courseId: "CSCI-1100",
+      courseTitle: "Computer Science 1",
+      startDateTime: "2024-12-12T13:00:00",
+      endDateTime: "2024-12-12T16:00:00",
+      location: "DCC 308",
+      notes: "Placeholder finals slot until backend data is available.",
+      semester: "FALL 2024",
+    },
+  ];
+
+  const ics = buildFinalsIcs(finals);
+
+  expect(ics).toContain("BEGIN:VCALENDAR");
+  expect(ics).toContain("PRODID:-//YACS//Finals Export//EN");
+  expect(ics).toContain("SUMMARY:CSCI-1100 Final Exam");
+  expect(ics).toContain("DTSTART:20241212T130000");
+  expect(ics).toContain("DTEND:20241212T160000");
+  expect(ics).toContain("LOCATION:DCC 308");
 });
