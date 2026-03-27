@@ -108,22 +108,6 @@ const handleResetImage = () => {
                   Edit Profile
                 </button>
                 
-                <label className="w-full border rounded-md py-2 text-sm flex items-center justify-center gap-2 hover:bg-gray-50 hover:dark:bg-slate-800 cursor-pointer">
-                  {/*Upload Picture */}
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleImageUpload}
-                  />
-                </label>
-
-                <button
-                  onClick={handleResetImage}
-                  className="w-full border rounded-md py-2 text-sm hover:bg-gray-50 hover:dark:bg-slate-800"
-                >
-                  {/* Reset Picture */}
-                </button>
 
               </div>
             </div>
@@ -236,6 +220,44 @@ const handleResetImage = () => {
           <div className="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-lg w-96">
 
             <h2 className="text-xl font-semibold mb-4">Edit Profile</h2>
+
+            {/* Profile Picture Upload */}
+            {/* Profile Picture Editor */}
+            <div className="flex flex-col items-center gap-3 mb-4">
+
+              <div className="w-24 h-24 rounded-full overflow-hidden bg-purple-600 flex items-center justify-center text-white text-xl">
+                {user.profileImage ? (
+                  <img
+                    src={user.profileImage}
+                    alt="Profile"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  getInitials(user.name)
+                )}
+              </div>
+
+              <label className="border px-3 py-1 rounded text-sm cursor-pointer hover:bg-gray-100">
+                Change Picture
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleImageUpload}
+                />
+              </label>
+
+              {user.profileImage && (
+                <button
+                  onClick={handleResetImage}
+                  className="text-xs text-red-500"
+                >
+                  Remove Picture
+                </button>
+              )}
+
+            </div>
+
 
             <div className="space-y-4">
               <input
