@@ -24,8 +24,8 @@ function buildMeetings(raw: ApiCourseResponse): Meeting[] {
     if (mt.wednesday) days.push("W");
     if (mt.thursday) days.push("R");
     if (mt.friday) days.push("F");
-    if (mt.saturday) days.push("Sa");
-    if (mt.sunday) days.push("Su");
+    if (mt.saturday) days.push("S");
+    if (mt.sunday) days.push("U");
 
     const location = [mt.building, mt.room].filter(Boolean).join(" ") || "";
 

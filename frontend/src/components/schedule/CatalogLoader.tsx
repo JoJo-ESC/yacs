@@ -4,7 +4,7 @@ import { useSchedule } from "@/context/schedule-context";
 export default function CatalogLoader({ semester }: { semester?: string }) {
   const { loadCatalog } = useSchedule();
   useEffect(() => {
-    loadCatalog(semester).catch(console.error);
+    loadCatalog(semester);
   }, [loadCatalog, semester]);
   return null;
 }

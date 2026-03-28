@@ -1,6 +1,6 @@
 # backend/schemas/course_schemas.py
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List, Optional
 
 
@@ -45,7 +45,7 @@ class CourseResponse(BaseModel):
     section: Optional[str] = None
     schedule_type: Optional[str] = None
     instructional_method: Optional[str] = None
-    meeting_times: List[MeetingTimeResponse] = []
+    meeting_times: List[MeetingTimeResponse] = Field(default_factory=list)
 
     class Config:
         from_attributes = True  # Allows converting SQLAlchemy models

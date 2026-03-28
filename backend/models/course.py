@@ -10,7 +10,7 @@ class Course(Base):
     term_desc = Column(String(50))          # e.g., "Spring 2025"                 
                                                                                 
     # Course identification                                                       
-    crn = Column(String(10), unique=True, index=True)  # courseReferenceNumber               
+    crn = Column(String(10), unique=True, index=True, nullable=False)  # courseReferenceNumber               
     subject = Column(String(10), index=True)  # e.g., "ADMN" (department code)    
     subject_description = Column(String(100)) # e.g., "Administrative Courses"    
     course_number = Column(String(10))      # e.g., "1030"                        
