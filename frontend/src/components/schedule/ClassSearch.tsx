@@ -24,7 +24,7 @@ export function ClassSearch({
   itemHeight?: number;
   listMaxHeight?: number;
 }) {
-  const { catalog, addCourse, hasCourse } = useSchedule();
+  const { catalog, catalogLoading, addCourse, hasCourse } = useSchedule();
 
   const [open, setOpen] = React.useState(false);
   const [query, setQuery] = React.useState("");
@@ -100,7 +100,9 @@ export function ClassSearch({
       role="listbox"
       aria-label="Search results"
     >
-      {filtered.length === 0 ? (
+      {catalogLoading ? (
+        <div className="p-3 text-sm opacity-80">Loading classes…</div>
+      ) : filtered.length === 0 ? (
         <div className="p-3 text-sm opacity-80">No classes found.</div>
       ) : (
         <div 

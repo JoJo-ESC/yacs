@@ -8,7 +8,7 @@ import sys
 # Add parent directory to path so we can import from models
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-from models import SessionLocal, Course, init_db
+from models import SessionLocal, Course, MeetingTime, init_db
 from terms import get_active_term_codes
 
 
@@ -42,6 +42,36 @@ def import_courses_from_file(filepath: str, db_session) -> int:
             instructional_method=course_json.get('instructionalMethod'),
         )
         db_session.merge(course)  # merge = insert or update if exists
+
+        # Replace meeting times for this CRN
+        crn = course_json.get('courseReferenceNumber')
+        db_session.query(MeetingTime).filter_by(crn=crn).delete()
+        for mf in course_json.get('meetingsFaculty', []):
+            mt = mf.get('meetingTime', {})
+            # Instructor: meeting-level faculty first, then primary course faculty
+            instructor = next(
+                (f['displayName'] for f in mf.get('faculty', []) if f.get('displayName')),
+                next((f['displayName'] for f in course_json.get('faculty', []) if f.get('primaryIndicator') and f.get('displayName')), None)
+            )
+            db_session.add(MeetingTime(
+                crn=crn,
+                monday=mt.get('monday', False),
+                tuesday=mt.get('tuesday', False),
+                wednesday=mt.get('wednesday', False),
+                thursday=mt.get('thursday', False),
+                friday=mt.get('friday', False),
+                saturday=mt.get('saturday', False),
+                sunday=mt.get('sunday', False),
+                begin_time=mt.get('beginTime'),
+                end_time=mt.get('endTime'),
+                building=mt.get('building'),
+                building_description=mt.get('buildingDescription'),
+                room=mt.get('room'),
+                start_date=mt.get('startDate'),
+                end_date=mt.get('endDate'),
+                meeting_schedule_type=mt.get('meetingScheduleType'),
+                instructor_name=instructor,
+            ))
         count += 1
 
     db_session.commit()
