@@ -28,12 +28,12 @@ export function SubjectNavSearch() {
   return (
     <div className="w-full max-w-2xl">
       <NavbarSearchField
-          id="subject-nav-search-input"
-          value={query}
-          onChange={updateQuery}
-          onClear={() => updateQuery("")}
-          placeholder="Search classes..."
-          ariaLabel="Search subjects by subject code or name"
+        id="subject-nav-search-input"
+        value={query}
+        onChange={updateQuery}
+        onClear={() => updateQuery("")}
+        placeholder="Search classes..."
+        ariaLabel="Search subjects by subject code or name"
       />
     </div>
   );

@@ -19,8 +19,7 @@ export default function App() {
         className={cn(
           "flex-1 pt-24 sm:pt-28",
           isSubjectBrowserRoute && "bg-white dark:bg-black",
-          isSubjectDetailRoute &&
-            "bg-[radial-gradient(circle_at_top_right,_rgba(176,129,89,0.1),_transparent_20%),linear-gradient(180deg,_#fffefd_0%,_#fffdfa_38%,_#ffffff_100%)] dark:bg-none dark:bg-black",
+          isSubjectDetailRoute && "bg-white dark:bg-black",
         )}
       >
         <Outlet />

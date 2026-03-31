@@ -36,8 +36,8 @@ export function NavbarSearchField({
   return (
     <label
       className={cn(
-        "flex w-full items-center gap-4 rounded-[24px] border border-slate-200 bg-white px-5 py-3 text-slate-800 transition-shadow",
-        "focus-within:border-[#caa57a] focus-within:ring-4 focus-within:ring-[#f5eadb]",
+        "flex h-11 w-full items-center gap-4 rounded-full border border-slate-200 bg-white px-5 text-slate-800 transition-shadow",
+        "focus-within:border-[#caa57a] focus-within:ring-2 focus-within:ring-[#f5eadb]",
         "dark:border-[#3a3a3a] dark:bg-[#181818] dark:text-neutral-100 dark:focus-within:border-[#8c6542] dark:focus-within:ring-[rgba(122,82,48,0.25)]",
       )}
       htmlFor={id}
@@ -46,12 +46,14 @@ export function NavbarSearchField({
       <input
         id={id}
         ref={inputRef}
-        type="search"
+        type="text"
+        inputMode="search"
+        autoComplete="off"
         value={value}
         onChange={(event) => onChange(event.target.value)}
         onFocus={onFocus}
         onKeyDown={onKeyDown}
-        className="min-w-0 flex-1 bg-transparent text-base font-medium outline-none placeholder:text-slate-400 dark:placeholder:text-neutral-500"
+        className="w-full min-w-0 flex-1 bg-transparent text-base font-medium outline-none placeholder:text-slate-400 dark:placeholder:text-neutral-500"
         placeholder={placeholder}
         aria-label={ariaLabel}
         aria-expanded={ariaExpanded}

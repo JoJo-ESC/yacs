@@ -49,8 +49,8 @@ function Navbar() {
       <div className="fixed inset-x-0 top-4 z-40 px-4 sm:px-6 lg:px-8">
         <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-4 rounded-[28px] border border-white/65 bg-[linear-gradient(135deg,_rgba(255,255,255,0.72)_0%,_rgba(252,249,244,0.62)_48%,_rgba(255,255,255,0.68)_100%)] px-5 py-3 text-input-foreground shadow-[0_22px_60px_-28px_rgba(15,23,42,0.18)] backdrop-blur-2xl supports-[backdrop-filter]:bg-[linear-gradient(135deg,_rgba(255,255,255,0.58)_0%,_rgba(252,249,244,0.5)_48%,_rgba(255,255,255,0.56)_100%)] dark:border-white/10 dark:bg-[linear-gradient(135deg,_rgba(34,34,34,0.72)_0%,_rgba(24,24,24,0.68)_50%,_rgba(32,32,32,0.72)_100%)] dark:shadow-[0_26px_70px_-32px_rgba(0,0,0,0.7)] dark:supports-[backdrop-filter]:bg-[linear-gradient(135deg,_rgba(34,34,34,0.58)_0%,_rgba(24,24,24,0.54)_50%,_rgba(32,32,32,0.58)_100%)]">
           <div className="flex min-w-0 items-center gap-4 md:gap-6">
-            <BrandLogo imageClassName="h-12" />
-            <div className="w-full max-w-2xl">
+            <BrandLogo className="shrink-0" imageClassName="h-[38px] shrink-0" />
+            <div className="min-w-0 w-full max-w-2xl">
               {isBrowseRoute ? (
                 <SubjectNavSearch />
               ) : (
@@ -60,7 +60,7 @@ function Navbar() {
               )}
             </div>
           </div>
-          <div className="invisible flex h-11 items-center gap-2 sm:visible">
+          <div className="invisible shrink-0 flex h-11 items-center gap-2 sm:visible">
             <div
               className="relative flex h-11 items-center gap-2"
               onMouseLeave={() => setHoveredKey(null)}

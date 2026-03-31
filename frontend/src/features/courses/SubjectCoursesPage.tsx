@@ -27,7 +27,7 @@ export default function SubjectCoursesPage() {
   }
 
   return (
-    <main className="relative flex-1 overflow-x-hidden bg-[radial-gradient(circle_at_top_right,_rgba(176,129,89,0.1),_transparent_20%),linear-gradient(180deg,_#fffefd_0%,_#fffdfa_38%,_#ffffff_100%)] pb-16 dark:bg-none dark:bg-black">
+    <main className="relative flex-1 overflow-x-hidden bg-white pb-16 dark:bg-none dark:bg-black">
       <div className="relative mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 pb-10 pt-8 sm:px-6 lg:px-8">
         <section className="overflow-hidden rounded-[40px] border border-white/80 bg-white/82 p-8 shadow-[0_28px_100px_-56px_rgba(15,23,42,0.45)] backdrop-blur dark:border-[#3a3a3a] dark:bg-[#1f1f1f]">
           <Link

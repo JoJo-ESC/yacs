@@ -50,7 +50,7 @@ export function SubjectCourseList({ courses }: SubjectCourseListProps) {
                   <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em] text-slate-600 dark:bg-[#2f2f2f] dark:text-neutral-200">
                     {course.id}
                   </span>
-                  <span className="rounded-full border border-[#dfc9ae] bg-[#f8f2ea] px-3 py-1 text-xs font-semibold text-[#7a5230] dark:border-[#6d4f36] dark:bg-[#3a281d] dark:text-[#f4e6d6]">
+                  <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200">
                     {course.credits} credit{course.credits === 1 ? "" : "s"}
                   </span>
                 </div>
