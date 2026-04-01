@@ -7,8 +7,7 @@ import React, {
   startTransition,
 } from "react";
 import type { Course } from "@/types/schedule";
-import { fetchText } from "@/api";
-import { parseCoursesFromCsvText } from "@/lib/schedule/parseSchedule";
+import { fetchAllCourses } from "@/api";
 
 type SelectionCtx = {
   courses: Course[];
@@ -22,9 +21,9 @@ const SelectionContext = createContext<SelectionCtx | undefined>(undefined);
 
 type CatalogCtx = {
   catalog: Course[];
-  loadCsv: (path: string) => Promise<void>;
   catalogLoading: boolean;
   catalogError: string | null;
+  loadCatalog: (semester?: string) => Promise<void>;
 };
 
 const CatalogContext = createContext<CatalogCtx | undefined>(undefined);
@@ -58,31 +57,25 @@ export function ScheduleProvider({ children }: { children: React.ReactNode }) {
   );
 
   const [catalog, setCatalog] = useState<Course[]>([]);
-  const [catalogLoading, setCatalogLoading] = useState(true);
+  const [catalogLoading, setCatalogLoading] = useState(false);
   const [catalogError, setCatalogError] = useState<string | null>(null);
 
-  const loadCsv = useCallback(async (path: string) => {
+  const loadCatalog = useCallback(async (semester?: string) => {
     setCatalogLoading(true);
     setCatalogError(null);
-
     try {
-      const text = await fetchText(path);
-
-      startTransition(() => {
-        const parsed = parseCoursesFromCsvText(text);
-        setCatalog(parsed);
-      });
-    } catch (error: unknown) {
-      setCatalogError(error instanceof Error ? error.message : "Failed to load course catalog");
-      throw error;
+      const courses = await fetchAllCourses(semester);
+      startTransition(() => setCatalog(courses));
+    } catch (err) {
+      setCatalogError(err instanceof Error ? err.message : "Failed to load catalog");
     } finally {
       setCatalogLoading(false);
     }
   }, []);
 
   const catalogValue = useMemo<CatalogCtx>(
-    () => ({ catalog, loadCsv, catalogLoading, catalogError }),
-    [catalog, loadCsv, catalogLoading, catalogError],
+    () => ({ catalog, catalogLoading, catalogError, loadCatalog }),
+    [catalog, catalogLoading, catalogError, loadCatalog]
   );
 
   return (
