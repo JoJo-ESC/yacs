@@ -9,9 +9,11 @@ import type { Course, Meeting } from "@/types/schedule";
 import { NavbarSearchField } from "@/components/ui/NavbarSearchField";
 
 function pickDefaultMeetings(c: Course): Meeting[] {
-  const chosen = new Map<string, Meeting>();
-  for (const m of c.meetings) if (!chosen.has(m.type)) chosen.set(m.type, m);
-  return Array.from(chosen.values());
+  const chosen = new Map<string, Meeting[]>();
+  for (const m of c.meetings) {
+    if (!chosen.has(m.type)) chosen.set(m.type, c.meetings.filter((meeting) => meeting.type === m.type));
+  }
+  return Array.from(chosen.values()).flat();
 }
 
 export function ClassSearch({

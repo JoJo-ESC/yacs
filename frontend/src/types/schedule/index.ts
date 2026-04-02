@@ -6,6 +6,10 @@ export type Meeting = {
   location: string;          // "DCC 308"
   instructor: string;        // "Dr. Alan Turing"
   section: string;           // "01", "L1", "R1", ...
+  seatsAvailable: number;
+  enrolled: number;
+  maxEnroll: number;
+  crn: string;
 };
 
 export type Course = {

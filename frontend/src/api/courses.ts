@@ -37,6 +37,10 @@ function buildMeetings(raw: ApiCourseResponse): Meeting[] {
       location,
       instructor: mt.instructor_name ?? "",
       section: raw.section ?? "",
+      seatsAvailable: raw.seats_available ?? 0,
+      enrolled: raw.enrollment ?? 0,
+      maxEnroll: raw.max_enrollment ?? 0,
+      crn: raw.crn ?? "",
     };
   });
 }
