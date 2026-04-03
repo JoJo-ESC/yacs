@@ -445,6 +445,47 @@ export async function downloadFinalsPng(finals: FinalExam[]) {
   }
 }
 
+export function buildFinalsText(finals: FinalExam[]) {
+  const semester = finals.map((exam) => exam.semester).find(Boolean);
+  const lines = [
+    "YACS Finals Export",
+    semester || "Selected finals",
+    "Placeholder finals data until backend scheduling is attached",
+    `${finals.length} ${finals.length === 1 ? "final" : "finals"}`,
+    "",
+  ];
+
+  for (const exam of finals) {
+    const date = new Date(exam.startDateTime).toLocaleDateString();
+    const time = `${new Date(exam.startDateTime).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })} - ${new Date(exam.endDateTime).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`;
+    lines.push(`${exam.courseId} - ${exam.courseTitle}`);
+    lines.push(`  ${date} | ${time} | ${exam.location || "TBA"}`);
+    lines.push(`  ${exam.notes || "TODO: backend finals data should replace this placeholder entry."}`);
+    lines.push("");
+  }
+
+  return lines.join("\n").trim();
+}
+
+export async function copyFinalsAsText(finals: FinalExam[]) {
+  const text = buildFinalsText(finals);
+
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(text);
+    return;
+  }
+
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  textarea.setAttribute("readonly", "true");
+  textarea.style.position = "absolute";
+  textarea.style.left = "-9999px";
+  document.body.appendChild(textarea);
+  textarea.select();
+  document.execCommand("copy");
+  document.body.removeChild(textarea);
+}
+
 export function buildSchedulePrintHtml(courses: Course[]) {
   const semester = courses.flatMap((course) => course.meetings.map((meeting) => meeting.semester)).find(Boolean);
   const rows = courses.flatMap((course) =>

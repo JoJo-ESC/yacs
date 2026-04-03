@@ -2,11 +2,12 @@ import React from "react";
 
 import { Button } from "@/components/ui/button";
 import { useSchedule } from "@/features/schedule/context/schedule-context";
-import { downloadFinalsIcs, downloadFinalsPng, printFinalsPdf } from "@/features/schedule/utils/exportSchedule";
+import { copyFinalsAsText, downloadFinalsIcs, downloadFinalsPng, printFinalsPdf } from "@/features/schedule/utils/exportSchedule";
 import { getFinalsForCourses } from "@/features/finals/utils/finalsSchedule";
 
 export default function FinalsPage() {
   const { courses } = useSchedule();
+  const [copyStatus, setCopyStatus] = React.useState<"idle" | "copied">("idle");
 
   const selectedCourses = courses.map((course) => ({
     id: course.id,
@@ -40,6 +41,19 @@ export default function FinalsPage() {
                     variant="outline"
                     size="sm"
                     onClick={() => {
+                      void copyFinalsAsText(finals).then(() => {
+                        setCopyStatus("copied");
+                        window.setTimeout(() => setCopyStatus("idle"), 2000);
+                      });
+                    }}
+                    className="border-border text-muted-foreground hover:bg-surface hover:text-foreground"
+                  >
+                    {copyStatus === "copied" ? "Copied" : "Copy finals text"}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
                       void downloadFinalsPng(finals);
                     }}
                     className="border-border text-muted-foreground hover:bg-surface hover:text-foreground"
@@ -65,6 +79,9 @@ export default function FinalsPage() {
                 </div>
               )}
             </div>
+            {copyStatus === "copied" && (
+              <p className="mt-3 text-sm text-foreground/70">Finals schedule copied to your clipboard.</p>
+            )}
 
             {selectedCourses.length === 0 ? (
               <div className="mt-5 rounded-2xl border border-dashed border-border bg-surface/40 px-5 py-10 text-center">
