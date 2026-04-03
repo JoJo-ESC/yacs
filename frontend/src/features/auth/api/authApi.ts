@@ -8,8 +8,7 @@ type ApiEnvelope = {
   user?: {
     user_id: number;
     email: string;
-    name: string;
-  };
+    name: string;    preferred_semester?: string;  };
 };
 
 export type LoginRequest = {
@@ -24,6 +23,7 @@ export type SignupRequest = {
   phone?: string;
   major?: string;
   degree?: string;
+  preferredSemester?: string;
 };
 
 export type AuthApiResult = ApiEnvelope & {
@@ -80,6 +80,7 @@ export function signupUser(payload: SignupRequest) {
       password: payload.password,
       major: payload.major ?? "Undeclared",
       degree: payload.degree ?? "BS",
+      preferred_semester: payload.preferredSemester,
     }),
   });
 }

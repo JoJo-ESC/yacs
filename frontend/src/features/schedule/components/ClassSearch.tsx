@@ -24,7 +24,7 @@ export function ClassSearch({
   itemHeight?: number;
   listMaxHeight?: number;
 }) {
-  const { catalog, addCourse, hasCourse } = useSchedule();
+  const { filteredCatalog: catalog, addCourse, hasCourse } = useSchedule();
 
   const [open, setOpen] = React.useState(false);
   const [query, setQuery] = React.useState("");

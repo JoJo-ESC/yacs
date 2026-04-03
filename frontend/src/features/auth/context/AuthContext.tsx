@@ -13,6 +13,7 @@ export type AuthUser = {
   name: string;
   email: string;
   source: UserSource;
+  preferredSemester?: string;
 };
 
 type LoginInput = {
@@ -24,6 +25,7 @@ type SignupInput = {
   name: string;
   email: string;
   password: string;
+  preferredSemester?: string;
 };
 
 type MockAccount = {
@@ -155,6 +157,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             name: response.user.name,
             email: response.user.email,
             source: "backend",
+            preferredSemester: response.user.preferred_semester,
           });
           return;
         }
@@ -189,6 +192,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           name: response.user?.name ?? input.email,
           email: response.user?.email ?? input.email,
           source: "backend",
+          preferredSemester: response.user?.preferred_semester,
         });
         return true;
       }
@@ -267,6 +271,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           name: input.name,
           email: input.email,
           source: "backend",
+          preferredSemester: loginResponse.user?.preferred_semester,
         });
         return true;
       }

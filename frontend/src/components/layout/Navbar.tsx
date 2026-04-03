@@ -5,10 +5,12 @@ import ClassSearch from "@/features/schedule/components/ClassSearch";
 import ThemeToggle from "@/components/theme/ThemeToggle";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "@/features/auth/hooks/useAuth";
+import { useSchedule } from "@/features/schedule/context/schedule-context";
 
 function Navbar() {
   const navigate = useNavigate();
   const { isAuthenticated, isGuest, user, logout, isBusy } = useAuth();
+  const { selectedSemester, setSelectedSemester, availableSemesters } = useSchedule();
 
   const link = ({ isActive }: { isActive: boolean }) =>
     `px-3 py-1 rounded hover:text-blue-500 ${isActive ? "text-blue-400" : "text-text"}`;
@@ -23,7 +25,24 @@ function Navbar() {
     <div className="flex justify-between items-center p-4 text-input-foreground bg-header border-b border-b-border">
     <div className="flex items-center space-x-4">
       <NavLink to="/app" className="text-l font-bold">YACS</NavLink>
-      <ClassSearch/>
+      <ClassSearch />
+      <div className="hidden md:flex items-center gap-2">
+        <label htmlFor="semester-select" className="text-xs text-input-foreground/70 uppercase tracking-widest">
+          Semester
+        </label>
+        <select
+          id="semester-select"
+          value={selectedSemester}
+          onChange={(event) => setSelectedSemester(event.target.value)}
+          className="rounded border border-border bg-input px-2 py-1 text-xs text-foreground outline-none"
+        >
+          {availableSemesters.map((semester) => (
+            <option key={semester} value={semester}>
+              {semester}
+            </option>
+          ))}
+        </select>
+      </div>
     </div>
     <div className="flex items-center space-x-3 h-6 invisible sm:visible">
       <NavLink to="/app/planner" className={link}>4-Year Plan</NavLink>

@@ -4,6 +4,7 @@ import React, {
   useMemo,
   useState,
   useCallback,
+  useEffect,
   startTransition,
 } from "react";
 import type { Course } from "../types/schedule";
@@ -22,13 +23,36 @@ const SelectionContext = createContext<SelectionCtx | undefined>(undefined);
 
 type CatalogCtx = {
   catalog: Course[];
+  filteredCatalog: Course[];
+  selectedSemester: string;
+  availableSemesters: string[];
+  setSelectedSemester: (semester: string) => void;
   loadCsv: (path: string) => Promise<void>;
 };
 
 const CatalogContext = createContext<CatalogCtx | undefined>(undefined);
 
+const SEMESTER_STORAGE_KEY = "yacs.selectedSemester";
+const AVAILABLE_SEMESTERS = [
+  "All Semesters",
+  "Fall 2025",
+  "Spring 2026",
+  "Summer 2026",
+  "Fall 2026",
+  "Spring 2027",
+  "Summer 2027",
+  "Fall 2027",
+];
+
+function getInitialSemester() {
+  if (typeof window === "undefined") return AVAILABLE_SEMESTERS[0];
+  const stored = window.localStorage.getItem(SEMESTER_STORAGE_KEY);
+  return stored && AVAILABLE_SEMESTERS.includes(stored) ? stored : AVAILABLE_SEMESTERS[0];
+}
+
 export function ScheduleProvider({ children }: { children: React.ReactNode }) {
   const [courses, setCourses] = useState<Course[]>([]);
+  const [selectedSemester, setSelectedSemester] = useState<string>(getInitialSemester);
   const courseIdSet = useMemo(() => {
     const s = new Set<string>();
     for (let i = 0; i < courses.length; i++) s.add(courses[i].id);
@@ -57,6 +81,11 @@ export function ScheduleProvider({ children }: { children: React.ReactNode }) {
 
   const [catalog, setCatalog] = useState<Course[]>([]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(SEMESTER_STORAGE_KEY, selectedSemester);
+  }, [selectedSemester]);
+
   const loadCsv = useCallback(async (path: string) => {
     const text = await fetchText(path);
 
@@ -66,7 +95,28 @@ export function ScheduleProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
-  const catalogValue = useMemo<CatalogCtx>(() => ({ catalog, loadCsv }), [catalog, loadCsv]);
+  const filteredCatalog = useMemo(() => {
+    if (selectedSemester === "All Semesters") {
+      return catalog;
+    }
+
+    const term = selectedSemester.split(" ")[0].toLowerCase();
+    return catalog.filter((course) => {
+      const frequency = course.offerFrequency?.toLowerCase() ?? "";
+      return term === "fall"
+        ? frequency.includes("fall")
+        : term === "spring"
+        ? frequency.includes("spring")
+        : term === "summer"
+        ? frequency.includes("summer")
+        : true;
+    });
+  }, [catalog, selectedSemester]);
+
+  const catalogValue = useMemo<CatalogCtx>(
+    () => ({ catalog, filteredCatalog, selectedSemester, availableSemesters: AVAILABLE_SEMESTERS, setSelectedSemester, loadCsv }),
+    [catalog, filteredCatalog, selectedSemester, setSelectedSemester, loadCsv]
+  );
 
   return (
     <CatalogContext.Provider value={catalogValue}>

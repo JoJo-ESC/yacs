@@ -4,6 +4,16 @@ import { useAuth } from "@/features/auth/hooks/useAuth";
 
 type AuthMode = "login" | "signup";
 
+const SIGNUP_SEMESTERS = [
+  "Fall 2025",
+  "Spring 2026",
+  "Summer 2026",
+  "Fall 2026",
+  "Spring 2027",
+  "Summer 2027",
+  "Fall 2027",
+];
+
 export default function LandingAuthPage() {
   const navigate = useNavigate();
   const {
@@ -20,6 +30,7 @@ export default function LandingAuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
+  const [preferredSemester, setPreferredSemester] = useState(SIGNUP_SEMESTERS[0]);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -38,7 +49,7 @@ export default function LandingAuthPage() {
     const success =
       mode === "login"
         ? await login({ email, password })
-        : await signup({ name, email, password });
+        : await signup({ name, email, password, preferredSemester });
 
     console.log("Signup/login result:", success);
     if (success) {
@@ -103,16 +114,32 @@ export default function LandingAuthPage() {
 
             <form className="space-y-4" onSubmit={handleSubmit}>
               {mode === "signup" && (
-                <label className="block space-y-1.5">
-                  <span className="text-sm font-medium">Full name</span>
-                  <input
-                    value={name}
-                    onChange={(event) => setName(event.target.value)}
-                    placeholder="Jane Doe"
-                    className="w-full rounded-lg border border-border bg-input px-3 py-2.5 text-input-foreground outline-none ring-blue-500 transition focus:ring-2"
-                    required
-                  />
-                </label>
+                <>
+                  <label className="block space-y-1.5">
+                    <span className="text-sm font-medium">Full name</span>
+                    <input
+                      value={name}
+                      onChange={(event) => setName(event.target.value)}
+                      placeholder="Jane Doe"
+                      className="w-full rounded-lg border border-border bg-input px-3 py-2.5 text-input-foreground outline-none ring-blue-500 transition focus:ring-2"
+                      required
+                    />
+                  </label>
+                  <label className="block space-y-1.5">
+                    <span className="text-sm font-medium">Preferred semester</span>
+                    <select
+                      value={preferredSemester}
+                      onChange={(event) => setPreferredSemester(event.target.value)}
+                      className="w-full rounded-lg border border-border bg-input px-3 py-2.5 text-input-foreground outline-none ring-blue-500 transition focus:ring-2"
+                    >
+                      {SIGNUP_SEMESTERS.map((semester) => (
+                        <option key={semester} value={semester}>
+                          {semester}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </>
               )}
 
               <label className="block space-y-1.5">
