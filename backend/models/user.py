@@ -13,3 +13,5 @@ class User(Base):
     password_hash = Column(String(length=255), nullable=False)
     major = Column(String(length=128), nullable=False, default="Undeclared")
     degree = Column(String(length=64), nullable=False, default="BS")
+    preferred_semester = Column(String(length=64), nullable=False, default="Fall 2025")
+    role = Column(String(length=32), nullable=False, default="user")

@@ -1,5 +1,5 @@
 import os
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 
 from utils import load_config, load_secrets
@@ -30,6 +30,17 @@ def init_db(retries: int = 5, delay: int = 2):
     for attempt in range(retries):
         try:
             Base.metadata.create_all(bind=engine)
+            with engine.connect() as conn:
+                conn.execute(
+                    text(
+                        "ALTER TABLE users ADD COLUMN IF NOT EXISTS preferred_semester VARCHAR(64) NOT NULL DEFAULT 'Fall 2025'"
+                    )
+                )
+                conn.execute(
+                    text(
+                        "ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(32) NOT NULL DEFAULT 'user'"
+                    )
+                )
             print("Database initialized successfully.")
             return
         except Exception as err:

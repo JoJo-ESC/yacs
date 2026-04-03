@@ -4,7 +4,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 
-from routers import user_router, auth_router, corequisite_router
+from middleware.admin_middleware import AdminMiddleware
+from routers import user_router, auth_router, corequisite_router, admin_router
 from models import init_db
 from utils import load_secrets
 
@@ -38,6 +39,7 @@ app.add_middleware(
     https_only=_as_bool(secrets.get("SESSION_HTTPS_ONLY"), default=False),
     max_age=int(secrets.get("SESSION_MAX_AGE_SECONDS", 12 * 60 * 60)),
 )
+app.add_middleware(AdminMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000"],
@@ -50,6 +52,7 @@ app.add_middleware(
 app.include_router(user_router.router)
 app.include_router(auth_router.router)
 app.include_router(corequisite_router.router)
+app.include_router(admin_router.router)
 
 
 # --- Root Endpoint ---

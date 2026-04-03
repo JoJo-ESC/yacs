@@ -31,6 +31,8 @@ def create_user(user_data: dict):
             password_hash=password_hash,
             major=user_data.get("major", "Undeclared").strip() or "Undeclared",
             degree=user_data.get("degree", "BS").strip() or "BS",
+            preferred_semester=user_data.get("preferred_semester", "Fall 2025").strip() or "Fall 2025",
+            role="user",
         )
         db.add(new_user)
         db.commit()
@@ -51,5 +53,83 @@ def delete_current_user(user_id: int):
         db.delete(user)
         db.commit()
         return {"success": True, "status": "success", "message": "User deleted."}
+    finally:
+        db.close()
+
+
+def update_preferred_semester(user_id: int, preferred_semester: str):
+    """Update a user's preferred semester."""
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.id == user_id).first()
+        if user is None:
+            return {"success": False, "status": "error", "message": "User not found."}
+
+        user.preferred_semester = preferred_semester.strip() or user.preferred_semester
+        db.commit()
+        return {
+            "success": True,
+            "status": "success",
+            "message": "Preferred semester updated.",
+            "preferred_semester": user.preferred_semester,
+        }
+    finally:
+        db.close()
+
+
+def list_users():
+    """Return a sanitized list of users."""
+    db = SessionLocal()
+    try:
+        users = db.query(User).all()
+        return {
+            "success": True,
+            "status": "success",
+            "users": [
+                {
+                    "user_id": user.id,
+                    "email": user.email,
+                    "name": user.name,
+                    "major": user.major,
+                    "degree": user.degree,
+                    "preferred_semester": user.preferred_semester,
+                    "role": user.role,
+                }
+                for user in users
+            ],
+        }
+    finally:
+        db.close()
+
+
+def set_user_role(user_id: int, role: str):
+    """Update a user's role to either 'user' or 'admin'."""
+    normalized = role.strip().lower()
+    if normalized not in {"user", "admin"}:
+        return {"success": False, "status": "error", "message": "Invalid role."}
+
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.id == user_id).first()
+        if user is None:
+            return {"success": False, "status": "error", "message": "User not found."}
+
+        if user.role == normalized:
+            return {
+                "success": True,
+                "status": "success",
+                "message": f"User already has role '{normalized}'.",
+                "role": user.role,
+            }
+
+        user.role = normalized
+        db.commit()
+        return {
+            "success": True,
+            "status": "success",
+            "message": f"User role updated to '{normalized}'.",
+            "user_id": user.id,
+            "role": user.role,
+        }
     finally:
         db.close()

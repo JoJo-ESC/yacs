@@ -88,6 +88,7 @@ def log_user_in(credentials: dict, session: dict, client_ip: str | None = None):
             "user_id": user.id,
             "email": user.email,
             "name": user.name,
+            "role": user.role,
             "authenticated_at": datetime.now(timezone.utc).isoformat(),
         }
 
@@ -104,6 +105,8 @@ def log_user_in(credentials: dict, session: dict, client_ip: str | None = None):
                 "user_id": user.id,
                 "email": user.email,
                 "name": user.name,
+                "preferred_semester": user.preferred_semester,
+                "role": user.role,
             },
         }
     finally:
@@ -144,6 +147,8 @@ def get_current_user_session(session: dict):
                 "user_id": user.id,
                 "email": user.email,
                 "name": user.name,
+                "preferred_semester": user.preferred_semester,
+                "role": user.role,
             },
         }
     finally:
