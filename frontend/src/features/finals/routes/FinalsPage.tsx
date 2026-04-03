@@ -2,7 +2,7 @@ import React from "react";
 
 import { Button } from "@/components/ui/button";
 import { useSchedule } from "@/features/schedule/context/schedule-context";
-import { downloadFinalsIcs } from "@/features/schedule/utils/exportSchedule";
+import { downloadFinalsIcs, printFinalsPdf } from "@/features/schedule/utils/exportSchedule";
 import { getFinalsForCourses } from "@/features/finals/utils/finalsSchedule";
 
 export default function FinalsPage() {
@@ -35,14 +35,24 @@ export default function FinalsPage() {
                 </p>
               </div>
               {finals.length > 0 && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => downloadFinalsIcs(finals)}
-                  className="border-border text-muted-foreground hover:bg-surface hover:text-foreground"
-                >
-                  Export finals ICS
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => printFinalsPdf(finals)}
+                    className="border-border text-muted-foreground hover:bg-surface hover:text-foreground"
+                  >
+                    Export finals PDF
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => downloadFinalsIcs(finals)}
+                    className="border-border text-muted-foreground hover:bg-surface hover:text-foreground"
+                  >
+                    Export finals ICS
+                  </Button>
+                </div>
               )}
             </div>
 

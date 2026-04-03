@@ -245,6 +245,113 @@ export function downloadFinalsIcs(finals: FinalExam[]) {
   window.URL.revokeObjectURL(url);
 }
 
+export function buildFinalsPrintHtml(finals: FinalExam[]) {
+  const semester = finals.map((exam) => exam.semester).find(Boolean);
+  const rows = finals.map((exam) => `
+    <tr>
+      <td>${escapeHtml(exam.courseId)}</td>
+      <td>${escapeHtml(exam.courseTitle)}</td>
+      <td>${escapeHtml(new Date(exam.startDateTime).toLocaleDateString())}</td>
+      <td>${escapeHtml(
+        `${new Date(exam.startDateTime).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })} - ${new Date(exam.endDateTime).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`
+      )}</td>
+      <td>${escapeHtml(exam.location || "TBA")}</td>
+      <td>${escapeHtml(exam.notes || "Waiting on backend finals data.")}</td>
+    </tr>
+  `);
+
+  return `
+    <!DOCTYPE html>
+    <html lang="en">
+      <head>
+        <meta charset="utf-8" />
+        <title>YACS Finals Export</title>
+        <style>
+          body {
+            font-family: Georgia, "Times New Roman", serif;
+            margin: 32px;
+            color: #111827;
+            background: #ffffff;
+          }
+          h1 {
+            margin: 0 0 8px;
+            font-size: 28px;
+          }
+          p {
+            margin: 0 0 20px;
+            color: #4b5563;
+          }
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+          }
+          th, td {
+            border: 1px solid #d1d5db;
+            padding: 10px 12px;
+            text-align: left;
+            vertical-align: top;
+          }
+          th {
+            background: #e5ecf6;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+          }
+          tbody tr:nth-child(even) {
+            background: #f8fafc;
+          }
+          .meta {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            font-size: 14px;
+          }
+          @media print {
+            body {
+              margin: 18px;
+            }
+          }
+        </style>
+      </head>
+      <body>
+        <h1>YACS Finals Export</h1>
+        <div class="meta">
+          <p>${escapeHtml(semester || "Selected finals")}</p>
+          <p>${escapeHtml(`${finals.length} ${finals.length === 1 ? "final" : "finals"}`)}</p>
+        </div>
+        <p>Placeholder finals data is shown here until backend finals scheduling data is attached.</p>
+        <table>
+          <thead>
+            <tr>
+              <th>Course</th>
+              <th>Title</th>
+              <th>Date</th>
+              <th>Time</th>
+              <th>Location</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.join("")}
+          </tbody>
+        </table>
+      </body>
+    </html>
+  `;
+}
+
+export function printFinalsPdf(finals: FinalExam[]) {
+  const popup = window.open("", "_blank", "noopener,noreferrer");
+  if (!popup) return;
+
+  popup.document.open();
+  popup.document.write(buildFinalsPrintHtml(finals));
+  popup.document.close();
+  popup.focus();
+  popup.print();
+}
+
 export function buildSchedulePrintHtml(courses: Course[]) {
   const semester = courses.flatMap((course) => course.meetings.map((meeting) => meeting.semester)).find(Boolean);
   const rows = courses.flatMap((course) =>
