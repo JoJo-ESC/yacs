@@ -1,4 +1,4 @@
-import { buildFinalsIcs, buildFinalsPrintHtml, buildScheduleIcs, buildScheduleImageSvg, buildSchedulePrintHtml, buildScheduleText } from "@/features/schedule/utils/exportSchedule";
+import { buildFinalsIcs, buildFinalsImageSvg, buildFinalsPrintHtml, buildScheduleIcs, buildScheduleImageSvg, buildSchedulePrintHtml, buildScheduleText } from "@/features/schedule/utils/exportSchedule";
 import type { FinalExam } from "@/features/finals/utils/finalsSchedule";
 import type { Course } from "@/features/schedule/types/schedule";
 
@@ -121,4 +121,27 @@ test("builds printable finals html for pdf export", () => {
   expect(html).toContain("Computer Science 1");
   expect(html).toContain("DCC 308");
   expect(html).toContain("Placeholder finals data is shown here until backend finals scheduling data is attached.");
+});
+
+test("builds finals svg markup for png export", () => {
+  const finals: FinalExam[] = [
+    {
+      courseId: "CSCI-1100",
+      courseTitle: "Computer Science 1",
+      startDateTime: "2024-12-12T13:00:00",
+      endDateTime: "2024-12-12T16:00:00",
+      location: "DCC 308",
+      notes: "Placeholder finals slot until backend data is available.",
+      semester: "FALL 2024",
+    },
+  ];
+
+  const svg = buildFinalsImageSvg(finals);
+
+  expect(svg).toContain("<svg");
+  expect(svg).toContain("YACS Finals Export");
+  expect(svg).toContain("CSCI-1100");
+  expect(svg).toContain("Computer Science 1");
+  expect(svg).toContain("DCC 308");
+  expect(svg).toContain("Placeholder finals data until backend scheduling is attached");
 });

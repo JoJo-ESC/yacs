@@ -352,6 +352,99 @@ export function printFinalsPdf(finals: FinalExam[]) {
   popup.print();
 }
 
+function getFinalsImageHeight(rowCount: number) {
+  return 220 + rowCount * 60;
+}
+
+export function buildFinalsImageSvg(finals: FinalExam[]) {
+  const semester = finals.map((exam) => exam.semester).find(Boolean);
+  const rows = finals.map((exam) => ({
+    courseId: exam.courseId,
+    courseTitle: exam.courseTitle,
+    date: new Date(exam.startDateTime).toLocaleDateString(),
+    time: `${new Date(exam.startDateTime).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })} - ${new Date(exam.endDateTime).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`,
+    location: exam.location || "TBA",
+  }));
+
+  const width = 1200;
+  const height = getFinalsImageHeight(rows.length);
+
+  const rowMarkup = rows
+    .map((row, index) => {
+      const y = 190 + index * 60;
+      const fill = index % 2 === 0 ? "#f8fafc" : "#eef4fb";
+
+      return `
+        <rect x="48" y="${y}" width="1104" height="50" rx="12" fill="${fill}" />
+        <text x="72" y="${y + 31}" font-size="18" font-weight="700" fill="#0f172a">${escapeHtml(row.courseId)}</text>
+        <text x="240" y="${y + 31}" font-size="16" fill="#334155">${escapeHtml(row.courseTitle)}</text>
+        <text x="640" y="${y + 31}" font-size="16" fill="#334155">${escapeHtml(row.date)}</text>
+        <text x="785" y="${y + 31}" font-size="16" fill="#334155">${escapeHtml(row.time)}</text>
+        <text x="995" y="${y + 31}" font-size="16" fill="#334155">${escapeHtml(row.location)}</text>
+      `;
+    })
+    .join("");
+
+  return `
+    <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
+      <rect width="${width}" height="${height}" fill="#ffffff" />
+      <rect x="32" y="32" width="1136" height="${height - 64}" rx="28" fill="#f3f6fb" />
+      <text x="64" y="88" font-size="34" font-weight="700" fill="#111827">YACS Finals Export</text>
+      <text x="64" y="124" font-size="18" fill="#475569">${escapeHtml(semester || "Selected finals")}</text>
+      <text x="64" y="152" font-size="18" fill="#475569">Placeholder finals data until backend scheduling is attached</text>
+
+      <rect x="48" y="176" width="1104" height="2" fill="#cbd5e1" />
+      <text x="72" y="170" font-size="13" font-weight="700" letter-spacing="1.5" fill="#64748b">COURSE</text>
+      <text x="240" y="170" font-size="13" font-weight="700" letter-spacing="1.5" fill="#64748b">TITLE</text>
+      <text x="640" y="170" font-size="13" font-weight="700" letter-spacing="1.5" fill="#64748b">DATE</text>
+      <text x="785" y="170" font-size="13" font-weight="700" letter-spacing="1.5" fill="#64748b">TIME</text>
+      <text x="995" y="170" font-size="13" font-weight="700" letter-spacing="1.5" fill="#64748b">LOCATION</text>
+
+      ${rowMarkup}
+    </svg>
+  `;
+}
+
+export async function downloadFinalsPng(finals: FinalExam[]) {
+  const svg = buildFinalsImageSvg(finals);
+  const svgBlob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
+  const svgUrl = window.URL.createObjectURL(svgBlob);
+
+  try {
+    const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error("Could not render the finals image."));
+      img.src = svgUrl;
+    });
+
+    const canvas = document.createElement("canvas");
+    canvas.width = image.width;
+    canvas.height = image.height;
+    const context = canvas.getContext("2d");
+    if (!context) {
+      throw new Error("Could not create a finals image export context.");
+    }
+
+    context.fillStyle = "#ffffff";
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.drawImage(image, 0, 0);
+
+    const pngUrl = canvas.toDataURL("image/png");
+    const firstSemester = finals.map((exam) => exam.semester).find(Boolean);
+    const filename = firstSemester ? `yacs-finals-${slugify(firstSemester)}.png` : "yacs-finals.png";
+
+    const link = document.createElement("a");
+    link.href = pngUrl;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  } finally {
+    window.URL.revokeObjectURL(svgUrl);
+  }
+}
+
 export function buildSchedulePrintHtml(courses: Course[]) {
   const semester = courses.flatMap((course) => course.meetings.map((meeting) => meeting.semester)).find(Boolean);
   const rows = courses.flatMap((course) =>
