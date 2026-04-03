@@ -156,7 +156,7 @@ export default function SubjectCoursesPage() {
           </section>
         ) : (
           <section className="space-y-5">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
               <div>
                 <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
                   Course listings
@@ -165,9 +165,6 @@ export default function SubjectCoursesPage() {
                   {subjectCourses.length} course{subjectCourses.length === 1 ? "" : "s"} in {subject?.code ?? subjectCode.toUpperCase()}
                 </h2>
               </div>
-              <p className="max-w-2xl text-sm text-slate-500 dark:text-slate-400">
-                These results are loaded from the department endpoint instead of downloading the full catalog first.
-              </p>
             </div>
             <SubjectCourseList courses={subjectCourses} />
           </section>
