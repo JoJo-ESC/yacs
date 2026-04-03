@@ -9,10 +9,11 @@ export default function App() {
   const location = useLocation();
   const isSubjectBrowserRoute = location.pathname === "/" || location.pathname === "/courses";
   const isSubjectDetailRoute = location.pathname.startsWith("/courses/");
+  const shouldLoadCatalog = isSubjectBrowserRoute;
 
   return (
     <div className="min-h-screen flex flex-col">
-      <CatalogLoader />
+      {shouldLoadCatalog ? <CatalogLoader /> : null}
       <Navbar />
       <div
         className={cn(

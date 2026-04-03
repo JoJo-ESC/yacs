@@ -25,9 +25,9 @@ export function SubjectSearchBar({
           type="search"
           value={query}
           onChange={(event) => onQueryChange(event.target.value)}
-          placeholder="Search CSCI, Computer Science, ECSE, mathematics..."
+          placeholder="Search CSCI-1200, Data Structures, algorithms..."
           className="min-w-0 flex-1 bg-transparent text-lg font-medium outline-none placeholder:text-slate-400"
-          aria-label="Search subjects by subject code or name"
+          aria-label="Search classes by course code or title"
         />
         {query ? (
           <button
@@ -43,7 +43,7 @@ export function SubjectSearchBar({
 
       <div className="flex flex-col gap-2 px-1 md:flex-row md:items-center md:justify-between">
         <p className="text-sm text-slate-600 dark:text-slate-300">
-          Search by subject code or name, then narrow with filters below.
+          Search by class title or course code, then narrow with filters below.
         </p>
         <button
           type="button"

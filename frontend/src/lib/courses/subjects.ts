@@ -162,6 +162,5 @@ export function getSubjectByCode(subjects: Subject[], code: string) {
 }
 
 export async function fetchMockSubjects() {
-  await new Promise((resolve) => window.setTimeout(resolve, 180));
   return MOCK_SUBJECTS;
 }

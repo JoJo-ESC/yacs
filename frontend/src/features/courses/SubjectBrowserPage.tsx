@@ -7,7 +7,6 @@ import { SubjectFilterBar } from "@/features/courses/components/SubjectFilterBar
 import { SubjectQuickOpenDialog } from "@/features/courses/components/SubjectQuickOpenDialog";
 import {
   ALL_SUBJECTS_CATEGORY,
-  filterSubjects,
   getCategoryCounts,
   getCategoryMeta,
   getCourseCountBySubject,
@@ -47,10 +46,6 @@ export default function SubjectBrowserPage() {
 
   const courseCounts = React.useMemo(() => getCourseCountBySubject(catalog), [catalog]);
   const categoryCounts = React.useMemo(() => getCategoryCounts(subjects), [subjects]);
-  const filteredResults = React.useMemo(
-    () => filterSubjects(subjects, deferredQuery, activeCategory, catalog),
-    [subjects, deferredQuery, activeCategory, catalog],
-  );
   const subjectByCode = React.useMemo(
     () =>
       subjects.reduce<Record<string, (typeof subjects)[number]>>((acc, subject) => {
@@ -111,84 +106,41 @@ export default function SubjectBrowserPage() {
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                   <div>
                     <h2 className="font-display text-3xl font-semibold tracking-tight text-[#2d1f15] dark:text-[#faf2ea]">
-                      {filteredResults.length + matchingCourses.length} match
-                      {filteredResults.length + matchingCourses.length === 1 ? "" : "es"} in {activeCategoryLabel}
+                      {matchingCourses.length} class match
+                      {matchingCourses.length === 1 ? "" : "es"} in {activeCategoryLabel}
                     </h2>
                   </div>
                   <div className="flex flex-wrap gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-[#837466] dark:text-[#c7b8a9]">
-                    <span className="rounded-full bg-[#f8f2ea] px-3 py-1 text-[#7a5230] dark:bg-[#3a281d] dark:text-[#f4e6d6]">
-                      {filteredResults.length} subject match{filteredResults.length === 1 ? "" : "es"}
-                    </span>
                     <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-600 dark:bg-[#2b2b2b] dark:text-neutral-300">
                       {matchingCourses.length} class match{matchingCourses.length === 1 ? "" : "es"}
                     </span>
                   </div>
                 </div>
 
-                {filteredResults.length === 0 && matchingCourses.length === 0 ? (
+                {matchingCourses.length === 0 ? (
                   <div className="rounded-[32px] border border-dashed border-[#e4d8c9] bg-white px-6 py-16 text-center dark:border-[#433128] dark:bg-[#171210]/70">
                     <p className="font-display text-2xl font-semibold tracking-tight text-[#2d1f15] dark:text-[#faf2ea]">
-                      No subjects or classes matched “{query.trim()}”.
+                      No classes matched “{query.trim()}”.
                     </p>
                     <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-[#837466] dark:text-[#c7b8a9]">
-                      Try a broader keyword, a department code like ECSE, a specific class like CSCI-1200 or Data Structures, or change the active filters.
+                      Try a broader keyword, a course code like CSCI-1200, a class title like Data Structures, or change the active filters.
                     </p>
                   </div>
                 ) : (
-                  <div className="space-y-8">
-                    <section className="space-y-4">
-                      <div>
-                        <h3 className="font-display text-2xl font-semibold tracking-tight text-[#2d1f15] dark:text-[#faf2ea]">
-                          Subjects
-                        </h3>
-                        <p className="text-sm text-[#837466] dark:text-[#c7b8a9]">
-                          Departments and subject areas that match your search.
-                        </p>
-                      </div>
-                      {filteredResults.length === 0 ? (
-                        <div className="rounded-[24px] border border-dashed border-[#e4d8c9] bg-white px-6 py-10 text-sm text-[#837466] dark:border-[#433128] dark:bg-[#171210]/70 dark:text-[#c7b8a9]">
-                          No subject matches for this query.
-                        </div>
-                      ) : (
-                        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-                          {filteredResults.map(({ subject }) => {
-                            const category = getCategoryMeta(subject.category);
-                            if (!category) return null;
-                            return (
-                              <SubjectCard
-                                key={subject.id}
-                                subject={subject}
-                                category={category}
-                                courseCount={courseCounts[subject.code]}
-                                query={query}
-                              />
-                            );
-                          })}
-                        </div>
-                      )}
-                    </section>
-
-                    <section className="space-y-4">
-                      <div>
-                        <h3 className="font-display text-2xl font-semibold tracking-tight text-[#2d1f15] dark:text-[#faf2ea]">
-                          Classes
-                        </h3>
-                        <p className="text-sm text-[#837466] dark:text-[#c7b8a9]">
-                          Catalog class names and course codes that match your search, without replacing the subject results above.
-                        </p>
-                      </div>
-                      {matchingCourses.length === 0 ? (
-                        <div className="rounded-[24px] border border-dashed border-[#e4d8c9] bg-white px-6 py-10 text-sm text-[#837466] dark:border-[#433128] dark:bg-[#171210]/70 dark:text-[#c7b8a9]">
-                          No class matches for this query.
-                        </div>
-                      ) : (
-                        <CourseSearchResults
-                          results={matchingCourses.map(({ course, subject }) => ({ course, subject }))}
-                          query={query}
-                        />
-                      )}
-                    </section>
-                  </div>
+                  <section className="space-y-4">
+                    <div>
+                      <h3 className="font-display text-2xl font-semibold tracking-tight text-[#2d1f15] dark:text-[#faf2ea]">
+                        Classes
+                      </h3>
+                      <p className="text-sm text-[#837466] dark:text-[#c7b8a9]">
+                        Catalog class names and course codes that match your search.
+                      </p>
+                    </div>
+                    <CourseSearchResults
+                      results={matchingCourses.map(({ course, subject }) => ({ course, subject }))}
+                      query={query}
+                    />
+                  </section>
                 )}
               </section>
             ) : (

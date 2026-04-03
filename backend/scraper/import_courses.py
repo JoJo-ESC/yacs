@@ -8,7 +8,7 @@ import sys
 # Add parent directory to path so we can import from models
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-from models import SessionLocal, Course, MeetingTime, init_db
+from models import SessionLocal, Course, MeetingTime, init_db, reset_course_tables
 from terms import get_active_term_codes
 
 
@@ -24,28 +24,36 @@ def import_courses_from_file(filepath: str, db_session) -> int:
     count = 0
 
     for course_json in courses_data:
-        course = Course(
-            id=course_json.get('id'),
-            term=course_json.get('term'),
-            term_desc=course_json.get('termDesc'),
-            crn=course_json.get('courseReferenceNumber'),
-            subject=course_json.get('subject'),
-            subject_description=course_json.get('subjectDescription'),
-            course_number=course_json.get('courseNumber'),
-            course_title=course_json.get('courseTitle'),
-            credit_hours=course_json.get('creditHours'),
-            max_enrollment=course_json.get('maximumEnrollment'),
-            enrollment=course_json.get('enrollment'),
-            seats_available=course_json.get('seatsAvailable'),
-            section=course_json.get('sequenceNumber'),
-            schedule_type=course_json.get('scheduleTypeDescription'),
-            instructional_method=course_json.get('instructionalMethod'),
-        )
-        db_session.merge(course)  # merge = insert or update if exists
+        term = course_json.get('term')
+        crn = course_json.get('courseReferenceNumber')
+        existing_course = db_session.query(Course).filter_by(term=term, crn=crn).one_or_none()
+
+        course_fields = {
+            'term': term,
+            'term_desc': course_json.get('termDesc'),
+            'crn': crn,
+            'subject': course_json.get('subject'),
+            'subject_description': course_json.get('subjectDescription'),
+            'course_number': course_json.get('courseNumber'),
+            'course_title': course_json.get('courseTitle'),
+            'credit_hours': course_json.get('creditHours'),
+            'max_enrollment': course_json.get('maximumEnrollment'),
+            'enrollment': course_json.get('enrollment'),
+            'seats_available': course_json.get('seatsAvailable'),
+            'section': course_json.get('sequenceNumber'),
+            'schedule_type': course_json.get('scheduleTypeDescription'),
+            'instructional_method': course_json.get('instructionalMethod'),
+        }
+
+        if existing_course is None:
+            course = Course(id=course_json.get('id'), **course_fields)
+            db_session.add(course)
+        else:
+            for field_name, value in course_fields.items():
+                setattr(existing_course, field_name, value)
 
         # Replace meeting times for this CRN
-        crn = course_json.get('courseReferenceNumber')
-        db_session.query(MeetingTime).filter_by(crn=crn).delete()
+        db_session.query(MeetingTime).filter_by(term=term, crn=crn).delete()
         for mf in course_json.get('meetingsFaculty', []):
             mt = mf.get('meetingTime', {})
             # Instructor: meeting-level faculty first, then primary course faculty
@@ -54,6 +62,7 @@ def import_courses_from_file(filepath: str, db_session) -> int:
                 next((f['displayName'] for f in course_json.get('faculty', []) if f.get('primaryIndicator') and f.get('displayName')), None)
             )
             db_session.add(MeetingTime(
+                term=term,
                 crn=crn,
                 monday=mt.get('monday', False),
                 tuesday=mt.get('tuesday', False),
@@ -89,10 +98,18 @@ def main():
         action='store_true',
         help='Import all terms on disk (use for initial setup or full refresh).',
     )
+    parser.add_argument(
+        '--reset-course-tables',
+        action='store_true',
+        help='Drop and recreate course and meeting_time tables before importing.',
+    )
     args = parser.parse_args()
 
     # Initialize database tables
     init_db()
+    if args.reset_course_tables:
+        reset_course_tables()
+        print("Reset course and meeting_time tables.")
 
     # Get data directory
     data_dir = os.path.join(os.path.dirname(__file__), 'data')

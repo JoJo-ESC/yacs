@@ -1,26 +1,75 @@
 import * as React from "react";
 import { ArrowLeft, BookOpenText, Grid2X2 } from "lucide-react";
 import { Link, Navigate, useParams } from "react-router-dom";
-import { useSchedule } from "@/context/schedule/schedule-context";
+import { fetchCoursesByDepartment, getCachedCoursesByDepartment } from "@/api";
 import { SubjectCourseList } from "@/features/courses/components/SubjectCourseList";
 import { useSubjects } from "@/hooks/courses/useSubjects";
-import { getCourseCountBySubject, getSubjectByCode, getSubjectCategories } from "@/lib/courses/subjects";
+import { getSubjectByCode, getSubjectCategories } from "@/lib/courses/subjects";
+import type { Course } from "@/types/schedule";
 
 export default function SubjectCoursesPage() {
   const { subjectCode = "" } = useParams();
   const { subjects, loading: subjectsLoading } = useSubjects();
-  const { catalog, catalogLoading, catalogError } = useSchedule();
+  const normalizedSubjectCode = subjectCode.trim().toUpperCase();
+  const [subjectCourses, setSubjectCourses] = React.useState<Course[]>(
+    () => getCachedCoursesByDepartment(normalizedSubjectCode) ?? [],
+  );
+  const [catalogLoading, setCatalogLoading] = React.useState(
+    () => normalizedSubjectCode.length > 0 && !getCachedCoursesByDepartment(normalizedSubjectCode),
+  );
+  const [catalogError, setCatalogError] = React.useState<string | null>(null);
 
   const subject = React.useMemo(() => getSubjectByCode(subjects, subjectCode), [subjects, subjectCode]);
   const category = React.useMemo(
     () => getSubjectCategories().find((entry) => entry.id === subject?.category),
     [subject],
   );
-  const courseCounts = React.useMemo(() => getCourseCountBySubject(catalog), [catalog]);
-  const subjectCourses = React.useMemo(
-    () => catalog.filter((course) => course.department.toUpperCase() === subjectCode.toUpperCase()),
-    [catalog, subjectCode],
-  );
+
+  React.useEffect(() => {
+    if (!normalizedSubjectCode) {
+      setSubjectCourses([]);
+      setCatalogError(null);
+      setCatalogLoading(false);
+      return;
+    }
+
+    const cachedCourses = getCachedCoursesByDepartment(normalizedSubjectCode);
+    if (cachedCourses) {
+      setSubjectCourses(cachedCourses);
+      setCatalogError(null);
+      setCatalogLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    async function loadSubjectCourses() {
+      setCatalogLoading(true);
+      setCatalogError(null);
+
+      try {
+        const courses = await fetchCoursesByDepartment(normalizedSubjectCode);
+        if (!cancelled) {
+          setSubjectCourses(courses);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setCatalogError(error instanceof Error ? error.message : "Failed to load subject courses");
+          setSubjectCourses([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setCatalogLoading(false);
+        }
+      }
+    }
+
+    loadSubjectCourses();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [normalizedSubjectCode]);
 
   if (!subjectsLoading && !subject) {
     return <Navigate to="/courses" replace />;
@@ -71,10 +120,8 @@ export default function SubjectCoursesPage() {
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
               <div className="rounded-[28px] border border-slate-200/80 bg-white/92 p-5 dark:border-[#3a3a3a] dark:bg-[#262626]">
                 <BookOpenText className="h-5 w-5 text-sky-600 dark:text-sky-300" />
-                <div className="mt-6 text-3xl font-semibold tracking-tight">
-                  {subject ? courseCounts[subject.code] ?? 0 : 0}
-                </div>
-                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Catalog courses currently mapped to this subject.</p>
+                <div className="mt-6 text-3xl font-semibold tracking-tight">{subjectCourses.length}</div>
+                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Courses fetched directly for this subject.</p>
               </div>
               <div className="rounded-[28px] border border-slate-200/80 bg-white/92 p-5 dark:border-[#3a3a3a] dark:bg-[#262626]">
                 <Grid2X2 className="h-5 w-5 text-emerald-600 dark:text-emerald-300" />
@@ -110,7 +157,7 @@ export default function SubjectCoursesPage() {
                 </h2>
               </div>
               <p className="max-w-2xl text-sm text-slate-500 dark:text-slate-400">
-                These results come from the existing catalog context, so plugging in a new catalog feed updates this screen without changing the subject UI.
+                These results are loaded from the department endpoint instead of downloading the full catalog first.
               </p>
             </div>
             <SubjectCourseList courses={subjectCourses} />

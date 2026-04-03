@@ -1,6 +1,6 @@
 # Database setup
 from .database import Base
-from .database_session import SessionLocal, engine, init_db
+from .database_session import SessionLocal, engine, init_db, reset_course_tables
 
 # Models
 from .course_prerequisite import CoursePrerequisite

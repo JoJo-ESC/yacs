@@ -1,15 +1,23 @@
-from sqlalchemy import Column, String, Integer, Boolean, ForeignKey
+from sqlalchemy import Boolean, Column, ForeignKeyConstraint, Integer, String
 from sqlalchemy.orm import relationship
 from .database import Base
 
 
 class MeetingTime(Base):
     __tablename__ = 'meeting_time'
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ['term', 'crn'],
+            ['course.term', 'course.crn'],
+            ondelete='CASCADE',
+        ),
+    )
 
     id = Column(Integer, primary_key=True, autoincrement=True)
 
     # Foreign key back to the course section
-    crn = Column(String(10), ForeignKey('course.crn'), nullable=False, index=True)
+    term = Column(String(10), nullable=False, index=True)
+    crn = Column(String(10), nullable=False, index=True)
 
     # Days of week
     monday = Column(Boolean, default=False)

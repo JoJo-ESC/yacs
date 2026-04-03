@@ -47,9 +47,6 @@ export function SubjectFilterBar({
           <p className="font-display text-lg font-semibold tracking-tight text-slate-950 dark:text-neutral-50">
             Filter subjects
           </p>
-          <p className="text-sm text-slate-500 dark:text-neutral-400">
-            Filters combine with search instantly.
-          </p>
         </div>
       </div>
 

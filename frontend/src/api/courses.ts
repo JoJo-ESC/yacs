@@ -6,6 +6,14 @@ import {
   ApiDepartmentResponse,
 } from "./types";
 import { Course, Meeting } from "../types/schedule";
+import { decodeHtmlEntities } from "@/lib/utils";
+
+const departmentCourseCache = new Map<string, Course[]>();
+const departmentCourseRequests = new Map<string, Promise<Course[]>>();
+
+function getDepartmentCacheKey(department: string, semester?: string) {
+  return `${department.toUpperCase()}::${semester ?? ""}`;
+}
 
 function formatTime(hhmm: string | null): string {
   if (!hhmm || hhmm.length < 4) return "";
@@ -30,12 +38,12 @@ function buildMeetings(raw: ApiCourseResponse): Meeting[] {
     const location = [mt.building, mt.room].filter(Boolean).join(" ") || "";
 
     return {
-      type: raw.schedule_type ?? "",
+      type: decodeHtmlEntities(raw.schedule_type ?? ""),
       days,
       start: formatTime(mt.begin_time),
       end: formatTime(mt.end_time),
       location,
-      instructor: mt.instructor_name ?? "",
+      instructor: decodeHtmlEntities(mt.instructor_name ?? ""),
       section: raw.section ?? "",
       seatsAvailable: raw.seats_available ?? 0,
       enrolled: raw.enrollment ?? 0,
@@ -57,11 +65,11 @@ function apiCoursesToCourses(raw: ApiCourseResponse[]): Course[] {
     } else {
       map.set(key, {
         id: key,
-        title: row.course_title ?? "",
+        title: decodeHtmlEntities(row.course_title ?? ""),
         credits: row.credit_hours ?? 0,
         level: row.course_number ?? "",
         department: row.subject ?? "",
-        school: row.subject_description ?? "",
+        school: decodeHtmlEntities(row.subject_description ?? ""),
         description: "",
         offerFrequency: "",
         prereqs: [],
@@ -91,6 +99,61 @@ export async function fetchAllCourses(semester?: string): Promise<Course[]> {
   } while (page <= totalPages);
 
   return apiCoursesToCourses(allRaw);
+}
+
+export async function fetchCoursesByDepartment(
+  department: string,
+  semester?: string,
+): Promise<Course[]> {
+  const cacheKey = getDepartmentCacheKey(department, semester);
+  const cached = departmentCourseCache.get(cacheKey);
+  if (cached) {
+    return cached;
+  }
+
+  const inFlight = departmentCourseRequests.get(cacheKey);
+  if (inFlight) {
+    return inFlight;
+  }
+
+  const request = (async () => {
+  const allRaw: ApiCourseResponse[] = [];
+  let page = 1;
+  let totalPages = 1;
+
+  do {
+    const params = new URLSearchParams({ page: String(page), per_page: "100" });
+    if (semester) params.set("semester", semester);
+    const res = await apiFetch<ApiCourseListResponse>(
+      `/api/courses/department/${encodeURIComponent(department)}?${params}`,
+    );
+    allRaw.push(...res.data);
+    totalPages = res.pagination.total_pages;
+    page++;
+  } while (page <= totalPages);
+
+    const courses = apiCoursesToCourses(allRaw);
+    departmentCourseCache.set(cacheKey, courses);
+    departmentCourseRequests.delete(cacheKey);
+    return courses;
+  })().catch((error) => {
+    departmentCourseRequests.delete(cacheKey);
+    throw error;
+  });
+
+  departmentCourseRequests.set(cacheKey, request);
+  return request;
+}
+
+export function getCachedCoursesByDepartment(
+  department: string,
+  semester?: string,
+): Course[] | undefined {
+  return departmentCourseCache.get(getDepartmentCacheKey(department, semester));
+}
+
+export function prefetchCoursesByDepartment(department: string, semester?: string): Promise<Course[]> {
+  return fetchCoursesByDepartment(department, semester);
 }
 
 export async function searchCourses(query: string, semester?: string): Promise<Course[]> {
