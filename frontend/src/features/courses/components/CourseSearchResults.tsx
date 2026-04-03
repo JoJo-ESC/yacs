@@ -53,7 +53,7 @@ export function CourseSearchResults({ results, query }: CourseSearchResultsProps
       {results.map(({ course, subject }) => (
         <article
           key={course.id}
-          className="overflow-hidden rounded-[28px] border border-slate-200/80 bg-white/95 shadow-[0_20px_60px_-42px_rgba(15,23,42,0.14)] dark:border-[#3a3a3a] dark:bg-[#262626]"
+          className="overflow-hidden rounded-[28px] border border-slate-200/80 bg-white/95 shadow-[0_20px_60px_-42px_rgba(15,23,42,0.14)] dark:border-[#3a3a3a] dark:bg-[#171717]"
         >
           <button
             type="button"
@@ -119,7 +119,7 @@ export function CourseSearchResults({ results, query }: CourseSearchResultsProps
           </button>
 
           {expandedCourseId === course.id ? (
-            <div className="border-t border-slate-200/70 bg-slate-50/60 px-5 py-4 dark:border-[#343434] dark:bg-[#202020]">
+            <div className="border-t border-slate-200/70 bg-slate-50/60 px-5 py-4 dark:border-[#343434] dark:bg-[#1a1a1a]">
               <SubjectCourseList
                 courses={[course]}
                 initiallyExpandedCourseIds={[course.id]}

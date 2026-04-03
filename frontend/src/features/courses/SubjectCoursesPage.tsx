@@ -4,7 +4,9 @@ import { Link, Navigate, useParams } from "react-router-dom";
 import { fetchCoursesByDepartment, getCachedCoursesByDepartment } from "@/api";
 import { SubjectCourseList } from "@/features/courses/components/SubjectCourseList";
 import { useSubjects } from "@/hooks/courses/useSubjects";
+import { getSubjectBadgeClasses } from "@/lib/courses/subjectColors";
 import { getSubjectByCode, getSubjectCategories } from "@/lib/courses/subjects";
+import { cn } from "@/lib/utils";
 import type { Course } from "@/types/schedule";
 
 export default function SubjectCoursesPage() {
@@ -24,6 +26,7 @@ export default function SubjectCoursesPage() {
     () => getSubjectCategories().find((entry) => entry.id === subject?.category),
     [subject],
   );
+  const subjectBadgeClasses = subject ? getSubjectBadgeClasses(subject) : null;
 
   React.useEffect(() => {
     if (!normalizedSubjectCode) {
@@ -78,7 +81,7 @@ export default function SubjectCoursesPage() {
   return (
     <main className="relative flex-1 overflow-x-hidden bg-white pb-16 dark:bg-none dark:bg-black">
       <div className="relative mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 pb-10 pt-8 sm:px-6 lg:px-8">
-        <section className="overflow-hidden rounded-[40px] border border-white/80 bg-white/82 p-8 shadow-[0_28px_100px_-56px_rgba(15,23,42,0.45)] backdrop-blur dark:border-[#3a3a3a] dark:bg-[#1f1f1f]">
+        <section className="overflow-hidden rounded-[40px] border border-white/80 bg-white/82 p-8 shadow-[0_28px_100px_-56px_rgba(15,23,42,0.45)] backdrop-blur dark:border-[#3a3a3a] dark:bg-[#171717]">
           <Link
             to="/courses"
             className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:border-slate-300 hover:bg-slate-50 dark:border-[#6d4f36] dark:bg-[#3a281d] dark:text-[#f4e6d6] dark:hover:bg-[#422f22]"
@@ -89,7 +92,13 @@ export default function SubjectCoursesPage() {
 
           <div className="mt-6 grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
             <div className="max-w-3xl">
-              <p className="inline-flex items-center rounded-full border border-[#dfc9ae] bg-[#f8f2ea] px-4 py-2 text-xs font-bold uppercase tracking-[0.24em] text-[#7a5230] dark:border-[#6d4f36] dark:bg-[#3a281d] dark:text-[#f4e6d6]">
+              <p
+                className={cn(
+                  "inline-flex items-center rounded-full border px-4 py-2 text-xs font-bold uppercase tracking-[0.24em]",
+                  subjectBadgeClasses?.outline ??
+                    "border-[#dfc9ae] bg-[#f8f2ea] text-[#7a5230] dark:border-[#6d4f36] dark:bg-[#3a281d] dark:text-[#f4e6d6]",
+                )}
+              >
                 {subject?.code ?? subjectCode}
               </p>
               <h1 className="font-display mt-5 text-4xl font-semibold tracking-[-0.04em] text-slate-950 sm:text-5xl dark:text-white">

@@ -4,7 +4,9 @@ import { Link, Navigate, useLocation, useParams } from "react-router-dom";
 import { fetchCoursesByDepartment, getCachedCoursesByDepartment } from "@/api";
 import { SubjectCourseList } from "@/features/courses/components/SubjectCourseList";
 import { useSubjects } from "@/hooks/courses/useSubjects";
+import { getSubjectBadgeClasses } from "@/lib/courses/subjectColors";
 import { getSubjectByCode, getSubjectCategories } from "@/lib/courses/subjects";
+import { cn } from "@/lib/utils";
 import type { Subject } from "@/types/courses";
 import type { Course } from "@/types/schedule";
 
@@ -44,6 +46,7 @@ export default function ClassSectionsPage() {
     () => (subject ? getSubjectCategories().find((entry) => entry.id === subject.category) : undefined),
     [subject],
   );
+  const subjectBadgeClasses = subject ? getSubjectBadgeClasses(subject) : null;
 
   React.useEffect(() => {
     if (!decodedCourseId) {
@@ -112,7 +115,13 @@ export default function ClassSectionsPage() {
 
           <div className="mt-6 grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
             <div className="max-w-3xl">
-              <p className="inline-flex items-center rounded-full border border-[#dfc9ae] bg-[#f8f2ea] px-4 py-2 text-xs font-bold uppercase tracking-[0.24em] text-[#7a5230] dark:border-[#6d4f36] dark:bg-[#3a281d] dark:text-[#f4e6d6]">
+              <p
+                className={cn(
+                  "inline-flex items-center rounded-full border px-4 py-2 text-xs font-bold uppercase tracking-[0.24em]",
+                  subjectBadgeClasses?.outline ??
+                    "border-[#dfc9ae] bg-[#f8f2ea] text-[#7a5230] dark:border-[#6d4f36] dark:bg-[#3a281d] dark:text-[#f4e6d6]",
+                )}
+              >
                 {course?.id ?? decodedCourseId}
               </p>
               <h1 className="font-display mt-5 text-4xl font-semibold tracking-[-0.04em] text-slate-950 sm:text-5xl dark:text-white">
@@ -125,7 +134,13 @@ export default function ClassSectionsPage() {
                 <span className="rounded-full bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-700 dark:bg-[#2b2b2b] dark:text-neutral-200">
                   {category?.label ?? "Course"}
                 </span>
-                <span className="rounded-full bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-700 dark:bg-[#2b2b2b] dark:text-neutral-200">
+                <span
+                  className={cn(
+                    "rounded-full border px-3 py-1 text-sm font-semibold",
+                    subjectBadgeClasses?.outline ??
+                      "border-slate-200 bg-slate-100 text-slate-700 dark:border-[#4a4a4a] dark:bg-[#2b2b2b] dark:text-neutral-200",
+                  )}
+                >
                   {subject?.name ?? departmentCode}
                 </span>
                 {course ? (
