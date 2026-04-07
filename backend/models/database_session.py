@@ -1,4 +1,5 @@
-from sqlalchemy import create_engine
+import os
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 
 from utils import load_config, load_secrets
@@ -7,11 +8,12 @@ from utils import load_config, load_secrets
 config = load_config()
 secrets = load_secrets()
 
-DB_NAME = config.get('DB_NAME', 'yacsdb')
-DB_HOST = config.get('DB_HOST', 'db')
-DB_PORT = config.get('DB_PORT', '5432')
-DB_USER = secrets.get('DB_USER', 'yacs')
-DB_PASS = secrets.get('DB_PASS', 'yacs')
+# Allow environment variables to override config
+DB_NAME = os.getenv('DB_NAME') or config.get('DB_NAME', 'yacsdb')
+DB_HOST = os.getenv('DB_HOST') or config.get('DB_HOST', 'db')
+DB_PORT = os.getenv('DB_PORT') or config.get('DB_PORT', '5432')
+DB_USER = os.getenv('DB_USER') or secrets.get('DB_USER', 'yacs')
+DB_PASS = os.getenv('DB_PASS') or secrets.get('DB_PASS', 'yacs')
 
 engine = create_engine(f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}")
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -28,6 +30,17 @@ def init_db(retries: int = 5, delay: int = 2):
     for attempt in range(retries):
         try:
             Base.metadata.create_all(bind=engine)
+            with engine.connect() as conn:
+                conn.execute(
+                    text(
+                        "ALTER TABLE users ADD COLUMN IF NOT EXISTS preferred_semester VARCHAR(64) NOT NULL DEFAULT 'Fall 2025'"
+                    )
+                )
+                conn.execute(
+                    text(
+                        "ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(32) NOT NULL DEFAULT 'user'"
+                    )
+                )
             print("Database initialized successfully.")
             return
         except Exception as err:

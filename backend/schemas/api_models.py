@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Literal, Optional
 
 
 class SessionPydantic(BaseModel):
@@ -30,6 +30,13 @@ class UserPydantic(BaseModel):
      password: str
      major: str
      degree: str
+     preferred_semester: Optional[str] = None
+
+class PreferredSemesterPydantic(BaseModel):
+    preferred_semester: str
+
+class RoleUpdatePydantic(BaseModel):
+    role: Literal["user", "admin"]
 
 class UserDeletePydantic(BaseModel):
     sessionID: str

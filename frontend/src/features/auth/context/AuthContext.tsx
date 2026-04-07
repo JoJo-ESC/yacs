@@ -1,5 +1,10 @@
-import React, { createContext, useMemo, useState } from "react";
-import { loginUser, logoutUser, signupUser } from "@/features/auth/api/authApi";
+import React, { createContext, useEffect, useRef, useState } from "react";
+import {
+  getCurrentSessionUser,
+  loginUser,
+  logoutUser,
+  signupUser,
+} from "@/features/auth/api/authApi";
 
 type AuthState = "anonymous" | "guest" | "authenticated";
 type UserSource = "backend" | "local";
@@ -8,6 +13,7 @@ export type AuthUser = {
   name: string;
   email: string;
   source: UserSource;
+  preferredSemester?: string;
 };
 
 type LoginInput = {
@@ -19,6 +25,7 @@ type SignupInput = {
   name: string;
   email: string;
   password: string;
+  preferredSemester?: string;
 };
 
 type MockAccount = {
@@ -91,11 +98,6 @@ function upsertMockAccount(input: SignupInput) {
   saveMockAccounts(accounts);
 }
 
-function toDisplayName(email: string) {
-  const localPart = email.split("@")[0] ?? "Student";
-  return localPart.charAt(0).toUpperCase() + localPart.slice(1);
-}
-
 function getInitialAuth() {
   const storedUser = readStorage<AuthUser>(STORAGE_AUTH_USER);
   if (storedUser) {
@@ -114,10 +116,18 @@ export const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const initial = getInitialAuth();
+  const initialRef = useRef(initial);
   const [state, setState] = useState<AuthState>(initial.state);
   const [user, setUser] = useState<AuthUser | null>(initial.user);
   const [isBusy, setIsBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const clearAuthenticated = () => {
+    setState("anonymous");
+    setUser(null);
+    clearStorage(STORAGE_AUTH_USER);
+    clearStorage(STORAGE_GUEST);
+  };
 
   const setAuthenticated = (nextUser: AuthUser) => {
     setState("authenticated");
@@ -125,6 +135,51 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     writeStorage(STORAGE_AUTH_USER, nextUser);
     clearStorage(STORAGE_GUEST);
   };
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const hydrateAuthFromServer = async () => {
+      const mountedInitial = initialRef.current;
+      if (mountedInitial.state === "guest") {
+        return;
+      }
+
+      setIsBusy(true);
+      try {
+        const response = await getCurrentSessionUser();
+        if (cancelled) {
+          return;
+        }
+
+        if (response.ok && response.success && response.user) {
+          setAuthenticated({
+            name: response.user.name,
+            email: response.user.email,
+            source: "backend",
+            preferredSemester: response.user.preferred_semester,
+          });
+          return;
+        }
+
+        if (response.statusCode === 401 && mountedInitial.user?.source === "backend") {
+          clearAuthenticated();
+        }
+      } catch {
+        // Keep existing local state on network failures.
+      } finally {
+        if (!cancelled) {
+          setIsBusy(false);
+        }
+      }
+    };
+
+    void hydrateAuthFromServer();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const login = async (input: LoginInput) => {
     setError(null);
@@ -134,9 +189,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const response = await loginUser(input);
       if (response.ok && response.success) {
         setAuthenticated({
-          name: toDisplayName(input.email),
-          email: input.email,
+          name: response.user?.name ?? input.email,
+          email: response.user?.email ?? input.email,
           source: "backend",
+          preferredSemester: response.user?.preferred_semester,
         });
         return true;
       }
@@ -149,6 +205,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           source: "local",
         });
         return true;
+      }
+
+      if (response.statusCode === 429 || response.code === "rate_limited") {
+        setError(response.message ?? "Too many failed login attempts. Please wait and try again.");
+        return false;
+      }
+
+      if (response.statusCode === 401) {
+        setError("Invalid email or password.");
+        return false;
       }
 
       setError(response.message ?? "Unable to log in with those credentials.");
@@ -176,15 +242,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsBusy(true);
 
     try {
-      upsertMockAccount(input);
-    } catch (signupError) {
-      setError(signupError instanceof Error ? signupError.message : "Unable to create account.");
-      setIsBusy(false);
-      return false;
-    }
+      const signupResponse = await signupUser(input);
+      console.log("Signup response:", signupResponse);
+      if (!signupResponse.ok || !signupResponse.success) {
+        console.log("Setting error:", signupResponse.message);
+        const errorMessage = signupResponse.message ?? "Unable to create account.";
+        setError(errorMessage);
+        window.alert("Signup failed: " + errorMessage);
+        setIsBusy(false);
+        return false;
+      }
 
-    try {
-      await signupUser(input);
+      // Signup succeeded, now log in
+      try {
+        upsertMockAccount(input);
+      } catch (mockError) {
+        // Mock account error is non-fatal
+        console.warn("Mock account upsert failed:", mockError);
+      }
+
       const loginResponse = await loginUser({
         email: input.email,
         password: input.password,
@@ -195,6 +271,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           name: input.name,
           email: input.email,
           source: "backend",
+          preferredSemester: loginResponse.user?.preferred_semester,
         });
         return true;
       }
@@ -205,13 +282,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         source: "local",
       });
       return true;
-    } catch {
-      setAuthenticated({
-        name: input.name,
-        email: input.email,
-        source: "local",
-      });
-      return true;
+    } catch (error) {
+      console.log("Signup error:", error);
+      setError(error instanceof Error ? error.message : "Network error during signup.");
+      return false;
     } finally {
       setIsBusy(false);
     }
@@ -226,10 +300,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch {
       // Ignore network errors during logout; local state still clears.
     } finally {
-      setState("anonymous");
-      setUser(null);
-      clearStorage(STORAGE_AUTH_USER);
-      clearStorage(STORAGE_GUEST);
+      clearAuthenticated();
       setIsBusy(false);
     }
   };
@@ -244,22 +315,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const clearError = () => setError(null);
 
-  const value = useMemo<AuthContextValue>(
-    () => ({
-      state,
-      user,
-      isAuthenticated: state === "authenticated",
-      isGuest: state === "guest",
-      isBusy,
-      error,
-      clearError,
-      login,
-      signup,
-      logout,
-      continueAsGuest,
-    }),
-    [state, user, isBusy, error]
-  );
+  const value: AuthContextValue = {
+    state,
+    user,
+    isAuthenticated: state === "authenticated",
+    isGuest: state === "guest",
+    isBusy,
+    error,
+    clearError,
+    login,
+    signup,
+    logout,
+    continueAsGuest,
+  };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

@@ -3,7 +3,12 @@ import { env } from "@/config";
 type ApiEnvelope = {
   success?: boolean;
   status?: string;
+  code?: string;
   message?: string;
+  user?: {
+    user_id: number;
+    email: string;
+    name: string;    preferred_semester?: string;  };
 };
 
 export type LoginRequest = {
@@ -18,6 +23,7 @@ export type SignupRequest = {
   phone?: string;
   major?: string;
   degree?: string;
+  preferredSemester?: string;
 };
 
 export type AuthApiResult = ApiEnvelope & {
@@ -74,6 +80,7 @@ export function signupUser(payload: SignupRequest) {
       password: payload.password,
       major: payload.major ?? "Undeclared",
       degree: payload.degree ?? "BS",
+      preferred_semester: payload.preferredSemester,
     }),
   });
 }
@@ -81,5 +88,11 @@ export function signupUser(payload: SignupRequest) {
 export function logoutUser() {
   return sendJson("/api/session", {
     method: "DELETE",
+  });
+}
+
+export function getCurrentSessionUser() {
+  return sendJson("/api/session/me", {
+    method: "GET",
   });
 }
