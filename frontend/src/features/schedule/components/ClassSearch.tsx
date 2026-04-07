@@ -1,16 +1,19 @@
 import * as React from "react";
 import { createPortal } from "react-dom";
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { Search as SearchIcon, X as XIcon, Check as CheckIcon } from "lucide-react";
+import { Check as CheckIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
-import { useSchedule } from "@/context/schedule-context";
+import { useSchedule } from "@/context/schedule/schedule-context";
 import type { Course, Meeting } from "@/types/schedule";
+import { NavbarSearchField } from "@/components/ui/NavbarSearchField";
 
 function pickDefaultMeetings(c: Course): Meeting[] {
-  const chosen = new Map<string, Meeting>();
-  for (const m of c.meetings) if (!chosen.has(m.type)) chosen.set(m.type, m);
-  return Array.from(chosen.values());
+  const chosen = new Map<string, Meeting[]>();
+  for (const m of c.meetings) {
+    if (!chosen.has(m.type)) chosen.set(m.type, c.meetings.filter((meeting) => meeting.type === m.type));
+  }
+  return Array.from(chosen.values()).flat();
 }
 
 export function ClassSearch({
@@ -184,22 +187,24 @@ export function ClassSearch({
     <>
       <div
         ref={wrapperRef}
-        className={cn(
-          "flex w-full items-center gap-2 rounded-md border bg-white dark:bg-black",
-          "border-border px-3 py-2 shadow-sm focus-within:ring-2 focus-within:ring-ring"
-        )}
+        className="w-full"
         onClick={() => {
           setOpen(true);
           inputRef.current?.focus();
         }}
       >
-        <SearchIcon className="h-4 w-4 opacity-60" aria-hidden="true" />
-        <input
-          ref={inputRef}
+        <NavbarSearchField
+          id="class-search-input"
           value={query}
-          onChange={(e) => {
-            setQuery(e.target.value);
+          inputRef={inputRef}
+          onChange={(nextValue) => {
+            setQuery(nextValue);
             if (!isOpen) setOpen(true);
+          }}
+          onClear={() => {
+            setQuery("");
+            setOpen(true);
+            inputRef.current?.focus();
           }}
           onFocus={() => setOpen(true)}
           onKeyDown={(e) => {
@@ -208,28 +213,13 @@ export function ClassSearch({
               (e.target as HTMLInputElement).blur();
             }
           }}
-          className="flex-1 bg-transparent text-foreground placeholder:opacity-60 outline-none"
-          aria-expanded={isOpen}
-          aria-haspopup="listbox"
-          aria-controls="class-search-dropdown-listbox"
           placeholder="Search classes..."
+          ariaLabel="Search classes"
+          ariaExpanded={isOpen}
+          ariaHaspopup="listbox"
+          ariaControls="class-search-dropdown-listbox"
           role="combobox"
         />
-        {query && (
-          <button
-            type="button"
-            className="rounded p-1 hover:bg-muted"
-            onClick={(e) => {
-              e.stopPropagation();
-              setQuery("");
-              setOpen(true);
-              inputRef.current?.focus();
-            }}
-            aria-label="Clear search"
-          >
-            <XIcon className="h-4 w-4 opacity-60" />
-          </button>
-        )}
       </div>
       {portalEl && dropdown ? createPortal(dropdown, portalEl) : null}
     </>

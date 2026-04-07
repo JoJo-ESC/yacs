@@ -1,4 +1,4 @@
-import { useCatalog } from "@/context/schedule-context";
+import { useCatalog } from "@/context/schedule/schedule-context";
 
 export function useCourses() {
   const { catalog, catalogLoading, catalogError } = useCatalog();

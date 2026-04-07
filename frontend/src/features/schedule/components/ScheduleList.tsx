@@ -1,6 +1,6 @@
 import * as React from "react";
 import type { JSX } from "react";
-import { useSchedule } from "@/context/schedule-context";
+import { useSchedule } from "@/context/schedule/schedule-context";
 import type { Course, Meeting } from "@/types/schedule";
 import { Button } from "@/components/ui/button";
 import { hasScheduleConflict } from "@/lib/schedule/schedule";
@@ -21,6 +21,50 @@ import {
 
 function formatDays(ds: string[]) {
   return (ds || []).join("");
+}
+
+type MeetingOption = {
+  key: string;
+  type: string;
+  section: string;
+  meetings: Meeting[];
+};
+
+function groupMeetingOptions(meetings: Meeting[]) {
+  const byType: Record<string, MeetingOption[]> = {};
+
+  for (const meeting of meetings) {
+    const key = `${meeting.type}::${meeting.section}::${meeting.crn}`;
+    const options = (byType[meeting.type] ||= []);
+    const existing = options.find((option) => option.key === key);
+
+    if (existing) {
+      existing.meetings.push(meeting);
+      continue;
+    }
+
+    options.push({
+      key,
+      type: meeting.type,
+      section: meeting.section,
+      meetings: [meeting],
+    });
+  }
+
+  return Object.fromEntries(
+    Object.entries(byType).map(([type, options]) => [
+      type,
+      [...options].sort((a, b) =>
+        String(a.section).localeCompare(String(b.section), undefined, { numeric: true }),
+      ),
+    ]),
+  );
+}
+
+function getSelectedOptionKey(meetings: Meeting[], type: string) {
+  const selectedMeeting = meetings.find((meeting) => meeting.type === type);
+  if (!selectedMeeting) return null;
+  return `${selectedMeeting.type}::${selectedMeeting.section}::${selectedMeeting.crn}`;
 }
 
 // --- Sub-Components ---
@@ -140,15 +184,7 @@ function CourseCard({
   replaceCourseMeetings
 }: CourseCardProps) {
   
-  const groupByType = (meetings: Meeting[]) => {
-    return meetings.reduce<Record<string, Meeting[]>>((acc, m) => {
-      (acc[m.type] ||= []).push(m);
-      return acc;
-    }, {});
-  };
-
-  const allByType = groupByType(allMeetingsForCourse);
-  const currentByType = groupByType(course.meetings);
+  const allByType = groupMeetingOptions(allMeetingsForCourse);
 
   const otherMeetings = otherCourses.flatMap(c => c.meetings);
   const isStrictConflict = 
@@ -156,9 +192,17 @@ function CourseCard({
     allMeetingsForCourse.length > 0 &&
     allMeetingsForCourse.every((m) => hasScheduleConflict(otherMeetings, m));
 
-  const onPickSection = (type: string, selected: Meeting) => {
+  const selectedLabels = Object.keys(allByType)
+    .map((type) => {
+      const selectedKey = getSelectedOptionKey(course.meetings, type);
+      const selectedOption = allByType[type]?.find((option) => option.key === selectedKey);
+      return selectedOption ? `${selectedOption.type}-${selectedOption.section}` : null;
+    })
+    .filter(Boolean) as string[];
+
+  const onPickSection = (type: string, selected: MeetingOption) => {
     const others = course.meetings.filter((m) => m.type !== type);
-    replaceCourseMeetings(course, [...others, selected]);
+    replaceCourseMeetings(course, [...others, ...selected.meetings]);
   };
 
   return (
@@ -191,7 +235,7 @@ function CourseCard({
                  <>
                  <span>•</span>
                  <span className="text-foreground/80 font-medium">
-                    Selected: {course.meetings.map(m => `${m.type}-${m.section}`).join(", ")}
+                    Selected: {selectedLabels.join(", ")}
                  </span>
                  </>
              )}
@@ -224,10 +268,7 @@ function CourseCard({
           ) : (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {Object.entries(allByType).map(([type, options]) => {
-                const current = (currentByType[type] || [])[0] as Meeting | undefined;
-                const sortedOptions = [...options].sort((a, b) =>
-                  String(a.section).localeCompare(String(b.section), undefined, { numeric: true })
-                );
+                const selectedKey = getSelectedOptionKey(course.meetings, type);
 
                 const sectionsOfOtherTypes = course.meetings.filter(m => m.type !== type);
                 const allCheckMeetings = [...sectionsOfOtherTypes, ...otherMeetings];
@@ -242,16 +283,16 @@ function CourseCard({
                     </div>
                     
                     <div className="flex flex-col gap-2">
-                      {sortedOptions.map((opt) => {
-                        const conflicts = hasScheduleConflict(allCheckMeetings, opt);
-                        const isSelected = current
-                          ? current.section === opt.section && current.type === opt.type
-                          : false;
+                      {options.map((opt) => {
+                        const conflicts = opt.meetings.some((meeting) =>
+                          hasScheduleConflict(allCheckMeetings, meeting)
+                        );
+                        const isSelected = selectedKey === opt.key;
 
                         return (
                           <SectionRow
                             key={`${course.id}-${type}-${opt.section}`}
-                            meeting={opt}
+                            meeting={opt.meetings[0]}
                             isSelected={isSelected}
                             hasConflict={conflicts}
                             onSelect={() => onPickSection(type, opt)}

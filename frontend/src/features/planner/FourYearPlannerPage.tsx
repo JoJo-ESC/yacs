@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect } from "react";
 import { GripVertical, Plus, Save } from "lucide-react";
-import { firstInteger } from "./lib/creditParsing";
+import { firstInteger } from "@/lib/planner/creditParsing";
 
 // ---------------------- Types ----------------------
 type Course = { id: string; title: string; credits: number; };
@@ -241,36 +241,66 @@ function defaultTerms(startFallYear = 2023): TermId[] {
 }
 
 // ---------------------- Components ----------------------
+const plannerPickerClass =
+  "mt-2 w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2 text-sm text-slate-700 outline-none transition-all focus:border-[var(--app-accent)] focus:bg-white focus:ring-4 focus:ring-[var(--app-accent-ring)] dark:border-[#303030] dark:bg-[#101010] dark:text-neutral-100";
+
+const plannerActiveTabClass =
+  "border-[#dfc9ae] bg-[#f8f2ea] text-[#7a5230] shadow-sm dark:border-[#6d4f36] dark:bg-[#3a281d] dark:text-[#f4e6d6]";
+
 const HeaderBar: React.FC<{ total: number; max?: number; onSave: () => void; onAdd: () => void; }>
-= ({ total, max = 128, onSave, onAdd }) => (
-  <div
-    className="sticky z-30 border-b border-slate-200/60 bg-white/85 px-3 py-3 backdrop-blur-xl shadow-sm shadow-slate-900/5 dark:border-border dark:bg-header/90"
-    style={{ top: "var(--navbar-height, 68px)" }}
-  >
-    <div className="h-3 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-muted">
-      <div className="h-full rounded-full bg-gradient-to-r from-blue-500 to-blue-700 transition-all duration-500 ease-out" style={{ width: `${Math.min((total / max) * 100, 100)}%` }} />
-    </div>
-    <div className="mt-3 flex items-center justify-between">
-      <span className="text-sm font-medium text-slate-700 dark:text-foreground">{total} / {max} credits</span>
-      <div className="flex gap-3">
-        <button
-          onClick={onAdd}
-          className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 dark:border-border dark:bg-surface dark:text-foreground"
-        >
-          <Plus className="h-4 w-4" />
-          Add
-        </button>
-        <button
-          onClick={onSave}
-          className="inline-flex h-10 items-center gap-2 rounded-xl bg-gradient-to-br from-indigo-600 to-indigo-700 px-5 text-sm font-medium text-white shadow-lg shadow-indigo-600/25 transition-all hover:from-indigo-700 hover:to-indigo-800 hover:shadow-xl hover:shadow-indigo-600/30"
-        >
-          <Save className="h-4 w-4" />
-          Save
-        </button>
+= ({ total, max = 128, onSave, onAdd }) => {
+  const progress = Math.min((total / max) * 100, 100);
+
+  return (
+    <div className="rounded-2xl border border-slate-200/70 bg-white p-4 shadow-sm shadow-slate-900/5 dark:border-[#303030] dark:bg-[#171717]">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div className="min-w-0 flex-1 max-w-4xl">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-sm font-semibold text-slate-900 dark:text-neutral-100">Credit Progress</span>
+            <span className="inline-flex items-center rounded-full border border-[color:var(--app-border)] bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-600 dark:border-[#303030] dark:bg-[#1a1a1a] dark:text-neutral-300">
+              {Math.round(progress)}% complete
+            </span>
+          </div>
+          <div className="mt-2 flex items-center gap-3">
+            <div className="relative flex-1">
+              <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-[#262626]">
+                <div
+                  className="h-full rounded-full transition-all duration-500 ease-out"
+                  style={{ width: `${progress}%`, backgroundColor: "var(--app-accent)", opacity: 0.85 }}
+                />
+              </div>
+              <span
+                className="absolute top-1/2 h-4 w-4 -translate-y-1/2 rounded-full border-2 border-white shadow-sm dark:border-[#151515]"
+                style={{
+                  left: `clamp(0.5rem, calc(${progress}% - 0.5rem), calc(100% - 0.5rem))`,
+                  backgroundColor: "var(--app-accent)",
+                }}
+              />
+            </div>
+            <span className="shrink-0 text-sm font-medium text-slate-700 dark:text-neutral-200">{total} / {max}</span>
+          </div>
+        </div>
+
+        <div className="flex gap-3 self-end md:self-auto">
+          <button
+            onClick={onAdd}
+            className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 dark:border-[#303030] dark:bg-[#171717] dark:text-neutral-100 dark:hover:bg-[#222222]"
+          >
+            <Plus className="h-4 w-4" />
+            Add
+          </button>
+          <button
+            onClick={onSave}
+            className="inline-flex h-10 items-center gap-2 rounded-xl border border-[#dfc9ae] bg-[#f8f2ea] px-5 text-sm font-medium text-[#7a5230] shadow-sm transition-all hover:bg-[#f4ebe0] dark:border-[#6d4f36] dark:bg-[#3a281d] dark:text-[#f4e6d6] dark:hover:bg-[#422f22]"
+          >
+            <Save className="h-4 w-4" />
+            Save
+          </button>
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 const TermColumn: React.FC<{
   id: TermId;
@@ -280,18 +310,18 @@ const TermColumn: React.FC<{
 }> = ({ id, items, onDropCourse, onRemove }) => {
   const credits = termCredits(items);
   return (
-    <div className="min-h-[160px] rounded-2xl border border-slate-200/70 bg-white p-5 shadow-sm shadow-slate-900/5 dark:border-zinc-800 dark:bg-gradient-to-br dark:from-zinc-900 dark:to-zinc-950">
+    <div className="min-h-[160px] rounded-2xl border border-slate-200/70 bg-white p-5 shadow-sm shadow-slate-900/5 dark:border-[#303030] dark:bg-[#171717]">
       <div className="flex items-baseline justify-between">
         <div>
-          <div className="text-base font-semibold tracking-tight text-slate-900 dark:text-foreground">{id.split(" ")[0]} {id.split(" ")[1]}</div>
-          <div className="mt-0.5 text-xs text-slate-500 dark:text-foreground/70">credits: {String(credits).padStart(2, "0")}</div>
+          <div className="text-base font-semibold tracking-tight text-slate-900 dark:text-neutral-100">{id.split(" ")[0]} {id.split(" ")[1]}</div>
+          <div className="mt-0.5 text-xs text-slate-500 dark:text-neutral-400">credits: {String(credits).padStart(2, "0")}</div>
         </div>
-        {credits >= 20 && <span className="text-[16px]" style={{ color: "var(--footer)" }} title="Heavy load">❗</span>}
+        {credits >= 20 && <span className="text-[16px] text-[#9B6B3F]" title="Heavy load">❗</span>}
       </div>
 
       {/* Drop area */}
       <div
-        className="mt-4 flex h-40 flex-col items-center justify-center gap-2 overflow-y-auto rounded-xl border-2 border-dashed border-slate-200/80 bg-indigo-50/40 dark:border-zinc-800 dark:bg-zinc-950/70"
+        className="mt-4 flex h-40 flex-col items-center justify-center gap-2 overflow-y-auto rounded-xl border-2 border-dashed border-slate-200/80 bg-slate-50/50 dark:border-[#303030] dark:bg-[#111111]"
         onDragOver={(e) => e.preventDefault()}
         onDrop={(e) => {
           e.preventDefault();
@@ -310,16 +340,16 @@ const TermColumn: React.FC<{
         )}
         <ul className="w-full space-y-2 p-1.5">
           {items.map((c) => (
-            <li key={c.key} className="group flex items-center justify-between rounded-xl border border-indigo-100 bg-gradient-to-br from-indigo-50 to-purple-50/50 px-2.5 py-2 shadow-sm shadow-indigo-500/5 dark:border-zinc-800 dark:from-zinc-900 dark:to-zinc-950">
+            <li key={c.key} className="group flex items-center justify-between rounded-xl border border-slate-200 bg-white px-2.5 py-2 shadow-sm shadow-slate-900/5 dark:border-[#303030] dark:bg-[#1a1a1a]">
               <div className="flex min-w-0 items-start gap-2.5">
-                <GripVertical className="mt-0.5 h-4 w-4 shrink-0 text-indigo-400 transition-colors group-hover:text-indigo-600 dark:text-indigo-300 dark:group-hover:text-indigo-200" />
-                <div className="truncate text-sm text-slate-800 dark:text-foreground" title={`${c.id} : ${c.title}`}>
+                <GripVertical className="mt-0.5 h-4 w-4 shrink-0 text-[#b08a66] transition-colors group-hover:text-[#9B6B3F] dark:text-[#8c6542] dark:group-hover:text-[#b08a66]" />
+                <div className="truncate text-sm text-slate-800 dark:text-neutral-100" title={`${c.id} : ${c.title}`}>
                   <b>{c.id}</b> : {c.title}
                 </div>
               </div>
               <div className="flex items-center gap-2">
                 <button
-                  className="flex h-6 w-6 items-center justify-center rounded-lg text-xs text-slate-500 opacity-0 transition-all hover:bg-red-100 hover:text-red-600 group-hover:opacity-100 dark:text-foreground/80 dark:hover:bg-red-950/40"
+                  className="flex h-6 w-6 items-center justify-center rounded-lg text-xs text-slate-500 opacity-0 transition-all hover:bg-red-100 hover:text-red-600 group-hover:opacity-100 dark:text-neutral-400 dark:hover:bg-red-950/40"
                   onClick={() => onRemove(id, c.key)}
                 >
                   ✕
@@ -337,7 +367,7 @@ const CatalogCard: React.FC<{ c: Course }>= ({ c }) => {
   const [isDragging, setIsDragging] = useState(false);
   return (
     <div
-      className={`group cursor-grab select-none rounded-xl border border-indigo-100 bg-gradient-to-br from-indigo-50 to-purple-50/50 px-3 py-2.5 text-foreground transition-all hover:shadow-md hover:shadow-indigo-500/10 dark:border-zinc-800 dark:from-zinc-900 dark:to-zinc-950 ${
+      className={`group cursor-grab select-none rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-foreground transition-all hover:shadow-md hover:shadow-slate-900/10 dark:border-[#303030] dark:bg-[#171717] ${
         isDragging ? "scale-95 opacity-55" : "opacity-100"
       }`}
       draggable
@@ -349,10 +379,10 @@ const CatalogCard: React.FC<{ c: Course }>= ({ c }) => {
       title={`${c.id} • ${c.title}`}
     >
       <div className="flex items-start gap-2.5">
-        <GripVertical className={`mt-0.5 h-4 w-4 shrink-0 transition-colors ${isDragging ? "text-blue-700 dark:text-blue-300" : "text-indigo-400 group-hover:text-indigo-600 dark:text-indigo-300 dark:group-hover:text-indigo-200"}`} />
+        <GripVertical className={`mt-0.5 h-4 w-4 shrink-0 transition-colors ${isDragging ? "text-[#9B6B3F] dark:text-[#b08a66]" : "text-[#b08a66] group-hover:text-[#9B6B3F] dark:text-[#8c6542] dark:group-hover:text-[#b08a66]"}`} />
         <div className="min-w-0 flex-1">
-          <div className="truncate text-sm font-semibold text-slate-900 dark:text-foreground">{c.id} : {c.title}</div>
-          <div className="text-xs text-slate-500 dark:text-foreground/70">{c.credits} credits</div>
+          <div className="truncate text-sm font-semibold text-slate-900 dark:text-neutral-100">{c.id} : {c.title}</div>
+          <div className="text-xs text-slate-500 dark:text-neutral-400">{c.credits} credits</div>
         </div>
       </div>
     </div>
@@ -360,17 +390,17 @@ const CatalogCard: React.FC<{ c: Course }>= ({ c }) => {
 };
 
 function requirementKindClass(kind: RequirementItem["kind"]) {
-  if (kind === "required") return "bg-emerald-500/20 text-emerald-700 border-emerald-700/70 dark:text-emerald-300";
-  if (kind === "choice") return "bg-amber-500/20 text-amber-700 border-amber-700/70 dark:text-amber-300";
-  if (kind === "track") return "bg-blue-500/20 text-blue-700 border-blue-700/70 dark:text-blue-300";
-  return "bg-zinc-500/20 text-zinc-700 border-zinc-700/70 dark:text-zinc-300";
+  if (kind === "required") return "bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-400 dark:border-emerald-900";
+  if (kind === "choice") return "bg-orange-50 text-orange-700 border-orange-300 dark:bg-orange-950 dark:text-orange-400 dark:border-orange-900";
+  if (kind === "track") return "bg-violet-50 text-violet-700 border-violet-300 dark:bg-violet-950 dark:text-violet-400 dark:border-violet-900";
+  return "bg-slate-50 text-slate-600 border-slate-300 dark:bg-[#101010] dark:text-neutral-300 dark:border-[#4a4a4a]";
 }
 
 const RequirementRow: React.FC<{ item: RequirementItem }> = ({ item }) => (
-  <div className="flex items-start justify-between gap-2 rounded-lg border border-zinc-200/80 px-2 py-2 dark:border-zinc-800">
-    <div className="text-xs text-slate-700 dark:text-zinc-200">{item.label}</div>
+  <div className="flex items-start justify-between gap-2 rounded-lg border border-slate-200/80 px-2 py-2 dark:border-[#303030] dark:bg-[#101010]">
+    <div className="text-xs text-slate-700 dark:text-neutral-200">{item.label}</div>
     <div className="flex items-center gap-2">
-      <span className="text-xs text-slate-500 dark:text-zinc-400">{item.credits}</span>
+      <span className="text-xs text-slate-500 dark:text-neutral-400">{item.credits}</span>
       <span className={`rounded-md border px-1.5 py-0.5 text-[10px] uppercase tracking-wide ${requirementKindClass(item.kind)}`}>
         {item.kind}
       </span>
@@ -420,15 +450,15 @@ const RightSidebar: React.FC<{ }> = () => {
 
   return (
     <aside className="w-full lg:w-96 shrink-0 lg:sticky lg:top-2 lg:h-[calc(100vh-16px)] overflow-auto space-y-4">
-      <div className="rounded-2xl border border-slate-200/70 bg-white p-2 shadow-sm shadow-slate-900/5 dark:border-zinc-800 dark:bg-gradient-to-br dark:from-zinc-900 dark:to-zinc-950">
+      <div className="rounded-2xl border border-slate-200/70 bg-white p-2 shadow-sm shadow-slate-900/5 dark:border-[#303030] dark:bg-[#171717]">
         <div className="grid grid-cols-2 gap-2">
           <button
             type="button"
             onClick={() => setTab("requirements")}
             className={`rounded-xl px-3 py-2 text-sm font-medium transition ${
               tab === "requirements"
-                ? "bg-indigo-600 text-white"
-                : "bg-slate-100 text-slate-700 dark:bg-zinc-900 dark:text-zinc-300"
+                ? plannerActiveTabClass
+                : "bg-slate-100 text-slate-700 dark:bg-[#101010] dark:text-neutral-300"
             }`}
           >
             Requirements
@@ -438,8 +468,8 @@ const RightSidebar: React.FC<{ }> = () => {
             onClick={() => setTab("catalog")}
             className={`rounded-xl px-3 py-2 text-sm font-medium transition ${
               tab === "catalog"
-                ? "bg-indigo-600 text-white"
-                : "bg-slate-100 text-slate-700 dark:bg-zinc-900 dark:text-zinc-300"
+                ? plannerActiveTabClass
+                : "bg-slate-100 text-slate-700 dark:bg-[#101010] dark:text-neutral-300"
             }`}
           >
             Catalog
@@ -449,12 +479,12 @@ const RightSidebar: React.FC<{ }> = () => {
 
       {tab === "requirements" ? (
         <div className="space-y-4">
-          <div className="rounded-2xl border border-slate-200/70 bg-white p-4 shadow-sm shadow-slate-900/5 dark:border-zinc-800 dark:bg-gradient-to-br dark:from-zinc-900 dark:to-zinc-950">
-            <div className="text-xs uppercase tracking-wider text-slate-500 dark:text-zinc-400">Major Template</div>
+          <div className="rounded-2xl border border-slate-200/70 bg-white p-4 shadow-sm shadow-slate-900/5 dark:border-[#303030] dark:bg-[#171717]">
+            <div className="text-xs uppercase tracking-wider text-slate-500 dark:text-neutral-400">Major Template</div>
             <select
               value={selectedMajorId}
               onChange={(e) => setSelectedMajorId(e.target.value)}
-              className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2 text-sm text-slate-700 outline-none transition-all focus:border-indigo-300 focus:bg-white focus:ring-4 focus:ring-indigo-100 dark:border-zinc-800 dark:bg-zinc-900/80 dark:text-foreground dark:focus:border-zinc-700 dark:focus:ring-zinc-800/40"
+              className={plannerPickerClass}
             >
               <option value={NONE_MAJOR_ID}>(None)</option>
               {majorTemplates.map((m) => (
@@ -464,7 +494,7 @@ const RightSidebar: React.FC<{ }> = () => {
               ))}
             </select>
             {selectedMajor && (
-              <div className="mt-2 text-sm text-slate-600 dark:text-zinc-400">Entry: {selectedMajor.entry}</div>
+              <div className="mt-2 text-sm text-slate-600 dark:text-neutral-400">Entry: {selectedMajor.entry}</div>
             )}
           </div>
 
@@ -472,15 +502,15 @@ const RightSidebar: React.FC<{ }> = () => {
             selectedMajor.years.map((year) => (
               <div
                 key={year.label}
-                className="rounded-2xl border border-slate-200/70 bg-white shadow-sm shadow-slate-900/5 dark:border-zinc-800 dark:bg-gradient-to-br dark:from-zinc-900 dark:to-zinc-950"
+                className="rounded-2xl border border-slate-200/70 bg-white shadow-sm shadow-slate-900/5 dark:border-[#303030] dark:bg-[#171717]"
               >
-                <div className="border-b border-slate-200/70 px-4 py-3 text-slate-900 dark:border-zinc-800 dark:text-foreground">
+                <div className="border-b border-slate-200/70 px-4 py-3 text-slate-900 dark:border-[#303030] dark:text-neutral-100">
                   <div className="text-base font-semibold">{year.label}</div>
                 </div>
                 <div className="space-y-3 p-3">
                   {year.terms.map((term) => (
-                    <div key={term.label} className="rounded-xl border border-slate-200/70 p-3 dark:border-zinc-800">
-                      <div className="mb-2 text-sm font-semibold text-slate-800 dark:text-zinc-200">{term.label}</div>
+                    <div key={term.label} className="rounded-xl border border-slate-200/70 p-3 dark:border-[#303030] dark:bg-[#101010]">
+                      <div className="mb-2 text-sm font-semibold text-slate-800 dark:text-neutral-200">{term.label}</div>
                       <div className="space-y-2">
                         {term.items.map((item, idx) => (
                           <RequirementRow key={`${term.label}-${idx}`} item={item} />
@@ -492,17 +522,17 @@ const RightSidebar: React.FC<{ }> = () => {
               </div>
             ))
           ) : (
-            <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-4 text-sm text-slate-500 dark:border-zinc-700 dark:bg-gradient-to-br dark:from-zinc-900 dark:to-zinc-950 dark:text-zinc-400">
+            <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-4 text-sm text-slate-500 dark:border-[#303030] dark:bg-[#171717] dark:text-neutral-400">
               Select a major template to view year-by-year requirements.
             </div>
           )}
 
-          <div className="rounded-2xl border border-slate-200/70 bg-white p-4 shadow-sm shadow-slate-900/5 dark:border-zinc-800 dark:bg-gradient-to-br dark:from-zinc-900 dark:to-zinc-950">
-            <div className="text-xs uppercase tracking-wider text-slate-500 dark:text-zinc-400">HASS Pathway</div>
+          <div className="rounded-2xl border border-slate-200/70 bg-white p-4 shadow-sm shadow-slate-900/5 dark:border-[#303030] dark:bg-[#171717]">
+            <div className="text-xs uppercase tracking-wider text-slate-500 dark:text-neutral-400">HASS Pathway</div>
             <select
               value={selectedPathwayId}
               onChange={(e) => setSelectedPathwayId(e.target.value)}
-              className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2 text-sm text-slate-700 outline-none transition-all focus:border-indigo-300 focus:bg-white focus:ring-4 focus:ring-indigo-100 dark:border-zinc-800 dark:bg-zinc-900/80 dark:text-foreground dark:focus:border-zinc-700 dark:focus:ring-zinc-800/40"
+              className={plannerPickerClass}
             >
               <option value={NONE_PATHWAY_ID}>(None)</option>
               {pathwayTemplates.map((pathway) => (
@@ -514,15 +544,15 @@ const RightSidebar: React.FC<{ }> = () => {
           </div>
 
           {selectedPathway ? (
-            <div className="rounded-2xl border border-slate-200/70 bg-white shadow-sm shadow-slate-900/5 dark:border-zinc-800 dark:bg-gradient-to-br dark:from-zinc-900 dark:to-zinc-950">
-              <div className="border-b border-slate-200/70 px-4 py-3 text-slate-900 dark:border-zinc-800 dark:text-foreground">
+            <div className="rounded-2xl border border-slate-200/70 bg-white shadow-sm shadow-slate-900/5 dark:border-[#303030] dark:bg-[#171717]">
+              <div className="border-b border-slate-200/70 px-4 py-3 text-slate-900 dark:border-[#303030] dark:text-neutral-100">
                 <div className="flex items-center justify-between">
                   <div className="text-base font-semibold">{selectedPathway.name}</div>
-                  <div className="text-xs text-slate-500 dark:text-zinc-400">{selectedPathway.targetCredits} credits</div>
+                  <div className="text-xs text-slate-500 dark:text-neutral-400">{selectedPathway.targetCredits} credits</div>
                 </div>
               </div>
               <div className="space-y-3 p-3">
-                <p className="text-sm text-slate-700 dark:text-zinc-300">{selectedPathway.description}</p>
+                <p className="text-sm text-slate-700 dark:text-neutral-300">{selectedPathway.description}</p>
                 {selectedPathway.introRequirement && (
                   <RequirementRow item={selectedPathway.introRequirement} />
                 )}
@@ -533,8 +563,8 @@ const RightSidebar: React.FC<{ }> = () => {
                     kind: "choice",
                   }}
                 />
-                <div className="rounded-xl border border-slate-200/70 p-3 dark:border-zinc-800">
-                  <div className="mb-2 text-xs uppercase tracking-wider text-slate-500 dark:text-zinc-400">Sample Courses</div>
+                <div className="rounded-xl border border-slate-200/70 p-3 dark:border-[#303030] dark:bg-[#101010]">
+                  <div className="mb-2 text-xs uppercase tracking-wider text-slate-500 dark:text-neutral-400">Sample Courses</div>
                   <div className="space-y-2">
                     {selectedPathway.sampleCourses.map((course) => (
                       <RequirementRow
@@ -548,8 +578,8 @@ const RightSidebar: React.FC<{ }> = () => {
                     ))}
                   </div>
                 </div>
-                <div className="rounded-xl border border-slate-200/70 p-3 dark:border-zinc-800">
-                  <div className="mb-2 text-xs uppercase tracking-wider text-slate-500 dark:text-zinc-400">Compatible Minor</div>
+                <div className="rounded-xl border border-slate-200/70 p-3 dark:border-[#303030] dark:bg-[#101010]">
+                  <div className="mb-2 text-xs uppercase tracking-wider text-slate-500 dark:text-neutral-400">Compatible Minor</div>
                   {compatibleMinors.length > 0 ? (
                     <div className="space-y-2">
                       {compatibleMinors.map((minor) => (
@@ -564,7 +594,7 @@ const RightSidebar: React.FC<{ }> = () => {
                       ))}
                     </div>
                   ) : (
-                    <div className="text-xs text-slate-700 dark:text-zinc-200">
+                    <div className="text-xs text-slate-700 dark:text-neutral-200">
                       No compatible minors configured for this pathway.
                     </div>
                   )}
@@ -572,17 +602,17 @@ const RightSidebar: React.FC<{ }> = () => {
               </div>
             </div>
           ) : (
-            <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-4 text-sm text-slate-500 dark:border-zinc-700 dark:bg-gradient-to-br dark:from-zinc-900 dark:to-zinc-950 dark:text-zinc-400">
+            <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-4 text-sm text-slate-500 dark:border-[#303030] dark:bg-[#171717] dark:text-neutral-400">
               Select a pathway to view 12-credit requirement details and compatible minors.
             </div>
           )}
 
-          <div className="rounded-2xl border border-slate-200/70 bg-white p-4 shadow-sm shadow-slate-900/5 dark:border-zinc-800 dark:bg-gradient-to-br dark:from-zinc-900 dark:to-zinc-950">
-            <div className="text-xs uppercase tracking-wider text-slate-500 dark:text-zinc-400">Minor Template</div>
+          <div className="rounded-2xl border border-slate-200/70 bg-white p-4 shadow-sm shadow-slate-900/5 dark:border-[#303030] dark:bg-[#171717]">
+            <div className="text-xs uppercase tracking-wider text-slate-500 dark:text-neutral-400">Minor Template</div>
             <select
               value={selectedMinorId}
               onChange={(e) => setSelectedMinorId(e.target.value)}
-              className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2 text-sm text-slate-700 outline-none transition-all focus:border-indigo-300 focus:bg-white focus:ring-4 focus:ring-indigo-100 dark:border-zinc-800 dark:bg-zinc-900/80 dark:text-foreground dark:focus:border-zinc-700 dark:focus:ring-zinc-800/40"
+              className={plannerPickerClass}
             >
               <option value={NONE_MINOR_ID}>(None)</option>
               {minorTemplates.map((minor) => (
@@ -594,20 +624,20 @@ const RightSidebar: React.FC<{ }> = () => {
           </div>
 
           {selectedMinor && (
-            <div className="rounded-2xl border border-slate-200/70 bg-white shadow-sm shadow-slate-900/5 dark:border-zinc-800 dark:bg-gradient-to-br dark:from-zinc-900 dark:to-zinc-950">
-              <div className="border-b border-slate-200/70 px-4 py-3 text-slate-900 dark:border-zinc-800 dark:text-foreground">
+            <div className="rounded-2xl border border-slate-200/70 bg-white shadow-sm shadow-slate-900/5 dark:border-[#303030] dark:bg-[#171717]">
+              <div className="border-b border-slate-200/70 px-4 py-3 text-slate-900 dark:border-[#303030] dark:text-neutral-100">
                 <div className="flex items-center justify-between">
                   <div className="text-base font-semibold">{selectedMinor.name}</div>
-                  <div className="text-xs text-slate-500 dark:text-zinc-400">{selectedMinor.targetCredits} credits</div>
+                  <div className="text-xs text-slate-500 dark:text-neutral-400">{selectedMinor.targetCredits} credits</div>
                 </div>
               </div>
               <div className="space-y-4 p-3">
                 {selectedMinor.description && (
-                  <p className="text-sm text-slate-700 dark:text-zinc-300">{selectedMinor.description}</p>
+                  <p className="text-sm text-slate-700 dark:text-neutral-300">{selectedMinor.description}</p>
                 )}
                 {selectedMinor.requirementSections.map((section) => (
-                  <div key={section.heading} className="rounded-xl border border-slate-200/70 p-3 dark:border-zinc-800">
-                    <div className="mb-2 text-sm font-semibold text-slate-900 dark:text-zinc-100">{section.heading}</div>
+                  <div key={section.heading} className="rounded-xl border border-slate-200/70 p-3 dark:border-[#303030] dark:bg-[#101010]">
+                    <div className="mb-2 text-sm font-semibold text-slate-900 dark:text-neutral-100">{section.heading}</div>
                     <div className="space-y-2">
                       {section.items.map((item) => (
                         <RequirementRow key={`${section.heading}-${item.label}`} item={item} />
@@ -615,7 +645,7 @@ const RightSidebar: React.FC<{ }> = () => {
                     </div>
                   </div>
                 ))}
-                <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50/50 p-3 text-xs text-slate-600 dark:border-zinc-700 dark:bg-zinc-900/40 dark:text-zinc-300">
+                <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50/50 p-3 text-xs text-slate-600 dark:border-[#303030] dark:bg-[#101010] dark:text-neutral-300">
                   To add minor courses to your plan, use the Catalog tab and drag courses into terms.
                 </div>
               </div>
@@ -623,22 +653,22 @@ const RightSidebar: React.FC<{ }> = () => {
           )}
 
           {!selectedMinor && (
-            <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-4 text-sm text-slate-500 dark:border-zinc-700 dark:bg-gradient-to-br dark:from-zinc-900 dark:to-zinc-950 dark:text-zinc-400">
+            <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-4 text-sm text-slate-500 dark:border-[#303030] dark:bg-[#171717] dark:text-neutral-400">
               Select a minor template to view requirement details.
             </div>
           )}
 
         </div>
       ) : (
-        <div className="rounded-2xl border border-slate-200/70 bg-white shadow-sm shadow-slate-900/5 dark:border-zinc-800 dark:bg-gradient-to-br dark:from-zinc-900 dark:to-zinc-950">
-          <div className="border-b border-slate-200/70 px-4 py-3 dark:border-zinc-800">
-            <div className="text-base font-semibold text-slate-900 dark:text-foreground">All Catalog Courses</div>
+        <div className="rounded-2xl border border-slate-200/70 bg-white shadow-sm shadow-slate-900/5 dark:border-[#303030] dark:bg-[#171717]">
+          <div className="border-b border-slate-200/70 px-4 py-3 dark:border-[#303030]">
+            <div className="text-base font-semibold text-slate-900 dark:text-neutral-100">All Catalog Courses</div>
             <div className="mt-2">
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search by course id or title..."
-                className="w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2 text-sm text-slate-700 outline-none transition-all placeholder:text-slate-400 focus:border-indigo-300 focus:bg-white focus:ring-4 focus:ring-indigo-100 dark:border-zinc-800 dark:bg-zinc-900/80 dark:text-foreground dark:placeholder:text-zinc-400 dark:focus:border-zinc-700 dark:focus:ring-zinc-800/40"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2 text-sm text-slate-700 outline-none transition-all placeholder:text-slate-400 focus:border-[var(--app-accent)] focus:bg-white focus:ring-4 focus:ring-[var(--app-accent-ring)] dark:border-[#303030] dark:bg-[#101010] dark:text-neutral-100 dark:placeholder:text-neutral-500"
               />
             </div>
           </div>
@@ -647,7 +677,7 @@ const RightSidebar: React.FC<{ }> = () => {
               <CatalogCard key={c.id} c={c} />
             ))}
             {filteredCatalog.length === 0 && (
-              <div className="rounded-xl border border-dashed border-slate-300 p-4 text-sm text-slate-500 dark:border-zinc-700 dark:text-zinc-400">
+              <div className="rounded-xl border border-dashed border-slate-300 p-4 text-sm text-slate-500 dark:border-[#303030] dark:text-neutral-400">
                 No matching courses.
               </div>
             )}
@@ -713,31 +743,33 @@ export default function FourYearPlannerPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/40 text-foreground dark:from-background dark:via-background dark:to-background">
-      <HeaderBar total={totalCredits} onSave={handleSave} onAdd={handleAdd} />
+    <div className="min-h-screen bg-white text-foreground dark:bg-black">
+      <div className="mx-auto max-w-7xl px-4 py-6 space-y-6">
+        <HeaderBar total={totalCredits} onSave={handleSave} onAdd={handleAdd} />
 
-      <div className="mx-auto grid max-w-7xl grid-cols-1 gap-6 px-4 py-6 lg:grid-cols-[1fr_380px]">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_380px]">
         {/* Left: terms grid */}
-        <main className="space-y-4">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            {terms.map((t) => (
-              <TermColumn key={t} id={t} items={plan[t]} onDropCourse={handleDrop} onRemove={handleRemove} />
-            ))}
-          </div>
+          <main className="space-y-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              {terms.map((t) => (
+                <TermColumn key={t} id={t} items={plan[t]} onDropCourse={handleDrop} onRemove={handleRemove} />
+              ))}
+            </div>
 
-          {/* Notes card */}
-          <div className="rounded-2xl border border-slate-200/70 bg-white p-4 shadow-sm shadow-slate-900/5 dark:border-zinc-800 dark:bg-gradient-to-br dark:from-zinc-900 dark:to-zinc-950">
-            <div className="mb-2 text-sm font-semibold tracking-wide text-slate-900 dark:text-foreground">NOTES</div>
-            <ul className="text-sm text-slate-600 dark:text-foreground/75">
-              <li>All computer science majors must declare a concentration sophomore year.</li>
-              <li>Meet with your advisor to confirm your four-year plan and requirements.</li>
-              <li>YACS is not responsible for scheduling mishaps.</li>
-            </ul>
-          </div>
-        </main>
+            {/* Notes card */}
+            <div className="rounded-2xl border border-slate-200/70 bg-white p-4 shadow-sm shadow-slate-900/5 dark:border-[#303030] dark:bg-[#171717]">
+              <div className="mb-2 text-sm font-semibold tracking-wide text-slate-900 dark:text-neutral-100">NOTES</div>
+              <ul className="text-sm text-slate-600 dark:text-neutral-300">
+                <li>All computer science majors must declare a concentration sophomore year.</li>
+                <li>Meet with your advisor to confirm your four-year plan and requirements.</li>
+                <li>YACS is not responsible for scheduling mishaps.</li>
+              </ul>
+            </div>
+          </main>
 
-        {/* Right: requirements + catalog tabs */}
-        <RightSidebar />
+          {/* Right: requirements + catalog tabs */}
+          <RightSidebar />
+        </div>
       </div>
     </div>
   );
