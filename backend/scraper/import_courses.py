@@ -9,7 +9,11 @@ import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 from models import SessionLocal, Course, MeetingTime, init_db, reset_course_tables
-from terms import get_active_term_codes
+
+try:
+    from .terms import get_active_term_codes
+except ImportError:
+    from terms import get_active_term_codes
 
 
 def load_json_file(filepath: str) -> list:
@@ -18,14 +22,40 @@ def load_json_file(filepath: str) -> list:
         return json.load(f)
 
 
+def _build_row_label(course_json: dict, index: int) -> str:
+    row_id = course_json.get('id')
+    subject = course_json.get('subject')
+    course_number = course_json.get('courseNumber')
+    return f"row={index} id={row_id!r} subject={subject!r} course_number={course_number!r}"
+
+
+def _warn_skipped_course(filepath: str, index: int, course_json: dict, reason: str) -> None:
+    print(
+        f"WARNING: Skipping malformed course in {os.path.basename(filepath)} "
+        f"({_build_row_label(course_json, index)}): {reason}",
+        file=sys.stderr,
+    )
+
+
 def import_courses_from_file(filepath: str, db_session) -> int:
     """Import courses from a single JSON file. Returns count of imported courses."""
     courses_data = load_json_file(filepath)
     count = 0
+    skipped = 0
 
-    for course_json in courses_data:
+    for index, course_json in enumerate(courses_data, start=1):
         term = course_json.get('term')
         crn = course_json.get('courseReferenceNumber')
+        if not term or not crn:
+            missing_fields = []
+            if not term:
+                missing_fields.append('term')
+            if not crn:
+                missing_fields.append('courseReferenceNumber')
+            _warn_skipped_course(filepath, index, course_json, f"missing required field(s): {', '.join(missing_fields)}")
+            skipped += 1
+            continue
+
         existing_course = db_session.query(Course).filter_by(term=term, crn=crn).one_or_none()
 
         course_fields = {
@@ -83,6 +113,7 @@ def import_courses_from_file(filepath: str, db_session) -> int:
             ))
         count += 1
 
+    import_courses_from_file.last_skipped_count = skipped
     db_session.commit()
     return count
 
@@ -135,7 +166,8 @@ def main():
 
             print(f"Importing {filename}...")
             count = import_courses_from_file(filepath, db)
-            print(f"  Imported {count} courses")
+            skipped = getattr(import_courses_from_file, 'last_skipped_count', 0)
+            print(f"  Imported {count} courses ({skipped} skipped)")
             total += count
 
         print(f"\nTotal: {total} courses imported")
