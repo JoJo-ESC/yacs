@@ -2,18 +2,15 @@ import React from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import CatalogLoader from "@/features/schedule/components/CatalogLoader";
 import { cn } from "@/lib/utils";
 
 export default function App() {
   const location = useLocation();
   const isSubjectBrowserRoute = location.pathname === "/" || location.pathname === "/courses";
   const isSubjectDetailRoute = location.pathname.startsWith("/courses/");
-  const shouldLoadCatalog = isSubjectBrowserRoute;
 
   return (
     <div className="min-h-screen flex flex-col">
-      {shouldLoadCatalog ? <CatalogLoader /> : null}
       <Navbar />
       <div
         className={cn(

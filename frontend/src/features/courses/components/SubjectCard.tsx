@@ -1,7 +1,6 @@
 import * as React from "react";
 import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
-import { prefetchCoursesByDepartment } from "@/api";
 import { getSubjectBadgeClasses } from "@/lib/courses/subjectColors";
 import { cn } from "@/lib/utils";
 import type { Subject, SubjectCategory } from "@/types/courses";
@@ -34,16 +33,11 @@ function highlightText(value: string, query?: string) {
 }
 
 export function SubjectCard({ subject, category, courseCount, query }: SubjectCardProps) {
-  const prefetchSubject = React.useCallback(() => {
-    void prefetchCoursesByDepartment(subject.code);
-  }, [subject.code]);
   const subjectBadgeClasses = getSubjectBadgeClasses(subject);
 
   return (
     <Link
       to={`/courses/${subject.code}`}
-      onMouseEnter={prefetchSubject}
-      onFocus={prefetchSubject}
       className={cn(
         "group relative overflow-hidden rounded-[28px] border border-slate-200/80 bg-white p-5 shadow-[0_18px_45px_-36px_rgba(15,23,42,0.12)] transition-all",
         "hover:-translate-y-1 hover:border-slate-300 hover:shadow-[0_22px_50px_-34px_rgba(15,23,42,0.16)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-200",
