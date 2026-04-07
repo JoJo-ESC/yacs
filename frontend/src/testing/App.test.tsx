@@ -30,6 +30,7 @@ test("renders app shell", async () => {
   );
 
   expect(await screen.findByRole("link", { name: /^yacs$/i })).toBeInTheDocument();
+  expect(screen.getByRole("combobox", { name: /semester/i })).toBeInTheDocument();
 });
 
 test("shows the not found page for invalid urls", async () => {
