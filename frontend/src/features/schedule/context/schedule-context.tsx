@@ -11,6 +11,19 @@ import type { Course } from "../types/schedule";
 import { fetchText } from "@/api";
 import { parseCoursesFromCsvText } from "../utils/parseSchedule";
 
+function filterCoursesBySemester(courses: Course[], selectedSemester: string) {
+  if (!selectedSemester) return courses;
+
+  return courses
+    .map((course) => {
+      const meetings = course.meetings.filter(
+        (meeting) => meeting.semester?.trim() === selectedSemester
+      );
+      return { ...course, meetings };
+    })
+    .filter((course) => course.meetings.length > 0);
+}
+
 type SelectionCtx = {
   courses: Course[];
   selectedSemester: string;
@@ -33,13 +46,13 @@ type CatalogCtx = {
 const CatalogContext = createContext<CatalogCtx | undefined>(undefined);
 
 export function ScheduleProvider({ children }: { children: React.ReactNode }) {
-  const [courses, setCourses] = useState<Course[]>([]);
+  const [allCourses, setCourses] = useState<Course[]>([]);
   const [selectedSemester, setSelectedSemester] = useState("");
   const courseIdSet = useMemo(() => {
     const s = new Set<string>();
-    for (let i = 0; i < courses.length; i++) s.add(courses[i].id);
+    for (let i = 0; i < allCourses.length; i++) s.add(allCourses[i].id);
     return s;
-  }, [courses]);
+  }, [allCourses]);
 
   const addCourse = useCallback((c: Course) => {
     setCourses((prev) => {
@@ -83,6 +96,16 @@ export function ScheduleProvider({ children }: { children: React.ReactNode }) {
     ));
   }, [availableSemesters]);
 
+  const courses = useMemo(
+    () => filterCoursesBySemester(allCourses, selectedSemester),
+    [allCourses, selectedSemester]
+  );
+
+  const filteredCatalog = useMemo(
+    () => filterCoursesBySemester(catalog, selectedSemester),
+    [catalog, selectedSemester]
+  );
+
   const selectionValue = useMemo<SelectionCtx>(
     () => ({ courses, selectedSemester, addCourse, removeCourse, clear, hasCourse, setSelectedSemester }),
     [courses, selectedSemester, addCourse, removeCourse, clear, hasCourse]
@@ -103,8 +126,8 @@ export function ScheduleProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const catalogValue = useMemo<CatalogCtx>(
-    () => ({ catalog, availableSemesters, catalogLoading, loadCsv }),
-    [catalog, availableSemesters, catalogLoading, loadCsv]
+    () => ({ catalog: filteredCatalog, availableSemesters, catalogLoading, loadCsv }),
+    [filteredCatalog, availableSemesters, catalogLoading, loadCsv]
   );
 
   return (

@@ -37,6 +37,16 @@ function SelectedSemesterProbe() {
   return <div data-testid="selected-semester">{selectedSemester || "none"}</div>;
 }
 
+function ScheduleDataProbe() {
+  const { catalog, courses } = useSchedule();
+  return (
+    <>
+      <div data-testid="catalog-courses">{catalog.map((course) => course.id).join(",") || "none"}</div>
+      <div data-testid="selected-courses">{courses.map((course) => course.id).join(",") || "none"}</div>
+    </>
+  );
+}
+
 test("renders app shell", async () => {
   render(
     <AppProviders>
@@ -75,6 +85,56 @@ test("stores the selected semester in shared app state", async () => {
 
   expect(select).toHaveValue("Spring 2026");
   expect(screen.getByTestId("selected-semester")).toHaveTextContent("Spring 2026");
+});
+
+test("filters catalog and selected courses by the selected semester", async () => {
+  global.fetch = jest.fn(() =>
+    Promise.resolve({
+      ok: true,
+      text: () => Promise.resolve(semesterCsv),
+    })
+  ) as unknown as typeof fetch;
+
+  function SemesterFilterHarness() {
+    const { catalog, addCourse } = useSchedule();
+    const addedRef = React.useRef(false);
+
+    React.useEffect(() => {
+      const fallCourse = catalog.find((course) => course.id === "CSCI-1200");
+      if (!addedRef.current && fallCourse) {
+        addedRef.current = true;
+        addCourse(fallCourse);
+      }
+    }, [catalog, addCourse]);
+
+    return (
+      <>
+        <CatalogLoader path="/semesters.csv" />
+        <SemesterSelect />
+        <ScheduleDataProbe />
+      </>
+    );
+  }
+
+  render(
+    <AppProviders>
+      <SemesterFilterHarness />
+    </AppProviders>
+  );
+
+  const select = await screen.findByRole("combobox", { name: /semester/i });
+
+  await waitFor(() => {
+    expect(screen.getByTestId("catalog-courses")).toHaveTextContent("CSCI-1200");
+    expect(screen.getByTestId("selected-courses")).toHaveTextContent("CSCI-1200");
+  });
+
+  await userEvent.selectOptions(select, "Spring 2026");
+
+  await waitFor(() => {
+    expect(screen.getByTestId("catalog-courses")).toHaveTextContent("CSCI-1100");
+    expect(screen.getByTestId("selected-courses")).toHaveTextContent("none");
+  });
 });
 
 test("shows the not found page for invalid urls", async () => {
