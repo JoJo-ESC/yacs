@@ -1,10 +1,13 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { AppProviders } from "@/providers/AppProviders";
 import { AppRoutes } from "@/routes/AppRoutes";
+import CatalogLoader from "@/features/schedule/components/CatalogLoader";
+import SemesterSelect from "@/features/schedule/components/SemesterSelect";
+import { useSchedule } from "@/features/schedule/context/schedule-context";
 
 const mockFetch = () =>
   Promise.resolve({
@@ -13,14 +16,26 @@ const mockFetch = () =>
   });
 
 const originalFetch = global.fetch;
+const semesterCsv = `short_name,full_name,course_name,course_type,course_credit_hours,course_days_of_the_week,course_start_time,course_end_time,course_instructor,course_location,course_max_enroll,course_enrolled,course_start_date,course_end_date,semester,course_level,course_section,description,raw_precoreqs,offer_frequency,prerequisites,corequisites,school
+CSCI-1100,Computer Science 1,Computer Science 1,LEC,4,MWF,09:00AM,09:50AM,Prof Example,DCC 308,100,80,2026-01-12,2026-05-01,Spring 2026,1000,01,Intro course,,Fall/Spring,[],[],Computer Science
+CSCI-1200,Data Structures,Data Structures,LEC,4,TR,10:00AM,11:50AM,Prof Example,DCC 318,100,90,2026-08-31,2026-12-18,Fall 2026,1000,01,DS course,,Fall/Spring,[],[],Computer Science`;
 
 beforeAll(() => {
+  global.fetch = mockFetch as unknown as typeof fetch;
+});
+
+afterEach(() => {
   global.fetch = mockFetch as unknown as typeof fetch;
 });
 
 afterAll(() => {
   global.fetch = originalFetch;
 });
+
+function SelectedSemesterProbe() {
+  const { selectedSemester } = useSchedule();
+  return <div data-testid="selected-semester">{selectedSemester || "none"}</div>;
+}
 
 test("renders app shell", async () => {
   render(
@@ -31,6 +46,35 @@ test("renders app shell", async () => {
 
   expect(await screen.findByRole("link", { name: /^yacs$/i })).toBeInTheDocument();
   expect(screen.getByRole("combobox", { name: /semester/i })).toBeInTheDocument();
+});
+
+test("stores the selected semester in shared app state", async () => {
+  global.fetch = jest.fn(() =>
+    Promise.resolve({
+      ok: true,
+      text: () => Promise.resolve(semesterCsv),
+    })
+  ) as unknown as typeof fetch;
+
+  render(
+    <AppProviders>
+      <CatalogLoader path="/semesters.csv" />
+      <SemesterSelect />
+      <SelectedSemesterProbe />
+    </AppProviders>
+  );
+
+  const select = await screen.findByRole("combobox", { name: /semester/i });
+
+  await waitFor(() => {
+    expect(select).toHaveValue("Fall 2026");
+    expect(screen.getByTestId("selected-semester")).toHaveTextContent("Fall 2026");
+  });
+
+  await userEvent.selectOptions(select, "Spring 2026");
+
+  expect(select).toHaveValue("Spring 2026");
+  expect(screen.getByTestId("selected-semester")).toHaveTextContent("Spring 2026");
 });
 
 test("shows the not found page for invalid urls", async () => {
