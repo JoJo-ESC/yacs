@@ -26,6 +26,7 @@ beforeAll(() => {
 
 afterEach(() => {
   global.fetch = mockFetch as unknown as typeof fetch;
+  localStorage.clear();
 });
 
 afterAll(() => {
@@ -135,6 +136,35 @@ test("filters catalog and selected courses by the selected semester", async () =
     expect(screen.getByTestId("catalog-courses")).toHaveTextContent("CSCI-1100");
     expect(screen.getByTestId("selected-courses")).toHaveTextContent("none");
   });
+});
+
+test("remembers the last selected semester", async () => {
+  localStorage.setItem("yacs:selected-semester", "Spring 2026");
+  global.fetch = jest.fn(() =>
+    Promise.resolve({
+      ok: true,
+      text: () => Promise.resolve(semesterCsv),
+    })
+  ) as unknown as typeof fetch;
+
+  render(
+    <AppProviders>
+      <CatalogLoader path="/semesters.csv" />
+      <SemesterSelect />
+      <SelectedSemesterProbe />
+    </AppProviders>
+  );
+
+  const select = await screen.findByRole("combobox", { name: /semester/i });
+
+  await waitFor(() => {
+    expect(select).toHaveValue("Spring 2026");
+    expect(screen.getByTestId("selected-semester")).toHaveTextContent("Spring 2026");
+  });
+
+  await userEvent.selectOptions(select, "Fall 2026");
+
+  expect(localStorage.getItem("yacs:selected-semester")).toBe("Fall 2026");
 });
 
 test("shows the not found page for invalid urls", async () => {

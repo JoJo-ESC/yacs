@@ -11,6 +11,8 @@ import type { Course } from "../types/schedule";
 import { fetchText } from "@/api";
 import { parseCoursesFromCsvText } from "../utils/parseSchedule";
 
+const SELECTED_SEMESTER_STORAGE_KEY = "yacs:selected-semester";
+
 function filterCoursesBySemester(courses: Course[], selectedSemester: string) {
   if (!selectedSemester) return courses;
 
@@ -47,7 +49,13 @@ const CatalogContext = createContext<CatalogCtx | undefined>(undefined);
 
 export function ScheduleProvider({ children }: { children: React.ReactNode }) {
   const [allCourses, setCourses] = useState<Course[]>([]);
-  const [selectedSemester, setSelectedSemester] = useState("");
+  const [selectedSemester, setSelectedSemester] = useState(() => {
+    try {
+      return localStorage.getItem(SELECTED_SEMESTER_STORAGE_KEY) ?? "";
+    } catch {
+      return "";
+    }
+  });
   const courseIdSet = useMemo(() => {
     const s = new Set<string>();
     for (let i = 0; i < allCourses.length; i++) s.add(allCourses[i].id);
@@ -87,7 +95,6 @@ export function ScheduleProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (availableSemesters.length === 0) {
-      setSelectedSemester("");
       return;
     }
 
@@ -95,6 +102,18 @@ export function ScheduleProvider({ children }: { children: React.ReactNode }) {
       current && availableSemesters.includes(current) ? current : availableSemesters[0]
     ));
   }, [availableSemesters]);
+
+  useEffect(() => {
+    try {
+      if (selectedSemester) {
+        localStorage.setItem(SELECTED_SEMESTER_STORAGE_KEY, selectedSemester);
+      } else {
+        localStorage.removeItem(SELECTED_SEMESTER_STORAGE_KEY);
+      }
+    } catch {
+      // Ignore storage failures and keep state in memory.
+    }
+  }, [selectedSemester]);
 
   const courses = useMemo(
     () => filterCoursesBySemester(allCourses, selectedSemester),
