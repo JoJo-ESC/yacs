@@ -1,20 +1,32 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Edit } from "lucide-react";
-import { useState } from "react";
+
+import { fetchJson } from "@/api/client";
+
+type ProfileResponse = {
+  id: number;
+  name: string;
+  email: string;
+  phone: string;
+  major: string;
+  degree: string;
+  profile_image_url: string | null;
+};
 
 export default function ProfilePage() {
-  const [user, setUser] = useState ({
-    name: "Maggie Trebilcock",
-    email: "trebim2@rpi.edu",
+  const [user, setUser] = useState({
+    name: "",
+    email: "",
     cohort: "2023",
-    majors: ["Computer Science"],
+    majors: [""],
     minors: "N/A",
     pathway: "Philosophy & Logic",
     semesters: ["SPRING 2025"],
     degreePlans: ["Plan A", "Plan B"],
-    profileImage: null as string | null
-
+    profileImage: null as string | null,
   });
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   {/*edit profile boolean*/}
   const [isEditing, setIsEditing] = useState(false);
@@ -24,6 +36,40 @@ export default function ProfilePage() {
     name: user.name,
     email: user.email
   });
+
+  useEffect(() => {
+    async function loadProfile() {
+      try {
+        setError(null);
+        const profile = await fetchJson<ProfileResponse>("/api/profile", {
+          credentials: "include",
+        });
+
+        if ("error" in profile) {
+          setError(profile.error);
+          return;
+        }
+
+        setUser((current) => ({
+          ...current,
+          name: profile.name,
+          email: profile.email,
+          majors: [profile.major],
+          profileImage: profile.profile_image_url,
+        }));
+        setFormData({
+          name: profile.name,
+          email: profile.email,
+        });
+      } catch {
+        setError("Could not load profile.");
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    loadProfile();
+  }, []);
   
 
   const getInitials = (name: string) =>
@@ -38,14 +84,41 @@ export default function ProfilePage() {
   };
 
   {/*save and cancel functions*/}
-  const handleSave = () => {
-  setUser({
-    ...user,
-    name: formData.name,
-    email: formData.email
-  });
-  setIsEditing(false);
-};
+  const handleSave = async () => {
+    try {
+      setError(null);
+      const updatedProfile = await fetchJson<ProfileResponse>("/api/profile", {
+        method: "PATCH",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: formData.name,
+        }),
+      });
+
+      if ("error" in updatedProfile) {
+        setError(updatedProfile.error);
+        return;
+      }
+
+      setUser({
+        ...user,
+        name: updatedProfile.name,
+        email: updatedProfile.email,
+        majors: [updatedProfile.major],
+        profileImage: updatedProfile.profile_image_url,
+      });
+      setFormData({
+        name: updatedProfile.name,
+        email: updatedProfile.email,
+      });
+      setIsEditing(false);
+    } catch {
+      setError("Could not save profile.");
+    }
+  };
 
 const handleCancel = () => {
   setIsEditing(false);
@@ -75,6 +148,17 @@ const handleResetImage = () => {
   return (
     <div className="flex-grow p-6 bg-background text-foreground min-h-screen">
       <div className="max-w-7xl mx-auto">
+        {error && (
+          <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {error}
+          </div>
+        )}
+
+        {isLoading ? (
+          <div className="rounded-xl border bg-white p-6 shadow-sm dark:bg-slate-900">
+            Loading profile...
+          </div>
+        ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
           {/* LEFT COLUMN */}
@@ -212,6 +296,7 @@ const handleResetImage = () => {
             </div>
           </div>
         </div>
+        )}
       </div>
 
       {/** Edit Profile UI */}
