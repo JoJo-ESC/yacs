@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 
-from routers import user_router, auth_router, corequisite_router, course_router
+from routers import user_router, auth_router, corequisite_router, course_router, schedule_router
 from models import init_db
 from utils import load_secrets
 
@@ -37,6 +37,7 @@ app.include_router(user_router.router)
 app.include_router(auth_router.router)
 app.include_router(corequisite_router.router)
 app.include_router(course_router.router)
+app.include_router(schedule_router.router)
 
 
 # --- Root Endpoint ---
