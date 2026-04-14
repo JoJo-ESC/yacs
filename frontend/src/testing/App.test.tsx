@@ -18,7 +18,8 @@ const mockFetch = () =>
 const originalFetch = global.fetch;
 const semesterCsv = `short_name,full_name,course_name,course_type,course_credit_hours,course_days_of_the_week,course_start_time,course_end_time,course_instructor,course_location,course_max_enroll,course_enrolled,course_start_date,course_end_date,semester,course_level,course_section,description,raw_precoreqs,offer_frequency,prerequisites,corequisites,school
 CSCI-1100,Computer Science 1,Computer Science 1,LEC,4,MWF,09:00AM,09:50AM,Prof Example,DCC 308,100,80,2026-01-12,2026-05-01,Spring 2026,1000,01,Intro course,,Fall/Spring,[],[],Computer Science
-CSCI-1200,Data Structures,Data Structures,LEC,4,TR,10:00AM,11:50AM,Prof Example,DCC 318,100,90,2026-08-31,2026-12-18,Fall 2026,1000,01,DS course,,Fall/Spring,[],[],Computer Science`;
+CSCI-1200,Data Structures,Data Structures,LEC,4,TR,10:00AM,11:50AM,Prof Example,DCC 318,100,90,2026-08-31,2026-12-18,Fall 2026,1000,01,DS course,,Fall/Spring,[],[],Computer Science
+MATH-1010,Calculus I,Calculus I,LEC,4,MWF,12:00PM,12:50PM,Dr Newton,Carnegie 201,120,110,2026-08-31,2026-12-18,Fall 2026,1000,01,Calc course,,Fall/Spring,[],[],Mathematics`;
 
 beforeAll(() => {
   global.fetch = mockFetch as unknown as typeof fetch;
@@ -219,6 +220,30 @@ test("renders the professors page shell", async () => {
 
   expect(await screen.findByRole("heading", { name: /professor directory/i })).toBeInTheDocument();
   expect(screen.getByText(/browse instructors in the current catalog view/i)).toBeInTheDocument();
+});
+
+test("filters professors by name from the search box", async () => {
+  global.fetch = jest.fn(() =>
+    Promise.resolve({
+      ok: true,
+      text: () => Promise.resolve(semesterCsv),
+    })
+  ) as unknown as typeof fetch;
+
+  render(
+    <AppProviders>
+      <AppRoutes initialEntries={["/professors"]} />
+    </AppProviders>
+  );
+
+  const search = await screen.findByRole("searchbox", { name: /search professors/i });
+  expect(await screen.findByText("Prof Example")).toBeInTheDocument();
+  expect(screen.getByText("Dr Newton")).toBeInTheDocument();
+
+  await userEvent.type(search, "newton");
+
+  expect(screen.getByText("Dr Newton")).toBeInTheDocument();
+  expect(screen.queryByText("Prof Example")).not.toBeInTheDocument();
 });
 
 test("renders professor details for a selected instructor", async () => {
