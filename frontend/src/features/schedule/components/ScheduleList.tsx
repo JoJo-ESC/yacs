@@ -91,18 +91,11 @@ function SectionRow({
       disabled={disabled}
       variant="ghost" 
       className={cn(
-        "relative flex h-auto w-full flex-col items-start gap-2 rounded-md border p-3 text-left transition-all shadow-sm",
-        
-        // DEFAULT STATE: Pop off the page using bg-background
-        "bg-background border-transparent hover:border-border hover:shadow-md",
-
-        // SELECTED STATE: Use a soft blue to match your footer vibe
-        isSelected && "border-blue-400/50 bg-blue-50/80 ring-1 ring-blue-400/50 dark:bg-blue-900/20 dark:border-blue-700",
-
-        // CONFLICT STATE
-        hasConflict && !isSelected && "opacity-70 bg-red-50/50 border-red-100 dark:bg-red-900/10 dark:border-red-900/30",
-        hasConflict && isSelected && "bg-red-50 border-red-500 ring-red-500 dark:bg-red-900/30",
-        
+        "relative flex h-auto w-full flex-col items-start gap-2 rounded-[20px] border p-3 text-left transition-all",
+        "border-slate-200 bg-white shadow-[0_14px_30px_-24px_rgba(15,23,42,0.12)] hover:border-[#d8c3aa] hover:bg-[#fbf7f1] dark:border-[#3a3a3a] dark:bg-[#1f1f1f] dark:hover:border-[#6d4f36] dark:hover:bg-[#2a221d]",
+        isSelected && "border-[#dfc9ae] bg-[#f8f2ea] ring-1 ring-[#dfc9ae] dark:border-[#6d4f36] dark:bg-[#3a281d]",
+        hasConflict && !isSelected && "border-rose-200 bg-rose-50/80 dark:border-rose-900/50 dark:bg-rose-950/20",
+        hasConflict && isSelected && "border-rose-300 bg-rose-50 ring-rose-300 dark:border-rose-900 dark:bg-rose-950/30",
         disabled && "cursor-not-allowed opacity-50"
       )}
     >
@@ -111,13 +104,13 @@ function SectionRow({
            {/* Checkbox circle visual */}
           <div className={cn(
             "h-4 w-4 rounded-full border flex items-center justify-center transition-colors",
-            isSelected ? "border-blue-500 bg-blue-500 text-white" : "border-muted-foreground/30 bg-transparent"
+            isSelected ? "border-[#9b6b3f] bg-[#9b6b3f] text-white dark:border-[#f4e6d6] dark:bg-[#f4e6d6] dark:text-[#3a281d]" : "border-muted-foreground/30 bg-transparent"
           )}>
             {isSelected && <CheckCircle2 className="h-3 w-3" />}
           </div>
           <span className={cn(
             "font-semibold text-sm",
-            isSelected ? "text-blue-700 dark:text-blue-300" : "text-foreground",
+            isSelected ? "text-[#7a5230] dark:text-[#f4e6d6]" : "text-foreground",
             hasConflict && "text-red-600 dark:text-red-400"
           )}>
             {meeting.type} {meeting.section}
@@ -207,46 +200,44 @@ function CourseCard({
 
   return (
     <div className={cn(
-      "overflow-hidden rounded-xl border border-border transition-all",
-      // Use User's 'surface' variable for the header background
-      "bg-surface" 
+      "overflow-hidden rounded-[28px] border border-slate-200/80 bg-white/95 shadow-[0_20px_60px_-42px_rgba(15,23,42,0.14)] transition-all dark:border-[#3a3a3a] dark:bg-[#171717]"
     )}>
-      {/* Card Header */}
-      <div 
-        className="flex cursor-pointer items-center justify-between p-3 md:p-4 hover:brightness-95 transition-all"
+      <div
+        className="flex cursor-pointer items-start justify-between gap-4 p-5 transition-colors hover:bg-slate-50/80 dark:hover:bg-white/[0.03]"
         onClick={onToggleExpand}
       >
-        <div className="flex min-w-0 flex-col gap-0.5">
-          <div className="flex items-center gap-2">
-            <h3 className="font-bold text-foreground truncate text-base">
-              {course.id} <span className="opacity-40 font-normal">|</span> {course.title}
-            </h3>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em] text-slate-700 dark:bg-[#303030] dark:text-neutral-200">
+              {course.id}
+            </span>
+            <span className="rounded-full border border-[color:var(--app-border)] bg-[color:var(--app-surface-muted)] px-3 py-1 text-xs font-semibold app-text-muted">
+              {Object.keys(allByType).length} section type{Object.keys(allByType).length === 1 ? "" : "s"}
+            </span>
+            {course.meetings.length > 0 && (
+              <span className="rounded-full border border-[#dfc9ae] bg-[#f8f2ea] px-3 py-1 text-xs font-semibold text-[#7a5230] dark:border-[#6d4f36] dark:bg-[#3a281d] dark:text-[#f4e6d6]">
+                {selectedLabels.length > 0 ? `Selected: ${selectedLabels.join(", ")}` : "Sections selected"}
+              </span>
+            )}
             {isStrictConflict && (
-              <span className="inline-flex items-center rounded-md bg-red-100/80 px-2 py-0.5 text-[10px] font-bold text-red-800 dark:bg-red-900/50 dark:text-red-300 border border-red-200 dark:border-red-900">
-                CONFLICT
+              <span className="inline-flex items-center rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200">
+                Conflict
               </span>
             )}
           </div>
-          <div className="flex items-center gap-2 text-xs text-foreground/60">
-             <span>
-               {Object.keys(allByType).length} Section Types
-             </span>
-             {course.meetings.length > 0 && (
-                 <>
-                 <span>•</span>
-                 <span className="text-foreground/80 font-medium">
-                    Selected: {selectedLabels.join(", ")}
-                 </span>
-                 </>
-             )}
+          <h3 className="mt-3 font-display text-2xl font-semibold tracking-tight text-slate-950 dark:text-white">
+            {course.title}
+          </h3>
+          <div className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+            {expanded ? "Review and swap section combinations below." : "Open to review or change sections."}
           </div>
         </div>
 
-        <div className="flex items-center gap-1 pl-4">
+        <div className="flex items-center gap-2 self-start pl-2">
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 text-foreground/50 hover:text-red-600 hover:bg-red-100/50"
+            className="h-11 w-11 rounded-full border border-transparent text-slate-500 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700 dark:text-slate-400 dark:hover:border-rose-900 dark:hover:bg-rose-950/30 dark:hover:text-rose-200"
             onClick={(e) => {
               e.stopPropagation();
               onRemove();
@@ -254,19 +245,18 @@ function CourseCard({
           >
             <Trash2 className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="icon" className="h-8 w-8 text-foreground/50">
-             {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-          </Button>
+          <span className="flex h-11 w-11 items-center justify-center rounded-full border border-[#dfc9ae] bg-[#f8f2ea] text-[#7a5230] dark:border-[#6d4f36] dark:bg-[#3a281d] dark:text-[#f4e6d6]">
+            {expanded ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+          </span>
         </div>
       </div>
 
-      {/* Expanded Content - Uses 'bg-background' to create contrast against 'bg-surface' */}
       {expanded && (
-        <div className="border-t border-border/50 bg-background/50 p-4 shadow-inner">
+        <div className="border-t border-slate-200/70 bg-slate-50/60 px-5 py-4 dark:border-[#343434] dark:bg-[#1a1a1a]">
           {Object.keys(allByType).length === 0 ? (
-            <p className="text-sm text-muted-foreground italic">No section data available.</p>
+            <p className="text-sm italic text-slate-500 dark:text-slate-400">No section data available.</p>
           ) : (
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
               {Object.entries(allByType).map(([type, options]) => {
                 const selectedKey = getSelectedOptionKey(course.meetings, type);
 
@@ -274,12 +264,12 @@ function CourseCard({
                 const allCheckMeetings = [...sectionsOfOtherTypes, ...otherMeetings];
 
                 return (
-                  <div key={`${course.id}-${type}`} className="flex flex-col gap-3 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground/80">
-                        {type} Sections
+                  <div key={`${course.id}-${type}`} className="flex min-w-0 flex-col gap-3">
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+                        {type} sections
                       </span>
-                      <div className="h-px flex-1 bg-border/50"></div>
+                      <div className="h-px flex-1 bg-slate-200 dark:bg-[#343434]" />
                     </div>
                     
                     <div className="flex flex-col gap-2">
@@ -354,11 +344,11 @@ export default function ScheduleList(): JSX.Element {
   };
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6">
+    <div className="mx-auto max-w-6xl space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold tracking-tight text-foreground">Your Schedule</h2>
-          <p className="text-sm text-muted-foreground">
+          <h2 className="font-display text-3xl font-semibold tracking-tight text-slate-950 dark:text-white">Your schedule</h2>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
             {displayCourses.length} {displayCourses.length === 1 ? 'course' : 'courses'} selected
           </p>
         </div>
@@ -367,7 +357,7 @@ export default function ScheduleList(): JSX.Element {
             variant="outline" 
             size="sm" 
             onClick={clear}
-            className="border-border text-muted-foreground hover:bg-surface hover:text-foreground"
+            className="rounded-full border-[#dfc9ae] bg-[#f8f2ea] px-4 text-[#7a5230] shadow-none hover:bg-[#efe3d2] dark:border-[#6d4f36] dark:bg-[#3a281d] dark:text-[#f4e6d6] dark:hover:bg-[#4a3223]"
           >
             Clear all
           </Button>
@@ -375,8 +365,13 @@ export default function ScheduleList(): JSX.Element {
       </div>
 
       {displayCourses.length === 0 ? (
-        <div className="flex h-32 flex-col items-center justify-center rounded-xl border border-dashed border-border bg-surface/30 text-center">
-          <p className="text-sm text-muted-foreground">No classes selected yet.</p>
+        <div className="rounded-[28px] border border-dashed border-slate-300 bg-white/80 px-6 py-16 text-center dark:border-slate-700 dark:bg-slate-950/70">
+          <p className="font-display text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
+            No classes selected yet.
+          </p>
+          <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-500 dark:text-slate-400">
+            Use the navbar search to add classes, then review and swap section combinations here.
+          </p>
         </div>
       ) : (
         <div className="flex flex-col gap-4">
