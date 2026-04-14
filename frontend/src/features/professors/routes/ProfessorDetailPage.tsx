@@ -3,6 +3,11 @@ import { Link, useParams } from "react-router-dom";
 import { useSchedule } from "@/features/schedule/context/schedule-context";
 import { buildProfessorList } from "@/features/professors/utils/professors";
 
+function buildRateMyProfessorsSearchUrl(name: string) {
+  const params = new URLSearchParams({ query: name });
+  return `https://www.ratemyprofessors.com/search/professors?${params.toString()}`;
+}
+
 export default function ProfessorDetailPage() {
   const { professorSlug } = useParams();
   const { catalog, catalogLoading, selectedSemester } = useSchedule();
@@ -60,6 +65,17 @@ export default function ProfessorDetailPage() {
                       : "Department details coming soon"}
                   </p>
                 </article>
+              </div>
+
+              <div className="mt-6">
+                <a
+                  href={buildRateMyProfessorsSearchUrl(professor.name)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground transition hover:border-blue-300 hover:text-blue-500"
+                >
+                  View on Rate My Professors
+                </a>
               </div>
             </section>
 

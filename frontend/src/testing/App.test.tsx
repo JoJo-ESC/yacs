@@ -267,6 +267,10 @@ test("renders professor details for a selected instructor", async () => {
   expect(screen.getAllByText(/computer science/i).length).toBeGreaterThan(0);
   expect(screen.getByText("CSCI-1200")).toBeInTheDocument();
   expect(screen.getByText("Data Structures")).toBeInTheDocument();
+  expect(screen.getByRole("link", { name: /view on rate my professors/i })).toHaveAttribute(
+    "href",
+    "https://www.ratemyprofessors.com/search/professors?query=Prof+Example"
+  );
 });
 
 test("shows a loading spinner while courses load", async () => {
