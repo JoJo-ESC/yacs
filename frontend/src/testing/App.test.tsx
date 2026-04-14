@@ -238,7 +238,10 @@ test("renders professor details for a selected instructor", async () => {
   expect(await screen.findByRole("heading", { name: /prof example/i })).toBeInTheDocument();
   expect(screen.getByText(/^name$/i)).toBeInTheDocument();
   expect(screen.getByText(/^department$/i)).toBeInTheDocument();
+  expect(screen.getByRole("heading", { name: /courses taught/i })).toBeInTheDocument();
   expect(screen.getAllByText(/computer science/i).length).toBeGreaterThan(0);
+  expect(screen.getByText("CSCI-1200")).toBeInTheDocument();
+  expect(screen.getByText("Data Structures")).toBeInTheDocument();
 });
 
 test("shows a loading spinner while courses load", async () => {

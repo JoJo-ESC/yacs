@@ -44,23 +44,44 @@ export default function ProfessorDetailPage() {
             <p className="text-sm text-foreground/70">We could not find a professor matching this directory entry.</p>
           </section>
         ) : (
-          <section className="rounded-2xl border border-border bg-background/70 p-6 shadow-sm">
-            <div className="grid gap-6 md:grid-cols-2">
-              <article className="rounded-2xl border border-border bg-surface/35 p-5">
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-foreground/55">Name</p>
-                <p className="mt-3 text-xl font-semibold text-foreground">{professor.name}</p>
-              </article>
+          <div className="space-y-6">
+            <section className="rounded-2xl border border-border bg-background/70 p-6 shadow-sm">
+              <div className="grid gap-6 md:grid-cols-2">
+                <article className="rounded-2xl border border-border bg-surface/35 p-5">
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-foreground/55">Name</p>
+                  <p className="mt-3 text-xl font-semibold text-foreground">{professor.name}</p>
+                </article>
 
-              <article className="rounded-2xl border border-border bg-surface/35 p-5">
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-foreground/55">Department</p>
-                <p className="mt-3 text-xl font-semibold text-foreground">
-                  {professor.departments.length > 0
-                    ? professor.departments.join(", ")
-                    : "Department details coming soon"}
+                <article className="rounded-2xl border border-border bg-surface/35 p-5">
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-foreground/55">Department</p>
+                  <p className="mt-3 text-xl font-semibold text-foreground">
+                    {professor.departments.length > 0
+                      ? professor.departments.join(", ")
+                      : "Department details coming soon"}
+                  </p>
+                </article>
+              </div>
+            </section>
+
+            <section className="rounded-2xl border border-border bg-background/70 p-6 shadow-sm">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-foreground">Courses taught</h2>
+                <p className="text-sm text-foreground/65">
+                  {professor.courseCount} {professor.courseCount === 1 ? "course" : "courses"}
                 </p>
-              </article>
-            </div>
-          </section>
+              </div>
+
+              <div className="mt-5 space-y-3">
+                {professor.courses.map((course) => (
+                  <article key={course.id} className="rounded-2xl border border-border bg-surface/35 p-4">
+                    <p className="text-sm font-semibold text-foreground">{course.id}</p>
+                    <p className="mt-1 text-sm text-foreground/75">{course.title}</p>
+                    <p className="mt-2 text-xs uppercase tracking-[0.18em] text-foreground/55">{course.department}</p>
+                  </article>
+                ))}
+              </div>
+            </section>
+          </div>
         )}
       </div>
     </main>
