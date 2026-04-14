@@ -1,39 +1,7 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import { useSchedule } from "@/features/schedule/context/schedule-context";
-
-type ProfessorSummary = {
-  name: string;
-  departments: string[];
-  courseCount: number;
-};
-
-function buildProfessorList(catalog: ReturnType<typeof useSchedule>["catalog"]): ProfessorSummary[] {
-  const byProfessor = new Map<string, { departments: Set<string>; courseIds: Set<string> }>();
-
-  for (const course of catalog) {
-    for (const meeting of course.meetings) {
-      const instructor = meeting.instructor?.trim();
-      if (!instructor) continue;
-
-      const entry = byProfessor.get(instructor) ?? {
-        departments: new Set<string>(),
-        courseIds: new Set<string>(),
-      };
-
-      if (course.department) entry.departments.add(course.department);
-      entry.courseIds.add(course.id);
-      byProfessor.set(instructor, entry);
-    }
-  }
-
-  return Array.from(byProfessor.entries())
-    .map(([name, value]) => ({
-      name,
-      departments: Array.from(value.departments).sort((left, right) => left.localeCompare(right)),
-      courseCount: value.courseIds.size,
-    }))
-    .sort((left, right) => left.name.localeCompare(right.name));
-}
+import { buildProfessorList } from "@/features/professors/utils/professors";
 
 export default function ProfessorsPage() {
   const { catalog, catalogLoading, selectedSemester } = useSchedule();
@@ -69,9 +37,10 @@ export default function ProfessorsPage() {
 
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {professors.map((professor) => (
-                <article
+                <Link
                   key={professor.name}
-                  className="rounded-2xl border border-border bg-background/70 p-5 shadow-sm"
+                  to={`/professors/${professor.slug}`}
+                  className="rounded-2xl border border-border bg-background/70 p-5 shadow-sm transition hover:border-blue-300 hover:shadow-md"
                 >
                   <p className="text-lg font-semibold text-foreground">{professor.name}</p>
                   <p className="mt-2 text-sm text-foreground/70">
@@ -82,7 +51,7 @@ export default function ProfessorsPage() {
                   <p className="mt-4 text-sm text-foreground/65">
                     {professor.courseCount} {professor.courseCount === 1 ? "course" : "courses"} in this view
                   </p>
-                </article>
+                </Link>
               ))}
             </div>
           </section>

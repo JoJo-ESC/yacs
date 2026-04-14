@@ -8,6 +8,7 @@ import HomePage from "@/features/schedule/routes/HomePage";
 import FourYearPlannerPage from "@/features/planner/routes/FourYearPlannerPage";
 import ProfilePage from "@/features/profile/routes/ProfilePage";
 import ProfessorsPage from "@/features/professors/routes/ProfessorsPage";
+import ProfessorDetailPage from "@/features/professors/routes/ProfessorDetailPage";
 import NotFoundPage from "@/pages/NotFoundPage";
 
 type AppRoutesProps = {
@@ -28,6 +29,7 @@ export function AppRoutes({ initialEntries }: AppRoutesProps) {
             <Route path="login" element={<LoginPage />} />
             <Route path="planner" element={<FourYearPlannerPage />} />
             <Route path="professors" element={<ProfessorsPage />} />
+            <Route path="professors/:professorSlug" element={<ProfessorDetailPage />} />
             <Route path="profile" element={<ProfilePage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Route>

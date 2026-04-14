@@ -221,6 +221,26 @@ test("renders the professors page shell", async () => {
   expect(screen.getByText(/browse instructors in the current catalog view/i)).toBeInTheDocument();
 });
 
+test("renders professor details for a selected instructor", async () => {
+  global.fetch = jest.fn(() =>
+    Promise.resolve({
+      ok: true,
+      text: () => Promise.resolve(semesterCsv),
+    })
+  ) as unknown as typeof fetch;
+
+  render(
+    <AppProviders>
+      <AppRoutes initialEntries={["/professors/prof-example"]} />
+    </AppProviders>
+  );
+
+  expect(await screen.findByRole("heading", { name: /prof example/i })).toBeInTheDocument();
+  expect(screen.getByText(/^name$/i)).toBeInTheDocument();
+  expect(screen.getByText(/^department$/i)).toBeInTheDocument();
+  expect(screen.getAllByText(/computer science/i).length).toBeGreaterThan(0);
+});
+
 test("shows a loading spinner while courses load", async () => {
   const originalFetch = global.fetch;
   global.fetch = jest.fn(() => new Promise(() => undefined)) as unknown as typeof fetch;
