@@ -210,6 +210,17 @@ test("renders the finals page shell", async () => {
   expect(screen.getByText(/uses placeholder finals data on the frontend for now/i)).toBeInTheDocument();
 });
 
+test("renders the professors page shell", async () => {
+  render(
+    <AppProviders>
+      <AppRoutes initialEntries={["/professors"]} />
+    </AppProviders>
+  );
+
+  expect(await screen.findByRole("heading", { name: /professor directory/i })).toBeInTheDocument();
+  expect(screen.getByText(/browse instructors in the current catalog view/i)).toBeInTheDocument();
+});
+
 test("shows a loading spinner while courses load", async () => {
   const originalFetch = global.fetch;
   global.fetch = jest.fn(() => new Promise(() => undefined)) as unknown as typeof fetch;

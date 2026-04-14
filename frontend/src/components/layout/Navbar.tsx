@@ -24,6 +24,8 @@ function Navbar() {
       <Separator orientation="vertical" />
       <NavLink to="/" className={link} end>Schedule</NavLink>
       <Separator orientation ="vertical" />
+      <NavLink to="/professors" className={link}>Professors</NavLink>
+      <Separator orientation ="vertical" />
       <NavLink to="/profile" className={link}>Profile</NavLink>
       
       <ThemeToggle />

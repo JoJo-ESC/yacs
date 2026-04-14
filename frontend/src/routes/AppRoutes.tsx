@@ -7,6 +7,7 @@ import FinalsPage from "@/features/finals/routes/FinalsPage";
 import HomePage from "@/features/schedule/routes/HomePage";
 import FourYearPlannerPage from "@/features/planner/routes/FourYearPlannerPage";
 import ProfilePage from "@/features/profile/routes/ProfilePage";
+import ProfessorsPage from "@/features/professors/routes/ProfessorsPage";
 import NotFoundPage from "@/pages/NotFoundPage";
 
 type AppRoutesProps = {
@@ -26,6 +27,7 @@ export function AppRoutes({ initialEntries }: AppRoutesProps) {
             <Route path="finals" element={<FinalsPage />} />
             <Route path="login" element={<LoginPage />} />
             <Route path="planner" element={<FourYearPlannerPage />} />
+            <Route path="professors" element={<ProfessorsPage />} />
             <Route path="profile" element={<ProfilePage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Route>
