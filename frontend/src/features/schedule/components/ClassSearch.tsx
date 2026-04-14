@@ -27,7 +27,7 @@ export function ClassSearch({
   itemHeight?: number;
   listMaxHeight?: number;
 }) {
-  const { catalog, catalogLoading, addCourse, hasCourse } = useSchedule();
+  const { catalog, catalogStatus, catalogLoading, loadCatalog, addCourse, hasCourse } = useSchedule();
 
   const [open, setOpen] = React.useState(false);
   const [query, setQuery] = React.useState("");
@@ -56,6 +56,12 @@ export function ClassSearch({
     document.addEventListener("mousedown", onDocClick);
     return () => document.removeEventListener("mousedown", onDocClick);
   }, []);
+
+  React.useEffect(() => {
+    if (open && catalogStatus === "idle") {
+      void loadCatalog();
+    }
+  }, [open, catalogStatus, loadCatalog]);
 
   type Indexed = { id: string; title: string; idL: string; titleL: string; raw: Course };
   const indexedCatalog = React.useMemo<Indexed[]>(() => {

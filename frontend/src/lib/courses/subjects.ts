@@ -5,7 +5,7 @@ import { MOCK_SUBJECTS, SUBJECT_CATEGORIES } from "@/features/courses/api/mockSu
 export const ALL_SUBJECTS_CATEGORY = "all" as const;
 export type SubjectFilterCategory = SubjectCategoryId | typeof ALL_SUBJECTS_CATEGORY;
 
-const SEARCH_DELIMITER = /\s+/;
+const SEARCH_DELIMITER = /\s+/g;
 
 function normalize(value: string) {
   return value.trim().toLowerCase();

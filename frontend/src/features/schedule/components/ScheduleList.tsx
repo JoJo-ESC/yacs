@@ -314,7 +314,13 @@ function CourseCard({
 // --- Main Component ---
 
 export default function ScheduleList(): JSX.Element {
-  const { courses, removeCourse, clear, catalog, addCourse } = useSchedule();
+  const { courses, removeCourse, clear, catalog, catalogStatus, loadCatalog, addCourse } = useSchedule();
+
+  React.useEffect(() => {
+    if (courses.length > 0 && catalogStatus === "idle") {
+      void loadCatalog();
+    }
+  }, [courses.length, catalogStatus, loadCatalog]);
 
   const orderRef = React.useRef<Map<string, number>>(new Map());
   React.useEffect(() => {

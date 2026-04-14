@@ -1,130 +1,149 @@
-"""Runtime check for term-scoped course imports using SQLite."""
-
-import importlib.util
-import pathlib
-import sys
-import types
+import json
+from typing import Optional
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-
-def load_module_as(name: str, path: pathlib.Path):
-    spec = importlib.util.spec_from_file_location(name, path)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
+from models.course import Course
+from models.database import Base
+from models.meeting_time import MeetingTime
+from scraper import import_courses
 
 
-def upsert_course(session, Course, MeetingTime, payload):
-    term = payload["term"]
-    crn = payload["crn"]
-    existing = session.query(Course).filter_by(term=term, crn=crn).one_or_none()
-
-    fields = {
+def _course_payload(
+    *,
+    row_id: int,
+    term: Optional[str] = "202509",
+    crn: Optional[str] = "72908",
+    title: str = "DATA STRUCTURES",
+    instructor: str = "Ada Lovelace",
+):
+    return {
+        "id": row_id,
         "term": term,
-        "term_desc": payload["term_desc"],
-        "crn": crn,
-        "subject": payload["subject"],
-        "subject_description": payload["subject_description"],
-        "course_number": payload["course_number"],
-        "course_title": payload["course_title"],
-        "credit_hours": payload["credit_hours"],
-        "max_enrollment": payload["max_enrollment"],
-        "enrollment": payload["enrollment"],
-        "seats_available": payload["seats_available"],
-        "section": payload["section"],
-        "schedule_type": payload["schedule_type"],
-        "instructional_method": payload["instructional_method"],
+        "termDesc": "Fall 2025" if term == "202509" else "Spring 2007",
+        "courseReferenceNumber": crn,
+        "subject": "CSCI",
+        "subjectDescription": "Computer Science",
+        "courseNumber": "1200",
+        "courseTitle": title,
+        "creditHours": 4,
+        "maximumEnrollment": 50,
+        "enrollment": 48,
+        "seatsAvailable": 2,
+        "sequenceNumber": "01",
+        "scheduleTypeDescription": "Lecture",
+        "instructionalMethod": "TR",
+        "faculty": [
+            {
+                "displayName": instructor,
+                "primaryIndicator": True,
+            }
+        ],
+        "meetingsFaculty": [
+            {
+                "meetingTime": {
+                    "monday": True,
+                    "beginTime": "0900",
+                    "endTime": "0950",
+                    "building": "DCC",
+                    "room": "318",
+                },
+                "faculty": [
+                    {
+                        "displayName": instructor,
+                    }
+                ],
+            }
+        ],
     }
 
-    if existing is None:
-        session.add(Course(id=payload["id"], **fields))
-    else:
-        for name, value in fields.items():
-            setattr(existing, name, value)
 
-    session.query(MeetingTime).filter_by(term=term, crn=crn).delete()
-    for instructor_name in payload["instructors"]:
-        session.add(MeetingTime(term=term, crn=crn, instructor_name=instructor_name))
+def _write_courses_file(tmp_path, name: str, payloads: list[dict]) -> str:
+    path = tmp_path / name
+    path.write_text(json.dumps(payloads), encoding="utf-8")
+    return str(path)
 
 
-def main():
-    models_dir = pathlib.Path(__file__).resolve().parents[1] / "models"
+def _count_meetings(session, *, term: str, crn: str) -> int:
+    return session.query(MeetingTime).filter_by(term=term, crn=crn).count()
 
-    models_pkg = types.ModuleType("models")
-    models_pkg.__path__ = [str(models_dir)]
-    sys.modules["models"] = models_pkg
 
-    database_mod = load_module_as("models.database", models_dir / "database.py")
-    sys.modules["models.database"] = database_mod
-    course_mod = load_module_as("models.course", models_dir / "course.py")
-    sys.modules["models.course"] = course_mod
-    meeting_time_mod = load_module_as("models.meeting_time", models_dir / "meeting_time.py")
-    sys.modules["models.meeting_time"] = meeting_time_mod
+def _get_course(session, *, term: str, crn: str) -> Course:
+    return session.query(Course).filter_by(term=term, crn=crn).one()
 
-    Base = database_mod.Base
-    Course = course_mod.Course
-    MeetingTime = meeting_time_mod.MeetingTime
 
+def _bind_importer_models(monkeypatch):
     engine = create_engine("sqlite:///:memory:")
     Session = sessionmaker(bind=engine)
-    Base.metadata.create_all(engine)
+    Base.metadata.create_all(bind=engine, tables=[Course.__table__, MeetingTime.__table__])
 
-    session = Session()
+    monkeypatch.setattr(import_courses, "Course", Course)
+    monkeypatch.setattr(import_courses, "MeetingTime", MeetingTime)
 
-    first_import = {
-        "id": 101,
-        "term": "202509",
-        "term_desc": "Fall 2025",
-        "crn": "72908",
-        "subject": "CSCI",
-        "subject_description": "Computer Science",
-        "course_number": "1200",
-        "course_title": "DATA STRUCTURES",
-        "credit_hours": 4,
-        "max_enrollment": 50,
-        "enrollment": 48,
-        "seats_available": 2,
-        "section": "01",
-        "schedule_type": "Lecture",
-        "instructional_method": "TR",
-        "instructors": ["Ada Lovelace"],
-    }
-    rerun_import = dict(first_import)
-    rerun_import["course_title"] = "DATA STRUCTURES AND ALGORITHMS"
-    rerun_import["instructors"] = ["Grace Hopper"]
+    return Session()
 
-    historical_import = dict(first_import)
-    historical_import["id"] = 202
-    historical_import["term"] = "200701"
-    historical_import["term_desc"] = "Spring 2007"
-    historical_import["course_title"] = "INTRO TO PROGRAMMING"
-    historical_import["instructors"] = ["Edsger Dijkstra"]
 
-    upsert_course(session, Course, MeetingTime, first_import)
-    session.commit()
+def test_reimport_updates_existing_term_scoped_course(tmp_path, monkeypatch):
+    session = _bind_importer_models(monkeypatch)
 
-    upsert_course(session, Course, MeetingTime, rerun_import)
-    session.commit()
+    first_file = _write_courses_file(tmp_path, "first.json", [_course_payload(row_id=101)])
+    rerun_file = _write_courses_file(
+        tmp_path,
+        "rerun.json",
+        [_course_payload(row_id=999, title="DATA STRUCTURES AND ALGORITHMS", instructor="Grace Hopper")],
+    )
 
-    upsert_course(session, Course, MeetingTime, historical_import)
-    session.commit()
+    assert import_courses.import_courses_from_file(first_file, session) == 1
+    assert import_courses.import_courses_from_file(rerun_file, session) == 1
 
-    fall_courses = session.query(Course).filter_by(term="202509", crn="72908").all()
-    spring_courses = session.query(Course).filter_by(term="200701", crn="72908").all()
-    all_meetings = session.query(MeetingTime).filter_by(crn="72908").all()
-
-    assert len(fall_courses) == 1
-    assert len(spring_courses) == 1
-    assert fall_courses[0].course_title == "DATA STRUCTURES AND ALGORITHMS"
-    assert session.query(MeetingTime).filter_by(term="202509", crn="72908").count() == 1
+    course = _get_course(session, term="202509", crn="72908")
+    assert session.query(Course).filter_by(term="202509", crn="72908").count() == 1
+    assert course.course_title == "DATA STRUCTURES AND ALGORITHMS"
+    assert _count_meetings(session, term="202509", crn="72908") == 1
     assert session.query(MeetingTime).filter_by(term="202509", crn="72908").one().instructor_name == "Grace Hopper"
-    assert session.query(MeetingTime).filter_by(term="200701", crn="72908").count() == 1
-    assert len(all_meetings) == 2
-
-    print("SUCCESS: course imports are idempotent and CRNs are term-scoped")
 
 
-if __name__ == "__main__":
-    main()
+def test_same_crn_across_terms_creates_distinct_rows(tmp_path, monkeypatch):
+    session = _bind_importer_models(monkeypatch)
+
+    payloads = [
+        _course_payload(row_id=101, term="202509", crn="72908", title="DATA STRUCTURES", instructor="Ada Lovelace"),
+        _course_payload(row_id=202, term="200701", crn="72908", title="INTRO TO PROGRAMMING", instructor="Edsger Dijkstra"),
+    ]
+    filepath = _write_courses_file(tmp_path, "historical.json", payloads)
+
+    assert import_courses.import_courses_from_file(filepath, session) == 2
+
+    assert session.query(Course).filter_by(term="202509", crn="72908").count() == 1
+    assert session.query(Course).filter_by(term="200701", crn="72908").count() == 1
+    assert _get_course(session, term="202509", crn="72908").course_title == "DATA STRUCTURES"
+    assert _get_course(session, term="200701", crn="72908").course_title == "INTRO TO PROGRAMMING"
+    assert _count_meetings(session, term="202509", crn="72908") == 1
+    assert _count_meetings(session, term="200701", crn="72908") == 1
+
+
+def test_missing_term_or_crn_is_skipped_without_mutating_existing_rows(tmp_path, monkeypatch, capsys):
+    session = _bind_importer_models(monkeypatch)
+
+    seed_file = _write_courses_file(tmp_path, "seed.json", [_course_payload(row_id=101)])
+    malformed_file = _write_courses_file(
+        tmp_path,
+        "malformed.json",
+        [
+            _course_payload(row_id=102, term=None, crn="88888", title="BAD TERM"),
+            _course_payload(row_id=103, term="202509", crn=None, title="BAD CRN"),
+        ],
+    )
+
+    assert import_courses.import_courses_from_file(seed_file, session) == 1
+    assert import_courses.import_courses_from_file(malformed_file, session) == 0
+
+    captured = capsys.readouterr()
+    assert "Skipping malformed course" in captured.err
+    assert "missing required field(s): term" in captured.err
+    assert "missing required field(s): courseReferenceNumber" in captured.err
+    assert getattr(import_courses.import_courses_from_file, "last_skipped_count", None) == 2
+    assert session.query(Course).count() == 1
+    assert _get_course(session, term="202509", crn="72908").course_title == "DATA STRUCTURES"
+    assert _count_meetings(session, term="202509", crn="72908") == 1
