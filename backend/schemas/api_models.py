@@ -61,6 +61,7 @@ class UserProfileResponse(BaseModel):
 
 class UserProfileUpdate(BaseModel):
     name: str | None = None
+    email: str | None = None
     phone: str | None = None
     major: str | None = None
     degree: str | None = None

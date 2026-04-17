@@ -63,6 +63,12 @@ def update_user_profile(user_id: int, update_data: dict):
         if not user:
             return {"error": "User not found"}
 
+        next_email = update_data.get("email")
+        if next_email and next_email != user.email:
+            existing_user = db.query(User).filter(User.email == next_email).first()
+            if existing_user:
+                return {"error": "A user with this email already exists"}
+
         for key, value in update_data.items():
             setattr(user, key, value)
 

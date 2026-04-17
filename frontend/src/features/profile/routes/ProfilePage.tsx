@@ -14,9 +14,12 @@ type ProfileResponse = {
 };
 
 export default function ProfilePage() {
+  const fallbackName = "New Student";
+  const fallbackEmail = "student@example.com";
+
   const [user, setUser] = useState({
-    name: "",
-    email: "",
+    name: fallbackName,
+    email: fallbackEmail,
     cohort: "2023",
     majors: [""],
     minors: "N/A",
@@ -33,8 +36,8 @@ export default function ProfilePage() {
 
   {/*edit profile temporary data*/}
   const [formData, setFormData] = useState({
-    name: user.name,
-    email: user.email
+    name: fallbackName,
+    email: fallbackEmail,
   });
 
   useEffect(() => {
@@ -52,17 +55,17 @@ export default function ProfilePage() {
 
         setUser((current) => ({
           ...current,
-          name: profile.name,
-          email: profile.email,
-          majors: [profile.major],
+          name: profile.name || fallbackName,
+          email: profile.email || fallbackEmail,
+          majors: [profile.major || ""],
           profileImage: profile.profile_image_url,
         }));
         setFormData({
-          name: profile.name,
-          email: profile.email,
+          name: profile.name || fallbackName,
+          email: profile.email || fallbackEmail,
         });
-      } catch {
-        setError("Could not load profile.");
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Could not load profile.");
       } finally {
         setIsLoading(false);
       }
@@ -73,13 +76,13 @@ export default function ProfilePage() {
   
 
   const getInitials = (name: string) =>
-    name.split(" ").map(n => n[0]).join("").toUpperCase();
+    name.split(" ").map((n) => n[0]).join("").toUpperCase();
 
   const handleEditProfile = () => {
     setFormData({
       name: user.name,
-      email: user.email
-  });
+      email: user.email,
+    });
     setIsEditing(true);
   };
 
@@ -95,6 +98,7 @@ export default function ProfilePage() {
         },
         body: JSON.stringify({
           name: formData.name,
+          email: formData.email,
         }),
       });
 
@@ -115,8 +119,8 @@ export default function ProfilePage() {
         email: updatedProfile.email,
       });
       setIsEditing(false);
-    } catch {
-      setError("Could not save profile.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not save profile.");
     }
   };
 
@@ -133,16 +137,16 @@ const handleCancel = () => {
     
     setUser({
       ...user,
-      profileImage: imageURL
+      profileImage: imageURL,
     });
   };
 
-const handleResetImage = () => {
-  setUser({
-    ...user,
-    profileImage: null
-  });
-};
+  const handleResetImage = () => {
+    setUser({
+      ...user,
+      profileImage: null,
+    });
+  };
 
   
   return (
