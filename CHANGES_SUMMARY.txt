@@ -1,0 +1,62 @@
+YACS changes summary
+
+1. Semester selection frontend
+- Added a semester dropdown to the navbar.
+- Stored the selected semester in shared frontend app state.
+- Filtered catalog courses and selected schedule courses by the selected semester.
+- Saved the last selected semester in localStorage so it persists across reloads.
+
+Main frontend files involved
+- frontend/src/features/schedule/components/SemesterSelect.tsx
+- frontend/src/features/schedule/context/schedule-context.tsx
+- frontend/src/components/layout/Navbar.tsx
+- frontend/src/testing/App.test.tsx
+
+2. Semester backend
+- Added a new backend endpoint: /api/semesters
+- Added a semester router and service.
+- The backend can return semesters from config if provided.
+- If config is not provided, it discovers semesters from scraper data files.
+- This was kept isolated so it can be replaced easily if the backend changes later.
+
+Main backend files involved
+- backend/routers/semester_router.py
+- backend/services/semester_service.py
+- backend/main.py
+- backend/routers/__init__.py
+- backend/services/__init__.py
+- backend/configs/config.yaml
+- backend/tests/test_semester_service.py
+
+3. Professor directory frontend
+- Added a professor directory page.
+- Added a navbar link and route for the professor directory.
+- Built professor entries from the current semester-filtered catalog.
+- Added professor detail pages.
+- Added the list of courses taught by each professor on the detail page.
+- Added professor search by name on the directory page.
+- Added a Rate My Professors search link on the detail page.
+
+Main professor files involved
+- frontend/src/features/professors/routes/ProfessorsPage.tsx
+- frontend/src/features/professors/routes/ProfessorDetailPage.tsx
+- frontend/src/features/professors/utils/professors.ts
+- frontend/src/routes/AppRoutes.tsx
+- frontend/src/components/layout/Navbar.tsx
+- frontend/src/testing/App.test.tsx
+
+4. Testing
+- Updated frontend route and feature tests in App.test.tsx for:
+  semester state
+  semester filtering
+  semester persistence
+  professor directory route
+  professor detail page
+  professor search
+  Rate My Professors link
+- Added a lightweight backend semester service test script.
+
+Notes
+- The semester frontend work is done.
+- The professor directory frontend work is done.
+- The semesters backend endpoint is done.
