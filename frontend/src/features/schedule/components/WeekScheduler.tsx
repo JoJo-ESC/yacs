@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useEffect } from "react";
+import React, { useMemo, useRef, useEffect, useState } from "react";
 import { useSchedule } from "@/context/schedule/schedule-context";
 import type { Course } from "@/types/schedule";
 import { AlertTriangle } from "lucide-react";
@@ -150,7 +150,7 @@ function expandCoursesToRenderEvents(courses: Course[]): RenderEvent[] {
         const dayIdx = DAY_MAP[d];
         if (dayIdx === undefined) continue;
         out.push({
-          key: `${c.id}-${m.section}-${d}`,
+          key: `${c.id}-${m.type}-${m.section}-${m.crn}-${m.start}-${m.end}-${d}`,
           id: c.id,
           title: c.title,
           location: m.location,
@@ -221,12 +221,14 @@ function computeConflictingEventKeys(
 export default function WeekScheduler({
   events,
   startHour = 8,
-  endHour = 20,
+  endHour = 22,
   slotMinutes = 60,
   showWeekend = true,
   onEventClick,
 }: WeekSchedulerProps) {
   const { courses } = useSchedule();
+  const [scrollingEventKey, setScrollingEventKey] = useState<string | null>(null);
+  const scrollHideTimeoutRef = useRef<number | null>(null);
   const daysToRender = showWeekend ? 7 : 5;
   const totalMinutes = (endHour - startHour) * 60;
 
@@ -243,8 +245,8 @@ export default function WeekScheduler({
   const layout = useMemo(() => {
     return (eventsExpanded || [])
       .map((e) => {
-        const { topPct, heightPct } = computeEventPosition(e.start, e.end, startHour, endHour);
-        return { ...e, topPct, heightPct, colorClass: getColor(e.id) };
+        const { topPct, heightPct, duration } = computeEventPosition(e.start, e.end, startHour, endHour);
+        return { ...e, topPct, heightPct, duration, colorClass: getColor(e.id) };
       })
       .filter((e) => e.heightPct > 0);
   }, [eventsExpanded, startHour, endHour, getColor]);
@@ -277,10 +279,29 @@ export default function WeekScheduler({
     return Array.from(set);
   }, [conflictKeys, eventsExpanded]);
 
+  useEffect(() => {
+    return () => {
+      if (scrollHideTimeoutRef.current !== null) {
+        window.clearTimeout(scrollHideTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const handleEventScroll = (eventKey: string) => {
+    setScrollingEventKey(eventKey);
+    if (scrollHideTimeoutRef.current !== null) {
+      window.clearTimeout(scrollHideTimeoutRef.current);
+    }
+    scrollHideTimeoutRef.current = window.setTimeout(() => {
+      setScrollingEventKey((current) => (current === eventKey ? null : current));
+      scrollHideTimeoutRef.current = null;
+    }, 700);
+  };
+
   return (
-    <section className="overflow-hidden rounded-[32px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] shadow-[var(--app-shadow)]">
+    <div className="space-y-3">
       {conflicts.length > 0 && (
-        <div className="border-b border-rose-200 bg-rose-50/80 px-5 py-4 dark:border-rose-900/60 dark:bg-rose-950/30">
+        <div className="rounded-[24px] border border-rose-200 bg-rose-50/80 px-5 py-4 dark:border-rose-900/60 dark:bg-rose-950/30">
           <div className="flex items-start gap-3">
             <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-rose-200 bg-white text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/50 dark:text-rose-200">
               <AlertTriangle className="h-5 w-5" />
@@ -302,24 +323,8 @@ export default function WeekScheduler({
         </div>
       )}
 
-      <div className="border-b border-[color:var(--app-border)] px-5 py-4">
-        <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.18em] app-text-muted">
-              Calendar
-            </p>
-            <h3 className="font-display text-2xl font-semibold tracking-tight text-slate-950 dark:text-white">
-              Weekly meeting view
-            </h3>
-          </div>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
-            Scroll horizontally on smaller screens to compare the full week.
-          </p>
-        </div>
-      </div>
-
-      <div className="overflow-x-auto px-3 pb-3 pt-3 sm:px-4">
-        <div className="min-w-[760px] overflow-hidden rounded-[28px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-muted)]">
+      <div className="overflow-x-auto">
+        <div className="min-w-[820px] overflow-hidden rounded-[28px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-muted)]">
           <div className="grid" style={{ gridTemplateColumns: `72px repeat(${daysToRender}, minmax(120px, 1fr))` }}>
             <div
               className="border-b border-[color:var(--app-border)] bg-[color:var(--app-surface)] p-3"
@@ -349,19 +354,28 @@ export default function WeekScheduler({
           >
             <div className="relative bg-[color:var(--app-surface)]">
               <div className="absolute inset-0">
-                {timeMarks.map((m, i) =>
-                  m.minutes % 60 === 0 ? (
+                {timeMarks.map((m, i) => {
+                  if (m.minutes % 60 !== 0) return null;
+
+                  const isLastMark = i === timeMarks.length - 1;
+
+                  return (
                     <div
                       key={i}
                       className="absolute inset-x-0 flex justify-end pr-3 text-[11px] font-medium app-text-muted"
                       style={{ top: `${((m.minutes - startHour * 60) / totalMinutes) * 100}%` }}
                     >
-                      <span className="-translate-y-1/2 select-none rounded-full bg-[color:var(--app-surface)] px-2 py-0.5">
+                      <span
+                        className={cn(
+                          "select-none rounded-full bg-[color:var(--app-surface)] px-2 py-0.5",
+                          isLastMark ? "-translate-y-full" : "-translate-y-1/2",
+                        )}
+                      >
                         {formatTime12h(m.minutes)}
                       </span>
                     </div>
-                  ) : null
-                )}
+                  );
+                })}
               </div>
             </div>
 
@@ -384,6 +398,7 @@ export default function WeekScheduler({
                       const start12 = formatClock12h(e.start);
                       const end12 = formatClock12h(e.end);
                       const titleLabel = `${e.title} • ${start12}–${end12}${e.location ? ` @ ${e.location}` : ""}`;
+                      const isCompact = e.duration <= 75;
 
                       return (
                         <button
@@ -397,15 +412,32 @@ export default function WeekScheduler({
                           style={{ top: `${e.topPct}%`, height: `${e.heightPct}%` }}
                           title={titleLabel}
                         >
-                          <div className="flex h-full flex-col overflow-hidden px-2.5 py-2">
-                            <div className="line-clamp-2 text-[11px] font-semibold leading-tight sm:text-xs">
+                          <div
+                            className={cn(
+                              "scrollbar-pop flex h-full min-h-0 max-h-full flex-col overflow-x-hidden overflow-y-auto overscroll-contain",
+                              scrollingEventKey === e.key && "scrollbar-pop-active",
+                              isCompact ? "justify-start px-2 py-1 pr-3" : "px-2.5 py-2 pr-4",
+                            )}
+                            onScroll={() => handleEventScroll(e.key)}
+                          >
+                            <div
+                              className={cn(
+                                "break-words font-semibold leading-tight [overflow-wrap:anywhere]",
+                                isCompact ? "text-[10px] sm:text-[11px]" : "text-[11px] sm:text-xs",
+                              )}
+                            >
                               {e.title}
                             </div>
-                            <div className="mt-1 text-[10px] font-medium opacity-80">
+                            <div className={cn("font-medium opacity-80", isCompact ? "mt-0.5 text-[9px] sm:text-[10px]" : "mt-1 text-[10px]")}>
                               {start12}–{end12}
                             </div>
                             {e.location ? (
-                              <div className="mt-1 line-clamp-2 text-[10px] opacity-75">
+                              <div
+                                className={cn(
+                                  "break-words opacity-75 [overflow-wrap:anywhere]",
+                                  isCompact ? "mt-0.5 text-[9px] leading-tight" : "mt-1 text-[10px]",
+                                )}
+                              >
                                 {e.location}
                               </div>
                             ) : null}
@@ -419,6 +451,6 @@ export default function WeekScheduler({
           </div>
         </div>
       </div>
-    </section>
+    </div>
   );
 }
