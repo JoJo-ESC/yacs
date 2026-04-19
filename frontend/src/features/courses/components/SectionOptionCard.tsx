@@ -11,7 +11,17 @@ const WEEK_DAYS = [
   { key: "F", label: "F" },
 ] as const;
 
-function MiniWeekPreview({ meetings }: { meetings: Meeting[] }) {
+function getMeetingKey(meeting: Meeting) {
+  return `${meeting.type}::${meeting.section}::${meeting.crn}::${meeting.start}::${meeting.end}`;
+}
+
+function MiniWeekPreview({
+  meetings,
+  conflictingMeetingKeys,
+}: {
+  meetings: Meeting[];
+  conflictingMeetingKeys: Set<string>;
+}) {
   const meetingsByDay = new Map<string, Meeting[]>();
 
   for (const day of WEEK_DAYS) {
@@ -38,7 +48,12 @@ function MiniWeekPreview({ meetings }: { meetings: Meeting[] }) {
                 ? (meetingsByDay.get(day.key) ?? []).map((meeting, index) => (
                     <div
                       key={`${day.key}-${meeting.start}-${meeting.end}-${index}`}
-                      className="rounded-full border border-[#7cc9ff] bg-sky-100/90 px-2 py-1 text-center text-[10px] font-semibold text-sky-800 shadow-sm dark:border-sky-800 dark:bg-sky-950/60 dark:text-sky-100"
+                      className={cn(
+                        "rounded-full border px-2 py-1 text-center text-[10px] font-semibold shadow-sm",
+                        conflictingMeetingKeys.has(getMeetingKey(meeting))
+                          ? "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200"
+                          : "border-[#7cc9ff] bg-sky-100/90 text-sky-800 dark:border-sky-800 dark:bg-sky-950/60 dark:text-sky-100",
+                      )}
                       title={`${day.label} ${meeting.start}-${meeting.end}${meeting.location ? ` • ${meeting.location}` : ""}`}
                     >
                       {meeting.start && meeting.end ? `${meeting.start} - ${meeting.end}` : "Time TBA"}
@@ -70,6 +85,7 @@ type SectionOptionCardProps = {
   meetings: Meeting[];
   isSelected: boolean;
   hasConflict: boolean;
+  conflictingMeetingKeys?: string[];
   onClick: () => void;
 };
 
@@ -83,9 +99,11 @@ export function SectionOptionCard({
   meetings,
   isSelected,
   hasConflict,
+  conflictingMeetingKeys = [],
   onClick,
 }: SectionOptionCardProps) {
   const seatTone = getSeatTone(seatsAvailable, maxEnroll);
+  const conflictingMeetingKeySet = React.useMemo(() => new Set(conflictingMeetingKeys), [conflictingMeetingKeys]);
 
   return (
     <button
@@ -134,7 +152,7 @@ export function SectionOptionCard({
           </div>
         </div>
 
-        <MiniWeekPreview meetings={meetings} />
+        <MiniWeekPreview meetings={meetings} conflictingMeetingKeys={conflictingMeetingKeySet} />
       </div>
     </button>
   );

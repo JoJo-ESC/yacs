@@ -65,6 +65,10 @@ function getSelectedOptionKey(meetings: Meeting[]) {
   return `${selectedMeeting.type}::${selectedMeeting.section}::${selectedMeeting.crn}`;
 }
 
+function getMeetingKey(meeting: Meeting) {
+  return `${meeting.type}::${meeting.section}::${meeting.crn}::${meeting.start}::${meeting.end}`;
+}
+
 function getOtherCourseMeetings(courses: Course[], courseId: string) {
   return courses
     .filter((course) => course.id !== courseId)
@@ -225,7 +229,8 @@ export function SubjectCourseList({
                     const selectedKey = getSelectedOptionKey(selectedCourse?.meetings ?? []);
                     const otherMeetings = otherMeetingsByCourse.get(course.id) ?? [];
                     const isSelected = selectedKey === option.key;
-                    const hasConflict = hasOptionConflict(otherMeetings, option, selectedCourse);
+                    const conflictingMeetings = option.meetings.filter((meeting) => hasScheduleConflict(otherMeetings, meeting));
+                    const hasConflict = conflictingMeetings.length > 0;
 
                     return (
                       <SectionOptionCard
@@ -240,6 +245,7 @@ export function SubjectCourseList({
                         meetings={option.meetings}
                         isSelected={isSelected}
                         hasConflict={hasConflict}
+                        conflictingMeetingKeys={conflictingMeetings.map(getMeetingKey)}
                       />
                     );
                   })}

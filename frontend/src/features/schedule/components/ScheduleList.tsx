@@ -59,6 +59,10 @@ function getSelectedOptionKey(meetings: Meeting[]) {
   return `${selectedMeeting.type}::${selectedMeeting.section}::${selectedMeeting.crn}`;
 }
 
+function getMeetingKey(meeting: Meeting) {
+  return `${meeting.type}::${meeting.section}::${meeting.crn}::${meeting.start}::${meeting.end}`;
+}
+
 interface CourseCardProps {
   course: Course;
   expanded: boolean;
@@ -169,7 +173,8 @@ function CourseCard({
           <div className="space-y-3">
             {allOptions.map((option) => {
               const isSelected = getSelectedOptionKey(course.meetings) === option.key;
-              const hasConflict = option.meetings.some((meeting) => hasScheduleConflict(otherMeetings, meeting));
+              const conflictingMeetings = option.meetings.filter((meeting) => hasScheduleConflict(otherMeetings, meeting));
+              const hasConflict = conflictingMeetings.length > 0;
 
               return (
                 <SectionOptionCard
@@ -184,6 +189,7 @@ function CourseCard({
                   meetings={option.meetings}
                   isSelected={isSelected}
                   hasConflict={hasConflict}
+                  conflictingMeetingKeys={conflictingMeetings.map(getMeetingKey)}
                 />
               );
             })}
@@ -196,6 +202,7 @@ function CourseCard({
 
 export default function ScheduleList(): JSX.Element {
   const { courses, removeCourse, clear, catalog, catalogStatus, loadCatalog, updateCourse } = useSchedule();
+  const [copiedCrn, setCopiedCrn] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     if (courses.length > 0 && catalogStatus === "idle") {
@@ -242,15 +249,58 @@ export default function ScheduleList(): JSX.Element {
     [catalog, courses],
   );
 
+  const selectedCrns = React.useMemo(
+    () =>
+      displayCourses
+        .map((course) => {
+          const meeting = course.meetings[0];
+          return meeting?.crn ? { courseId: course.id, courseTitle: course.title, crn: meeting.crn } : null;
+        })
+        .filter((entry): entry is { courseId: string; courseTitle: string; crn: string } => entry !== null),
+    [displayCourses],
+  );
+
+  const copyCrn = React.useCallback(async (crn: string) => {
+    try {
+      await navigator.clipboard.writeText(crn);
+      setCopiedCrn(crn);
+      window.setTimeout(() => {
+        setCopiedCrn((current) => (current === crn ? null : current));
+      }, 1200);
+    } catch {
+      setCopiedCrn(null);
+    }
+  }, []);
+
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
+    <div className="w-full space-y-6">
       {displayCourses.length > 0 ? (
-        <div className="flex justify-end">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0 flex-1">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+              Current CRNs
+            </p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {selectedCrns.map(({ courseId, courseTitle, crn }) => (
+                <button
+                  key={crn}
+                  type="button"
+                  onClick={() => void copyCrn(crn)}
+                  className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition-colors hover:border-slate-300 hover:bg-slate-50 dark:border-[#3a3a3a] dark:bg-[#1f1f1f] dark:text-neutral-200 dark:hover:border-[#4a4a4a] dark:hover:bg-[#242424]"
+                  aria-label={`Copy CRN ${crn} for ${courseId}`}
+                  title={`${courseId} ${courseTitle}`}
+                >
+                  {copiedCrn === crn ? "Copied" : crn}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <Button
             variant="outline"
             size="sm"
             onClick={clear}
-            className="rounded-full border-rose-200 bg-rose-50 px-4 text-rose-700 shadow-none hover:border-rose-300 hover:bg-rose-100 hover:text-rose-800 dark:border-rose-900/70 dark:bg-rose-950/30 dark:text-rose-200 dark:hover:border-rose-800 dark:hover:bg-rose-950/50 dark:hover:text-rose-100"
+            className="shrink-0 self-start sm:self-end rounded-full border-rose-200 bg-rose-50 px-4 text-rose-700 shadow-none hover:border-rose-300 hover:bg-rose-100 hover:text-rose-800 dark:border-rose-900/70 dark:bg-rose-950/30 dark:text-rose-200 dark:hover:border-rose-800 dark:hover:bg-rose-950/50 dark:hover:text-rose-100"
           >
             Clear all
           </Button>
@@ -258,7 +308,7 @@ export default function ScheduleList(): JSX.Element {
       ) : null}
 
       {displayCourses.length === 0 ? (
-        <div className="rounded-[28px] border border-dashed border-slate-300 bg-white/80 px-6 py-16 text-center dark:border-slate-700 dark:bg-slate-950/70">
+        <div className="mx-auto max-w-6xl rounded-[28px] border border-dashed border-slate-300 bg-white/80 px-6 py-16 text-center dark:border-slate-700 dark:bg-slate-950/70">
           <p className="font-display text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
             No classes selected yet.
           </p>
@@ -267,7 +317,7 @@ export default function ScheduleList(): JSX.Element {
           </p>
         </div>
       ) : (
-        <div className="flex flex-col gap-4">
+        <div className="mx-auto flex max-w-6xl flex-col gap-4">
           {displayCourses.map((course) => (
             <CourseCard
               key={course.id}
