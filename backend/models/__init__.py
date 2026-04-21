@@ -8,4 +8,3 @@ from .course_corequisite import CourseCorequisite
 from .user_session import UserSession
 from .course import Course
 from .meeting_time import MeetingTime
-from .user import User
