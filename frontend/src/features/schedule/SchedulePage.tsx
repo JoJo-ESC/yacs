@@ -190,7 +190,7 @@ export default function SchedulePage() {
 
   return (
     <main className="relative flex-1 overflow-x-hidden bg-white pb-16 dark:bg-none dark:bg-black">
-      <div className="relative mx-auto flex w-full max-w-[96rem] flex-col gap-8 px-4 pb-10 pt-8 sm:px-6 lg:px-8">
+      <div className="relative mx-auto flex w-full max-w-[96rem] flex-col gap-3 px-4 pb-10 pt-8 sm:px-6 lg:px-8">
         <section className="space-y-5">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>

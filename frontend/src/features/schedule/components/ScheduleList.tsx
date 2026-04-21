@@ -1,9 +1,11 @@
 import * as React from "react";
 import type { JSX } from "react";
-import { CalendarDays, ChevronDown, ChevronUp, Trash2 } from "lucide-react";
+import { CalendarDays, ChevronDown, ChevronUp, Download, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useSchedule } from "@/context/schedule/schedule-context";
 import { SectionOptionCard } from "@/features/courses/components/SectionOptionCard";
+import { buildScheduleIcs, hasExportableMeetings } from "@/lib/schedule/calendarExport";
 import { hasScheduleConflict } from "@/lib/schedule/schedule";
 import type { Course, Meeting } from "@/types/schedule";
 
@@ -201,8 +203,9 @@ function CourseCard({
 }
 
 export default function ScheduleList(): JSX.Element {
-  const { courses, removeCourse, clear, catalog, catalogStatus, loadCatalog, updateCourse } = useSchedule();
+  const { courses, removeCourse, catalog, catalogStatus, loadCatalog, updateCourse } = useSchedule();
   const [copiedCrn, setCopiedCrn] = React.useState<string | null>(null);
+  const [exportOpen, setExportOpen] = React.useState(false);
 
   React.useEffect(() => {
     if (courses.length > 0 && catalogStatus === "idle") {
@@ -260,6 +263,33 @@ export default function ScheduleList(): JSX.Element {
     [displayCourses],
   );
 
+  const exportCourses = React.useMemo(() => {
+    const catalogById = new Map(catalog.map((course) => [course.id, course]));
+
+    return displayCourses.map((course) => {
+      const catalogCourse = catalogById.get(course.id);
+      if (!catalogCourse) return course;
+
+      return {
+        ...course,
+        meetings: course.meetings.map((meeting) => {
+          const datedMeeting = catalogCourse.meetings.find(
+            (candidate) =>
+              candidate.crn === meeting.crn &&
+              candidate.type === meeting.type &&
+              candidate.section === meeting.section &&
+              candidate.start === meeting.start &&
+              candidate.end === meeting.end &&
+              candidate.days.join("") === meeting.days.join(""),
+          );
+          return datedMeeting ? { ...meeting, startDate: datedMeeting.startDate, endDate: datedMeeting.endDate } : meeting;
+        }),
+      };
+    });
+  }, [catalog, displayCourses]);
+
+  const canExportSchedule = React.useMemo(() => hasExportableMeetings(exportCourses), [exportCourses]);
+
   const copyCrn = React.useCallback(async (crn: string) => {
     try {
       await navigator.clipboard.writeText(crn);
@@ -271,6 +301,21 @@ export default function ScheduleList(): JSX.Element {
       setCopiedCrn(null);
     }
   }, []);
+
+  const downloadIcs = React.useCallback(() => {
+    if (!canExportSchedule) return;
+
+    const blob = new Blob([buildScheduleIcs(exportCourses)], { type: "text/calendar;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "yacs-schedule.ics";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+    setExportOpen(false);
+  }, [canExportSchedule, exportCourses]);
 
   return (
     <div className="w-full space-y-6">
@@ -296,14 +341,30 @@ export default function ScheduleList(): JSX.Element {
             </div>
           </div>
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={clear}
-            className="shrink-0 self-start sm:self-end rounded-full border-rose-200 bg-rose-50 px-4 text-rose-700 shadow-none hover:border-rose-300 hover:bg-rose-100 hover:text-rose-800 dark:border-rose-900/70 dark:bg-rose-950/30 dark:text-rose-200 dark:hover:border-rose-800 dark:hover:bg-rose-950/50 dark:hover:text-rose-100"
-          >
-            Clear all
-          </Button>
+          <Popover open={exportOpen} onOpenChange={setExportOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="shrink-0 self-start rounded-full border-[#dfc9ae] bg-[#f8f2ea] px-4 text-[#7a5230] shadow-none hover:border-[#d5b891] hover:bg-[#efe3d2] hover:text-[#6b4526] disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400 dark:border-[#6d4f36] dark:bg-[#3a281d] dark:text-[#f4e6d6] dark:hover:border-[#8a6748] dark:hover:bg-[#4a3223] dark:hover:text-[#fff6ec] dark:disabled:border-[#343434] dark:disabled:bg-[#1f1f1f] dark:disabled:text-[#666666] sm:self-end"
+                disabled={!canExportSchedule}
+              >
+                <Download className="h-4 w-4" />
+                Export schedule
+                <ChevronDown className="h-4 w-4" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-56 rounded-2xl border-slate-200 bg-white p-2 shadow-lg dark:border-[#3a3a3a] dark:bg-[#171717]">
+              <button
+                type="button"
+                onClick={downloadIcs}
+                className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 dark:text-neutral-200 dark:hover:bg-[#242424]"
+              >
+                <CalendarDays className="h-4 w-4" />
+                Download ICS
+              </button>
+            </PopoverContent>
+          </Popover>
         </div>
       ) : null}
 

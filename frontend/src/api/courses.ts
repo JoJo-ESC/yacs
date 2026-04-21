@@ -45,6 +45,8 @@ function buildMeetings(raw: ApiCourseResponse): Meeting[] {
       location,
       instructor: decodeHtmlEntities(mt.instructor_name ?? ""),
       section: raw.section ?? "",
+      startDate: mt.start_date ?? undefined,
+      endDate: mt.end_date ?? undefined,
       seatsAvailable: raw.seats_available ?? 0,
       enrolled: raw.enrollment ?? 0,
       maxEnroll: raw.max_enrollment ?? 0,

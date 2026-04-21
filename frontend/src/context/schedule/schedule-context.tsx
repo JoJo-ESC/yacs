@@ -48,6 +48,8 @@ function isMeeting(value: unknown): value is Course["meetings"][number] {
     typeof meeting.location === "string" &&
     typeof meeting.instructor === "string" &&
     typeof meeting.section === "string" &&
+    (meeting.startDate === undefined || typeof meeting.startDate === "string") &&
+    (meeting.endDate === undefined || typeof meeting.endDate === "string") &&
     typeof meeting.seatsAvailable === "number" &&
     typeof meeting.enrolled === "number" &&
     typeof meeting.maxEnroll === "number" &&
