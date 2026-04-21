@@ -1,13 +1,32 @@
 # Pydantic schemas for request/response models
-from .api_models import (
+
+# Auth schemas
+from .auth_schemas import (
     SessionPydantic,
     SessionDeletePydantic,
-    CourseDeletePydantic,
-    updateUser,
+)
+
+# User schemas
+from .user_schemas import (
     UserPydantic,
     UserDeletePydantic,
+    UpdateUserPydantic,
+)
+
+# Course schemas
+from .course_schemas import (
+    CourseResponse,
+    CourseListResponse,
+    PaginationMeta,
+    DepartmentResponse,
+    SemesterResponse,
     UserCoursePydantic,
+    CourseDeletePydantic,
     SubsemesterPydantic,
     DefaultSemesterSetPydantic,
+)
+
+# Corequisite schemas
+from .corequisite_schemas import (
     CourseCorequisiteCreate,
 )

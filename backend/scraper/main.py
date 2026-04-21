@@ -3,6 +3,7 @@ import requests
 import time
 import os
 import json
+from terms import get_active_term_codes
 
 
 class SIS9Scraper:
@@ -58,6 +59,7 @@ class SIS9Scraper:
         return aggregated_results
 
 
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -71,14 +73,27 @@ def main():
     terms = scraper.get_terms()
     output_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
     os.makedirs(output_dir, exist_ok=True)
+
+    active_terms = get_active_term_codes()
+    skipped = 0
+
     for term in terms:
+        code = term["code"]
+        output_path = os.path.join(output_dir, f"sis9_courses_{code}.json")
+
+        if os.path.exists(output_path) and code not in active_terms:
+            skipped += 1
+            continue
+
         print(f"Fetching courses for term: {term['description']}")
         start = time.time()
-        results = scraper.get_courses(term["code"])
-        output_path = os.path.join(output_dir, f"sis9_courses_{term['code']}.json")
+        results = scraper.get_courses(code)
         with open(output_path, "w", encoding="utf-8") as file:
             json.dump(results, file, indent=4)
-        print(f"Time taken: {time.time() - start} seconds")
+        print(f"  Saved {len(results)} courses ({time.time() - start:.1f}s)")
+
+    if skipped:
+        print(f"\nSkipped {skipped} historical term(s) already on disk.")
 
 
 if __name__ == "__main__":

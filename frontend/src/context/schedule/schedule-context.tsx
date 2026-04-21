@@ -4,11 +4,13 @@ import React, {
   useMemo,
   useState,
   useCallback,
+  useRef,
   startTransition,
 } from "react";
-import type { Course } from "../types/schedule";
-import { fetchText } from "@/api";
-import { parseCoursesFromCsvText } from "../utils/parseSchedule";
+import type { Course } from "@/types/schedule";
+import { fetchAllCourses } from "@/api";
+
+type CatalogStatus = "idle" | "loading" | "loaded" | "error";
 
 type SelectionCtx = {
   courses: Course[];
@@ -22,7 +24,10 @@ const SelectionContext = createContext<SelectionCtx | undefined>(undefined);
 
 type CatalogCtx = {
   catalog: Course[];
-  loadCsv: (path: string) => Promise<void>;
+  catalogStatus: CatalogStatus;
+  catalogLoading: boolean;
+  catalogError: string | null;
+  loadCatalog: (semester?: string) => Promise<void>;
 };
 
 const CatalogContext = createContext<CatalogCtx | undefined>(undefined);
@@ -56,17 +61,49 @@ export function ScheduleProvider({ children }: { children: React.ReactNode }) {
   );
 
   const [catalog, setCatalog] = useState<Course[]>([]);
+  const [catalogStatus, setCatalogStatus] = useState<CatalogStatus>("idle");
+  const [catalogLoading, setCatalogLoading] = useState(false);
+  const [catalogError, setCatalogError] = useState<string | null>(null);
+  const catalogPromiseRef = useRef<Promise<void> | null>(null);
+  const catalogSemesterRef = useRef<string | undefined>(undefined);
 
-  const loadCsv = useCallback(async (path: string) => {
-    const text = await fetchText(path);
+  const loadCatalog = useCallback(async (semester?: string) => {
+    if (catalogStatus === "loaded" && catalogSemesterRef.current === semester) {
+      return;
+    }
 
-    startTransition(() => {
-      const parsed = parseCoursesFromCsvText(text);
-      setCatalog(parsed);
-    });
-  }, []);
+    if (catalogStatus === "loading" && catalogSemesterRef.current === semester && catalogPromiseRef.current) {
+      return catalogPromiseRef.current;
+    }
 
-  const catalogValue = useMemo<CatalogCtx>(() => ({ catalog, loadCsv }), [catalog, loadCsv]);
+    catalogSemesterRef.current = semester;
+    setCatalogStatus("loading");
+    setCatalogLoading(true);
+    setCatalogError(null);
+
+    const request = (async () => {
+      try {
+        const nextCatalog = await fetchAllCourses(semester);
+        startTransition(() => setCatalog(nextCatalog));
+        setCatalogStatus("loaded");
+      } catch (err) {
+        setCatalogStatus("error");
+        setCatalogError(err instanceof Error ? err.message : "Failed to load catalog");
+        throw err;
+      } finally {
+        setCatalogLoading(false);
+        catalogPromiseRef.current = null;
+      }
+    })();
+
+    catalogPromiseRef.current = request;
+    return request;
+  }, [catalogStatus]);
+
+  const catalogValue = useMemo<CatalogCtx>(
+    () => ({ catalog, catalogStatus, catalogLoading, catalogError, loadCatalog }),
+    [catalog, catalogStatus, catalogLoading, catalogError, loadCatalog]
+  );
 
   return (
     <CatalogContext.Provider value={catalogValue}>

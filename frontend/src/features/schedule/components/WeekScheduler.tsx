@@ -1,6 +1,6 @@
 import React, { useMemo, useRef, useEffect } from "react";
-import { useSchedule } from "../context/schedule-context";
-import type { Course } from "../types/schedule";
+import { useSchedule } from "@/context/schedule/schedule-context";
+import type { Course } from "@/types/schedule";
 
 export type DayIndex = 0 | 1 | 2 | 3 | 4 | 5 | 6; // 0=Mon, 6=Sun
 
@@ -270,10 +270,10 @@ export default function WeekScheduler({
   const conflicts = useMemo(() => {
     const set = new Set<string>();
     const byKey = new Map(eventsExpanded.map((e) => [e.key, e]));
-    for (const k of conflictKeys) {
+    conflictKeys.forEach((k) => {
       const ev = byKey.get(k);
       if (ev) set.add(ev.title);
-    }
+    });
     return Array.from(set);
   }, [conflictKeys, eventsExpanded]);
 

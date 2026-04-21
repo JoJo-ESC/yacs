@@ -15,9 +15,11 @@ def log_user_in(credentials: dict, session: dict):
             "email": user.email,
             "name": user.name,
         }
+
         return {"success": True, "message": "Login successful."}
     finally:
         db.close()
+
 
 def log_user_out(session: dict):
     """Logs a user out by clearing their session data."""

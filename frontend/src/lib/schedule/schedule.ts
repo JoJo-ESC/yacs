@@ -1,4 +1,4 @@
-import type { Meeting } from "../types/schedule";
+import type { Meeting } from "@/types/schedule";
 
 function parseTime(timeStr: string): number {
   const [time, period] = timeStr.split(/(?=[AP]M)/);
