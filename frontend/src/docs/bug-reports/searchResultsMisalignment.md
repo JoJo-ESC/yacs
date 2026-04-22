@@ -15,4 +15,4 @@ Results drop down below search bar, not above
 Results start above the search bar, some blocked by navbar
 
 ## Notes
-UI error
+See ClassSearch.tsx, error may be caused by line 230
