@@ -1,45 +1,36 @@
 import * as React from "react";
 import type { JSX } from "react";
-import { useSchedule } from "@/context/schedule/schedule-context";
-import type { Course, Meeting } from "@/types/schedule";
+import { CalendarDays, ChevronDown, ChevronUp, Download, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useSchedule } from "@/context/schedule/schedule-context";
+import { SectionOptionCard } from "@/features/courses/components/SectionOptionCard";
+import { buildScheduleIcs, hasExportableMeetings } from "@/lib/schedule/calendarExport";
 import { hasScheduleConflict } from "@/lib/schedule/schedule";
-import { cn } from "@/lib/utils";
-import { 
-  Clock, 
-  MapPin, 
-  User, 
-  AlertCircle, 
-  Trash2, 
-  ChevronDown, 
-  ChevronUp,
-  CalendarDays,
-  CheckCircle2
-} from "lucide-react";
-
-// --- Helper Functions ---
-
-function formatDays(ds: string[]) {
-  return (ds || []).join("");
-}
+import type { Course, Meeting } from "@/types/schedule";
 
 type MeetingOption = {
   key: string;
   type: string;
   section: string;
+  crn: string;
   meetings: Meeting[];
+  instructor: string;
+  seatsAvailable: number;
+  enrolled: number;
+  maxEnroll: number;
 };
 
 function groupMeetingOptions(meetings: Meeting[]) {
-  const byType: Record<string, MeetingOption[]> = {};
+  const options: MeetingOption[] = [];
 
   for (const meeting of meetings) {
     const key = `${meeting.type}::${meeting.section}::${meeting.crn}`;
-    const options = (byType[meeting.type] ||= []);
     const existing = options.find((option) => option.key === key);
 
     if (existing) {
       existing.meetings.push(meeting);
+      if (!existing.instructor && meeting.instructor) existing.instructor = meeting.instructor;
       continue;
     }
 
@@ -47,121 +38,31 @@ function groupMeetingOptions(meetings: Meeting[]) {
       key,
       type: meeting.type,
       section: meeting.section,
+      crn: meeting.crn,
       meetings: [meeting],
+      instructor: meeting.instructor,
+      seatsAvailable: meeting.seatsAvailable,
+      enrolled: meeting.enrolled,
+      maxEnroll: meeting.maxEnroll,
     });
   }
 
-  return Object.fromEntries(
-    Object.entries(byType).map(([type, options]) => [
-      type,
-      [...options].sort((a, b) =>
-        String(a.section).localeCompare(String(b.section), undefined, { numeric: true }),
-      ),
-    ]),
+  return [...options].sort((a, b) =>
+    a.key.localeCompare(b.key, undefined, {
+      numeric: true,
+      sensitivity: "base",
+    }),
   );
 }
 
-function getSelectedOptionKey(meetings: Meeting[], type: string) {
-  const selectedMeeting = meetings.find((meeting) => meeting.type === type);
+function getSelectedOptionKey(meetings: Meeting[]) {
+  const selectedMeeting = meetings[0];
   if (!selectedMeeting) return null;
   return `${selectedMeeting.type}::${selectedMeeting.section}::${selectedMeeting.crn}`;
 }
 
-// --- Sub-Components ---
-
-interface SectionRowProps {
-  meeting: Meeting;
-  isSelected: boolean;
-  onSelect: () => void;
-  hasConflict: boolean;
-  disabled?: boolean;
-}
-
-function SectionRow({
-  meeting,
-  isSelected,
-  onSelect,
-  hasConflict,
-  disabled,
-}: SectionRowProps): JSX.Element {
-  return (
-    <Button
-      type="button"
-      onClick={onSelect}
-      disabled={disabled}
-      variant="ghost" 
-      className={cn(
-        "relative flex h-auto w-full flex-col items-start gap-2 rounded-md border p-3 text-left transition-all shadow-sm",
-        
-        // DEFAULT STATE: Pop off the page using bg-background
-        "bg-background border-transparent hover:border-border hover:shadow-md",
-
-        // SELECTED STATE: Use a soft blue to match your footer vibe
-        isSelected && "border-blue-400/50 bg-blue-50/80 ring-1 ring-blue-400/50 dark:bg-blue-900/20 dark:border-blue-700",
-
-        // CONFLICT STATE
-        hasConflict && !isSelected && "opacity-70 bg-red-50/50 border-red-100 dark:bg-red-900/10 dark:border-red-900/30",
-        hasConflict && isSelected && "bg-red-50 border-red-500 ring-red-500 dark:bg-red-900/30",
-        
-        disabled && "cursor-not-allowed opacity-50"
-      )}
-    >
-      <div className="flex w-full items-center justify-between">
-        <div className="flex items-center gap-2">
-           {/* Checkbox circle visual */}
-          <div className={cn(
-            "h-4 w-4 rounded-full border flex items-center justify-center transition-colors",
-            isSelected ? "border-blue-500 bg-blue-500 text-white" : "border-muted-foreground/30 bg-transparent"
-          )}>
-            {isSelected && <CheckCircle2 className="h-3 w-3" />}
-          </div>
-          <span className={cn(
-            "font-semibold text-sm",
-            isSelected ? "text-blue-700 dark:text-blue-300" : "text-foreground",
-            hasConflict && "text-red-600 dark:text-red-400"
-          )}>
-            {meeting.type} {meeting.section}
-          </span>
-        </div>
-        
-        {hasConflict && (
-          <div className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-red-600 dark:text-red-400">
-            <AlertCircle className="h-3 w-3" />
-            <span>Conflict</span>
-          </div>
-        )}
-      </div>
-
-      <div className="grid grid-cols-1 gap-1.5 pl-6 text-xs text-muted-foreground w-full">
-        <div className="flex items-center gap-2">
-          <CalendarDays className="h-3.5 w-3.5 shrink-0 opacity-70" />
-          <span className="font-medium text-foreground/80">
-            {formatDays(meeting.days)}
-          </span>
-          <span className="opacity-30">|</span>
-          <Clock className="h-3.5 w-3.5 shrink-0 opacity-70" />
-          <span>{meeting.start}–{meeting.end}</span>
-        </div>
-
-        {(meeting.location || meeting.instructor) && (
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-            {meeting.location && (
-              <div className="flex items-center gap-1.5 overflow-hidden">
-                <MapPin className="h-3.5 w-3.5 shrink-0 opacity-70" />
-                <span className="truncate">{meeting.location}</span>
-              </div>
-            )}
-            {meeting.instructor && (
-              <div className="flex items-center gap-1.5 overflow-hidden">
-                <User className="h-3.5 w-3.5 shrink-0 opacity-70" />
-                <span className="truncate">{meeting.instructor}</span>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-    </Button>
-  );
+function getMeetingKey(meeting: Meeting) {
+  return `${meeting.type}::${meeting.section}::${meeting.crn}::${meeting.start}::${meeting.end}`;
 }
 
 interface CourseCardProps {
@@ -171,7 +72,7 @@ interface CourseCardProps {
   onRemove: () => void;
   allMeetingsForCourse: Meeting[];
   otherCourses: Course[];
-  replaceCourseMeetings: (c: Course, m: Meeting[]) => void;
+  replaceCourseMeetings: (course: Course, meetings: Meeting[]) => void;
 }
 
 function CourseCard({
@@ -181,140 +82,130 @@ function CourseCard({
   onRemove,
   allMeetingsForCourse,
   otherCourses,
-  replaceCourseMeetings
-}: CourseCardProps) {
-  
-  const allByType = groupMeetingOptions(allMeetingsForCourse);
+  replaceCourseMeetings,
+}: CourseCardProps): JSX.Element {
+  const allOptions = React.useMemo(() => groupMeetingOptions(allMeetingsForCourse), [allMeetingsForCourse]);
+  const sectionCount = allOptions.length;
+  const selectedLabels = React.useMemo(
+    () => {
+      const selectedKey = getSelectedOptionKey(course.meetings);
+      const selectedOption = allOptions.find((option) => option.key === selectedKey);
+      return selectedOption ? [`${selectedOption.type} ${selectedOption.section}`] : [];
+    },
+    [allOptions, course.meetings],
+  );
 
-  const otherMeetings = otherCourses.flatMap(c => c.meetings);
-  const isStrictConflict = 
-    otherMeetings.length > 0 &&
-    allMeetingsForCourse.length > 0 &&
-    allMeetingsForCourse.every((m) => hasScheduleConflict(otherMeetings, m));
+  const otherMeetings = React.useMemo(() => otherCourses.flatMap((otherCourse) => otherCourse.meetings), [otherCourses]);
 
-  const selectedLabels = Object.keys(allByType)
-    .map((type) => {
-      const selectedKey = getSelectedOptionKey(course.meetings, type);
-      const selectedOption = allByType[type]?.find((option) => option.key === selectedKey);
-      return selectedOption ? `${selectedOption.type}-${selectedOption.section}` : null;
-    })
-    .filter(Boolean) as string[];
-
-  const onPickSection = (type: string, selected: MeetingOption) => {
-    const others = course.meetings.filter((m) => m.type !== type);
-    replaceCourseMeetings(course, [...others, ...selected.meetings]);
-  };
+  const applyOption = React.useCallback(
+    (selected: MeetingOption) => {
+      replaceCourseMeetings(course, selected.meetings);
+    },
+    [course, replaceCourseMeetings],
+  );
 
   return (
-    <div className={cn(
-      "overflow-hidden rounded-xl border border-border transition-all",
-      // Use User's 'surface' variable for the header background
-      "bg-surface" 
-    )}>
-      {/* Card Header */}
-      <div 
-        className="flex cursor-pointer items-center justify-between p-3 md:p-4 hover:brightness-95 transition-all"
-        onClick={onToggleExpand}
-      >
-        <div className="flex min-w-0 flex-col gap-0.5">
-          <div className="flex items-center gap-2">
-            <h3 className="font-bold text-foreground truncate text-base">
-              {course.id} <span className="opacity-40 font-normal">|</span> {course.title}
-            </h3>
-            {isStrictConflict && (
-              <span className="inline-flex items-center rounded-md bg-red-100/80 px-2 py-0.5 text-[10px] font-bold text-red-800 dark:bg-red-900/50 dark:text-red-300 border border-red-200 dark:border-red-900">
-                CONFLICT
-              </span>
-            )}
+    <article className="overflow-hidden rounded-[28px] border border-slate-200/80 bg-white/95 shadow-[0_20px_60px_-42px_rgba(15,23,42,0.14)] dark:border-[#3a3a3a] dark:bg-[#171717]">
+      <div className="flex flex-col gap-4 p-5 lg:flex-row lg:items-start lg:justify-between">
+        <button
+          type="button"
+          onClick={onToggleExpand}
+          className="min-w-0 flex-1 text-left transition-colors hover:text-inherit"
+        >
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em] text-slate-600 dark:bg-[#2f2f2f] dark:text-neutral-200">
+              {course.id}
+            </span>
+            <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200">
+              {course.credits} credit{course.credits === 1 ? "" : "s"}
+            </span>
+            <span className="rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-700 dark:border-sky-900 dark:bg-sky-950/40 dark:text-sky-200">
+              Selected
+            </span>
           </div>
-          <div className="flex items-center gap-2 text-xs text-foreground/60">
-             <span>
-               {Object.keys(allByType).length} Section Types
-             </span>
-             {course.meetings.length > 0 && (
-                 <>
-                 <span>•</span>
-                 <span className="text-foreground/80 font-medium">
-                    Selected: {selectedLabels.join(", ")}
-                 </span>
-                 </>
-             )}
-          </div>
-        </div>
 
-        <div className="flex items-center gap-1 pl-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 text-foreground/50 hover:text-red-600 hover:bg-red-100/50"
-            onClick={(e) => {
-              e.stopPropagation();
-              onRemove();
-            }}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="icon" className="h-8 w-8 text-foreground/50">
-             {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-          </Button>
+          <h3 className="mt-3 font-display text-2xl font-semibold tracking-tight text-slate-950 dark:text-white">
+            {course.title}
+          </h3>
+
+          <div className="mt-4 flex flex-wrap gap-3 text-sm text-slate-500 dark:text-slate-400">
+            <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 dark:bg-[#2f2f2f]">
+              <CalendarDays className="h-4 w-4" />
+              {sectionCount} section{sectionCount === 1 ? "" : "s"}
+            </span>
+          </div>
+        </button>
+
+        <div className="flex items-start justify-between gap-3 lg:justify-end">
+          <div className="text-left lg:text-right">
+            <button type="button" onClick={onToggleExpand} className="text-left lg:text-right">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+                Selected sections
+              </p>
+              <p className="mt-1 text-sm font-medium text-slate-700 dark:text-slate-200">
+                {selectedLabels.length ? selectedLabels.join(", ") : "Open to review"}
+              </p>
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-11 w-11 rounded-full border border-transparent text-rose-600 shadow-none hover:text-rose-700 dark:text-rose-300 dark:hover:text-rose-200"
+              onClick={onRemove}
+              aria-label={`Remove ${course.id}`}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+            <button
+              type="button"
+              onClick={onToggleExpand}
+              className="flex h-11 w-11 items-center justify-center rounded-full border border-[#dfc9ae] bg-[#f8f2ea] text-[#7a5230] dark:border-[#6d4f36] dark:bg-[#3a281d] dark:text-[#f4e6d6]"
+              aria-label={expanded ? `Collapse ${course.id}` : `Expand ${course.id}`}
+            >
+              {expanded ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Expanded Content - Uses 'bg-background' to create contrast against 'bg-surface' */}
-      {expanded && (
-        <div className="border-t border-border/50 bg-background/50 p-4 shadow-inner">
-          {Object.keys(allByType).length === 0 ? (
-            <p className="text-sm text-muted-foreground italic">No section data available.</p>
-          ) : (
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {Object.entries(allByType).map(([type, options]) => {
-                const selectedKey = getSelectedOptionKey(course.meetings, type);
+      {expanded ? (
+        <div className="border-t border-slate-200/70 bg-slate-50/60 px-5 py-4 dark:border-[#343434] dark:bg-[#1a1a1a]">
+          <div className="space-y-3">
+            {allOptions.map((option) => {
+              const isSelected = getSelectedOptionKey(course.meetings) === option.key;
+              const conflictingMeetings = option.meetings.filter((meeting) => hasScheduleConflict(otherMeetings, meeting));
+              const hasConflict = conflictingMeetings.length > 0;
 
-                const sectionsOfOtherTypes = course.meetings.filter(m => m.type !== type);
-                const allCheckMeetings = [...sectionsOfOtherTypes, ...otherMeetings];
-
-                return (
-                  <div key={`${course.id}-${type}`} className="flex flex-col gap-3 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground/80">
-                        {type} Sections
-                      </span>
-                      <div className="h-px flex-1 bg-border/50"></div>
-                    </div>
-                    
-                    <div className="flex flex-col gap-2">
-                      {options.map((opt) => {
-                        const conflicts = opt.meetings.some((meeting) =>
-                          hasScheduleConflict(allCheckMeetings, meeting)
-                        );
-                        const isSelected = selectedKey === opt.key;
-
-                        return (
-                          <SectionRow
-                            key={`${course.id}-${type}-${opt.section}`}
-                            meeting={opt.meetings[0]}
-                            isSelected={isSelected}
-                            hasConflict={conflicts}
-                            onSelect={() => onPickSection(type, opt)}
-                          />
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+              return (
+                <SectionOptionCard
+                  key={option.key}
+                  onClick={() => applyOption(option)}
+                  sectionLabel={`${option.type} ${option.section}`}
+                  instructor={option.instructor}
+                  crn={option.crn}
+                  seatsAvailable={option.seatsAvailable}
+                  enrolled={option.enrolled}
+                  maxEnroll={option.maxEnroll}
+                  meetings={option.meetings}
+                  isSelected={isSelected}
+                  hasConflict={hasConflict}
+                  conflictingMeetingKeys={conflictingMeetings.map(getMeetingKey)}
+                />
+              );
+            })}
+          </div>
         </div>
-      )}
-    </div>
+      ) : null}
+    </article>
   );
 }
 
-// --- Main Component ---
-
 export default function ScheduleList(): JSX.Element {
-  const { courses, removeCourse, clear, catalog, catalogStatus, loadCatalog, addCourse } = useSchedule();
+  const { courses, removeCourse, catalog, catalogStatus, loadCatalog, updateCourse } = useSchedule();
+  const [copiedCrn, setCopiedCrn] = React.useState<string | null>(null);
+  const [exportOpen, setExportOpen] = React.useState(false);
 
   React.useEffect(() => {
     if (courses.length > 0 && catalogStatus === "idle") {
@@ -326,10 +217,10 @@ export default function ScheduleList(): JSX.Element {
   React.useEffect(() => {
     const map = orderRef.current;
     let maxIndex = Math.max(-1, ...Array.from(map.values()));
-    for (const c of courses) {
-      if (!map.has(c.id)) map.set(c.id, ++maxIndex);
+    for (const course of courses) {
+      if (!map.has(course.id)) map.set(course.id, ++maxIndex);
     }
-    const currentIds = new Set(courses.map(c => c.id));
+    const currentIds = new Set(courses.map((course) => course.id));
     for (const id of Array.from(map.keys())) {
       if (!currentIds.has(id)) map.delete(id);
     }
@@ -341,54 +232,162 @@ export default function ScheduleList(): JSX.Element {
   }, [courses]);
 
   const [open, setOpen] = React.useState<Record<string, boolean>>({});
-  const toggleOpen = (id: string) =>
-    setOpen((prev) => ({ ...prev, [id]: !prev[id] }));
+  const toggleOpen = React.useCallback(
+    (id: string) => setOpen((prev) => ({ ...prev, [id]: !prev[id] })),
+    [],
+  );
 
-  const replaceCourseMeetings = (course: Course, newMeetings: Meeting[]) => {
-    removeCourse(course.id);
-    addCourse({ ...course, meetings: newMeetings });
-  };
+  const replaceCourseMeetings = React.useCallback(
+    (course: Course, newMeetings: Meeting[]) => {
+      updateCourse({ ...course, meetings: newMeetings });
+    },
+    [updateCourse],
+  );
 
-  const getAllMeetingsForCourse = (courseId: string): Meeting[] => {
-    return catalog.find((c) => c.id === courseId)?.meetings || [];
-  };
+  const getAllMeetingsForCourse = React.useCallback(
+    (courseId: string): Meeting[] =>
+      catalog.find((course) => course.id === courseId)?.meetings ||
+      courses.find((course) => course.id === courseId)?.meetings ||
+      [],
+    [catalog, courses],
+  );
+
+  const selectedCrns = React.useMemo(
+    () =>
+      displayCourses
+        .map((course) => {
+          const meeting = course.meetings[0];
+          return meeting?.crn ? { courseId: course.id, courseTitle: course.title, crn: meeting.crn } : null;
+        })
+        .filter((entry): entry is { courseId: string; courseTitle: string; crn: string } => entry !== null),
+    [displayCourses],
+  );
+
+  const exportCourses = React.useMemo(() => {
+    const catalogById = new Map(catalog.map((course) => [course.id, course]));
+
+    return displayCourses.map((course) => {
+      const catalogCourse = catalogById.get(course.id);
+      if (!catalogCourse) return course;
+
+      return {
+        ...course,
+        meetings: course.meetings.map((meeting) => {
+          const datedMeeting = catalogCourse.meetings.find(
+            (candidate) =>
+              candidate.crn === meeting.crn &&
+              candidate.type === meeting.type &&
+              candidate.section === meeting.section &&
+              candidate.start === meeting.start &&
+              candidate.end === meeting.end &&
+              candidate.days.join("") === meeting.days.join(""),
+          );
+          return datedMeeting ? { ...meeting, startDate: datedMeeting.startDate, endDate: datedMeeting.endDate } : meeting;
+        }),
+      };
+    });
+  }, [catalog, displayCourses]);
+
+  const canExportSchedule = React.useMemo(() => hasExportableMeetings(exportCourses), [exportCourses]);
+
+  const copyCrn = React.useCallback(async (crn: string) => {
+    try {
+      await navigator.clipboard.writeText(crn);
+      setCopiedCrn(crn);
+      window.setTimeout(() => {
+        setCopiedCrn((current) => (current === crn ? null : current));
+      }, 1200);
+    } catch {
+      setCopiedCrn(null);
+    }
+  }, []);
+
+  const downloadIcs = React.useCallback(() => {
+    if (!canExportSchedule) return;
+
+    const blob = new Blob([buildScheduleIcs(exportCourses)], { type: "text/calendar;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "yacs-schedule.ics";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+    setExportOpen(false);
+  }, [canExportSchedule, exportCourses]);
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-bold tracking-tight text-foreground">Your Schedule</h2>
-          <p className="text-sm text-muted-foreground">
-            {displayCourses.length} {displayCourses.length === 1 ? 'course' : 'courses'} selected
-          </p>
+    <div className="w-full space-y-6">
+      {displayCourses.length > 0 ? (
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0 flex-1">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+              Current CRNs
+            </p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {selectedCrns.map(({ courseId, courseTitle, crn }) => (
+                <button
+                  key={crn}
+                  type="button"
+                  onClick={() => void copyCrn(crn)}
+                  className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition-colors hover:border-slate-300 hover:bg-slate-50 dark:border-[#3a3a3a] dark:bg-[#1f1f1f] dark:text-neutral-200 dark:hover:border-[#4a4a4a] dark:hover:bg-[#242424]"
+                  aria-label={`Copy CRN ${crn} for ${courseId}`}
+                  title={`${courseId} ${courseTitle}`}
+                >
+                  {copiedCrn === crn ? "Copied" : crn}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <Popover open={exportOpen} onOpenChange={setExportOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="shrink-0 self-start rounded-full border-[#dfc9ae] bg-[#f8f2ea] px-4 text-[#7a5230] shadow-none hover:border-[#d5b891] hover:bg-[#efe3d2] hover:text-[#6b4526] disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400 dark:border-[#6d4f36] dark:bg-[#3a281d] dark:text-[#f4e6d6] dark:hover:border-[#8a6748] dark:hover:bg-[#4a3223] dark:hover:text-[#fff6ec] dark:disabled:border-[#343434] dark:disabled:bg-[#1f1f1f] dark:disabled:text-[#666666] sm:self-end"
+                disabled={!canExportSchedule}
+              >
+                <Download className="h-4 w-4" />
+                Export schedule
+                <ChevronDown className="h-4 w-4" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-56 rounded-2xl border-slate-200 bg-white p-2 shadow-lg dark:border-[#3a3a3a] dark:bg-[#171717]">
+              <button
+                type="button"
+                onClick={downloadIcs}
+                className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 dark:text-neutral-200 dark:hover:bg-[#242424]"
+              >
+                <CalendarDays className="h-4 w-4" />
+                Download ICS
+              </button>
+            </PopoverContent>
+          </Popover>
         </div>
-        {displayCourses.length > 0 && (
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={clear}
-            className="border-border text-muted-foreground hover:bg-surface hover:text-foreground"
-          >
-            Clear all
-          </Button>
-        )}
-      </div>
+      ) : null}
 
       {displayCourses.length === 0 ? (
-        <div className="flex h-32 flex-col items-center justify-center rounded-xl border border-dashed border-border bg-surface/30 text-center">
-          <p className="text-sm text-muted-foreground">No classes selected yet.</p>
+        <div className="mx-auto max-w-6xl rounded-[28px] border border-dashed border-slate-300 bg-white/80 px-6 py-16 text-center dark:border-slate-700 dark:bg-slate-950/70">
+          <p className="font-display text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
+            No classes selected yet.
+          </p>
+          <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-500 dark:text-slate-400">
+            Use the navbar search to add classes, then review and swap section combinations here.
+          </p>
         </div>
       ) : (
-        <div className="flex flex-col gap-4">
-          {displayCourses.map((c) => (
-            <CourseCard 
-              key={c.id}
-              course={c}
-              expanded={!!open[c.id]}
-              onToggleExpand={() => toggleOpen(c.id)}
-              onRemove={() => removeCourse(c.id)}
-              allMeetingsForCourse={getAllMeetingsForCourse(c.id)}
-              otherCourses={displayCourses.filter(other => other.id !== c.id)}
+        <div className="mx-auto flex max-w-6xl flex-col gap-4">
+          {displayCourses.map((course) => (
+            <CourseCard
+              key={course.id}
+              course={course}
+              expanded={!!open[course.id]}
+              onToggleExpand={() => toggleOpen(course.id)}
+              onRemove={() => removeCourse(course.id)}
+              allMeetingsForCourse={getAllMeetingsForCourse(course.id)}
+              otherCourses={displayCourses.filter((other) => other.id !== course.id)}
               replaceCourseMeetings={replaceCourseMeetings}
             />
           ))}

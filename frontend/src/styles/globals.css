@@ -167,3 +167,39 @@
   -ms-overflow-style: none; 
   scrollbar-width: none;  
 }
+
+.scrollbar-pop {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  scrollbar-gutter: stable;
+}
+
+.scrollbar-pop::-webkit-scrollbar {
+  width: 8px;
+}
+
+.scrollbar-pop::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-pop::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: transparent;
+  transition: background-color 150ms ease;
+}
+
+.scrollbar-pop:hover,
+.scrollbar-pop:focus,
+.scrollbar-pop:focus-visible,
+.scrollbar-pop:active,
+.scrollbar-pop-active {
+  scrollbar-color: rgba(100, 116, 139, 0.45) transparent;
+}
+
+.scrollbar-pop:hover::-webkit-scrollbar-thumb,
+.scrollbar-pop:focus::-webkit-scrollbar-thumb,
+.scrollbar-pop:focus-visible::-webkit-scrollbar-thumb,
+.scrollbar-pop:active::-webkit-scrollbar-thumb,
+.scrollbar-pop-active::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.45);
+}
