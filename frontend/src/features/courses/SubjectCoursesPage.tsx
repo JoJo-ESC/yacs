@@ -4,6 +4,7 @@ import { Link, Navigate, useParams } from "react-router-dom";
 import { fetchCoursesByDepartment, getCachedCoursesByDepartment } from "@/api";
 import { SubjectCourseList } from "@/features/courses/components/SubjectCourseList";
 import { useSubjects } from "@/hooks/courses/useSubjects";
+import { useSemester } from "@/context/semester/semester-context";
 import { getSubjectBadgeClasses } from "@/lib/courses/subjectColors";
 import { getSubjectByCode, getSubjectCategories } from "@/lib/courses/subjects";
 import { cn } from "@/lib/utils";
@@ -12,6 +13,7 @@ import type { Course } from "@/types/schedule";
 export default function SubjectCoursesPage() {
   const { subjectCode = "" } = useParams();
   const { subjects, loading: subjectsLoading } = useSubjects();
+  const { selectedSemester } = useSemester();
   const normalizedSubjectCode = subjectCode.trim().toUpperCase();
   const [subjectCourses, setSubjectCourses] = React.useState<Course[]>(
     () => getCachedCoursesByDepartment(normalizedSubjectCode) ?? [],
@@ -36,7 +38,7 @@ export default function SubjectCoursesPage() {
       return;
     }
 
-    const cachedCourses = getCachedCoursesByDepartment(normalizedSubjectCode);
+    const cachedCourses = getCachedCoursesByDepartment(normalizedSubjectCode, selectedSemester);
     if (cachedCourses) {
       setSubjectCourses(cachedCourses);
       setCatalogError(null);
@@ -51,7 +53,7 @@ export default function SubjectCoursesPage() {
       setCatalogError(null);
 
       try {
-        const courses = await fetchCoursesByDepartment(normalizedSubjectCode);
+        const courses = await fetchCoursesByDepartment(normalizedSubjectCode, selectedSemester);
         if (!cancelled) {
           setSubjectCourses(courses);
         }
@@ -72,7 +74,7 @@ export default function SubjectCoursesPage() {
     return () => {
       cancelled = true;
     };
-  }, [normalizedSubjectCode]);
+  }, [normalizedSubjectCode, selectedSemester]);
 
   if (!subjectsLoading && !subject) {
     return <Navigate to="/courses" replace />;

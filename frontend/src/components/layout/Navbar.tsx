@@ -1,9 +1,11 @@
 import React from "react";
-import { Bars3Icon } from "@heroicons/react/24/solid";
+import { Bars3Icon, ChevronDownIcon } from "@heroicons/react/24/solid";
 import ClassSearch from "@/features/schedule/components/ClassSearch";
 import { SubjectNavSearch } from "@/features/courses/components/SubjectNavSearch";
 import ThemeToggle from "@/components/theme/ThemeToggle";
 import { BrandLogo } from "@/components/layout/BrandLogo";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { useSemester } from "@/context/semester/semester-context";
 import { Link, useLocation } from "react-router-dom";
 
 function Navbar() {
@@ -20,9 +22,13 @@ function Navbar() {
   );
   const activeKey = navItems.find((item) => item.matches(location.pathname))?.key ?? "browse";
   const [hoveredKey, setHoveredKey] = React.useState<string | null>(null);
-  const itemRefs = React.useRef<Record<string, HTMLAnchorElement | null>>({});
+  const itemRefs = React.useRef<Record<string, HTMLElement | null>>({});
   const [bubbleStyle, setBubbleStyle] = React.useState({ x: 0, width: 0, opacity: 0 });
   const bubbleKey = hoveredKey ?? activeKey;
+
+  const { semesters, selectedSemester, setSelectedSemester, semestersLoading } = useSemester();
+  const [semesterOpen, setSemesterOpen] = React.useState(false);
+  const selectedSemesterName = semesters.find((s) => s.term === selectedSemester)?.name ?? selectedSemester;
 
   React.useEffect(() => {
     const updateBubble = () => {
@@ -96,6 +102,48 @@ function Navbar() {
                   </Link>
                 );
               })}
+
+              {!semestersLoading && semesters.length > 0 && (
+                <Popover open={semesterOpen} onOpenChange={setSemesterOpen}>
+                  <PopoverTrigger asChild>
+                    <button
+                      ref={(node) => { itemRefs.current["semester"] = node; }}
+                      onMouseEnter={() => setHoveredKey("semester")}
+                      onFocus={() => setHoveredKey("semester")}
+                      onBlur={() => setHoveredKey(null)}
+                      className={`relative z-10 px-5 h-11 inline-flex items-center gap-1 rounded-full text-sm font-semibold transition-colors duration-300 ${
+                        bubbleKey === "semester"
+                          ? "text-[#7a5230] dark:text-[#f4e6d6]"
+                          : "text-slate-700 dark:text-neutral-200"
+                      }`}
+                    >
+                      {selectedSemesterName}
+                      <ChevronDownIcon className="h-3 w-3 shrink-0" />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent align="end" className="w-44 p-1 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700">
+                    <ul className="max-h-60 overflow-y-auto">
+                      {semesters.slice(0, 5).map((s) => (
+                        <li key={s.term}>
+                          <button
+                            className={`w-full rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-accent hover:text-accent-foreground ${
+                              s.term === selectedSemester
+                                ? "font-semibold text-[#7a5230] dark:text-[#f4e6d6]"
+                                : "text-slate-700 dark:text-neutral-200"
+                            }`}
+                            onClick={() => {
+                              setSelectedSemester(s.term);
+                              setSemesterOpen(false);
+                            }}
+                          >
+                            {s.name}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </PopoverContent>
+                </Popover>
+              )}
             </div>
 
             <ThemeToggle className="h-11 w-11 rounded-full text-slate-700 hover:bg-[#faf5ee] hover:text-[#7a5230] dark:text-neutral-200 dark:hover:bg-[#201813]" />

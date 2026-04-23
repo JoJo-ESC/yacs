@@ -49,7 +49,7 @@ export default function ProfilePage() {
         });
 
         if ("error" in profile) {
-          setError(profile.error);
+          setError(String(profile.error));
           return;
         }
 
@@ -103,7 +103,7 @@ export default function ProfilePage() {
       });
 
       if ("error" in updatedProfile) {
-        setError(updatedProfile.error);
+        setError(String(updatedProfile.error));
         return;
       }
 
