@@ -13,11 +13,13 @@ import {
   type SubjectFilterCategory,
 } from "@/lib/courses/subjects";
 import { useSubjects } from "@/hooks/courses/useSubjects";
+import { useSemester } from "@/context/semester/semester-context";
 import { useSearchParams } from "react-router-dom";
 import type { Course } from "@/types/schedule";
 
 export default function SubjectBrowserPage() {
   const { subjects, loading, error } = useSubjects();
+  const { selectedSemester } = useSemester();
   const [searchParams] = useSearchParams();
   const query = searchParams.get("q") ?? "";
   const deferredQuery = React.useDeferredValue(query);
@@ -60,7 +62,7 @@ export default function SubjectBrowserPage() {
       setSearchError(null);
 
       try {
-        const courses = await searchCourses(trimmedQuery);
+        const courses = await searchCourses(trimmedQuery, selectedSemester);
         if (!cancelled) {
           setMatchingCourses(courses);
         }
@@ -80,7 +82,7 @@ export default function SubjectBrowserPage() {
       cancelled = true;
       window.clearTimeout(timeoutId);
     };
-  }, [deferredQuery]);
+  }, [deferredQuery, selectedSemester]);
 
   const categoryCounts = React.useMemo(() => getCategoryCounts(subjects), [subjects]);
   const subjectByCode = React.useMemo(

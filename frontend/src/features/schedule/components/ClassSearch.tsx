@@ -5,6 +5,7 @@ import { Check as CheckIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { useSchedule } from "@/context/schedule/schedule-context";
+import { useSemester } from "@/context/semester/semester-context";
 import type { Course, Meeting } from "@/types/schedule";
 import { NavbarSearchField } from "@/components/ui/NavbarSearchField";
 
@@ -28,6 +29,7 @@ export function ClassSearch({
   listMaxHeight?: number;
 }) {
   const { catalog, catalogStatus, catalogLoading, loadCatalog, addCourse, hasCourse } = useSchedule();
+  const { selectedSemester } = useSemester();
 
   const [open, setOpen] = React.useState(false);
   const [query, setQuery] = React.useState("");
@@ -59,9 +61,9 @@ export function ClassSearch({
 
   React.useEffect(() => {
     if (open && catalogStatus === "idle") {
-      void loadCatalog();
+      void loadCatalog(selectedSemester);
     }
-  }, [open, catalogStatus, loadCatalog]);
+  }, [open, catalogStatus, loadCatalog, selectedSemester]);
 
   type Indexed = { id: string; title: string; idL: string; titleL: string; raw: Course };
   const indexedCatalog = React.useMemo<Indexed[]>(() => {
