@@ -58,3 +58,28 @@ export interface ApiDepartmentResponse {
   code: string;
   name: string;
 }
+
+export interface ApiScheduleResponse {
+  id: number;
+  name: string;
+  semester: string;
+  crns: string[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ApiSaveScheduleRequest {
+  name: string;
+  semester: string;
+  crns: string[];
+}
+
+export interface ApiSaveScheduleResponse {
+  success: boolean;
+  schedule: ApiScheduleResponse;
+}
+
+export interface ApiDeleteScheduleResponse {
+  success: boolean;
+  message?: string;
+}

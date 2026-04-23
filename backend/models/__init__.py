@@ -6,5 +6,6 @@ from .database_session import SessionLocal, engine, init_db, reset_course_tables
 from .course_prerequisite import CoursePrerequisite
 from .course_corequisite import CourseCorequisite
 from .user_session import UserSession
+from .saved_schedule import SavedSchedule, SavedScheduleSection
 from .course import Course
 from .meeting_time import MeetingTime
