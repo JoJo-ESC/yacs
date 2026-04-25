@@ -1,5 +1,6 @@
 import * as React from "react";
 import { searchCourses } from "@/api";
+import { Loader2 } from "lucide-react";
 import { SubjectBrowserSkeleton } from "@/features/courses/components/SubjectBrowserSkeleton";
 import { CourseSearchResults } from "@/features/courses/components/CourseSearchResults";
 import { SubjectCard } from "@/features/courses/components/SubjectCard";
@@ -165,10 +166,16 @@ export default function SubjectBrowserPage() {
                     </p>
                   </div>
                 ) : searchLoading ? (
-                  <div className="rounded-[32px] border border-dashed border-[#e4d8c9] bg-white px-6 py-16 text-center dark:border-[#433128] dark:bg-[#171210]/70">
-                    <p className="font-display text-2xl font-semibold tracking-tight text-[#2d1f15] dark:text-[#faf2ea]">
-                      Searching classes...
-                    </p>
+                  <div className="rounded-[32px] border border-dashed border-[#e4d8c9] bg-white px-6 py-16 dark:border-[#433128] dark:bg-[#171210]/70">
+                    <div className="flex flex-col items-center justify-center gap-4">
+                      <Loader2 className="h-10 w-10 animate-spin text-[#7a5230] dark:text-[#f4ece2]" />
+                      <p className="font-display text-2xl font-semibold tracking-tight text-[#2d1f15] dark:text-[#faf2ea]">
+                        Searching classes...
+                      </p>
+                      <p className="text-sm text-[#837466] dark:text-[#c7b8a9]">
+                        Looking through the course catalog for matches.
+                      </p>
+                    </div>
                   </div>
                 ) : matchingResults.length === 0 ? (
                   <div className="rounded-[32px] border border-dashed border-[#e4d8c9] bg-white px-6 py-16 text-center dark:border-[#433128] dark:bg-[#171210]/70">
