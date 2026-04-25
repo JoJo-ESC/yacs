@@ -1,4 +1,4 @@
-const apiBaseUrl = process.env.REACT_APP_API_BASE_URL ?? "http://localhost:8000";
+const apiBaseUrl = process.env.REACT_APP_API_BASE_URL ?? (process.env.NODE_ENV === "development" ? "http://localhost:8000" : "");
 
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${apiBaseUrl}${path}`, init);

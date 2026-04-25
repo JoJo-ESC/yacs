@@ -1,6 +1,6 @@
 # Application configuration (non-sensitive settings)
 # This file can be safely committed to version control
 
-DB_HOST: "db"
-DB_PORT: "5432"
+DB_HOST: "localhost"
+DB_PORT: "5433"
 DB_NAME: "yacsdb"
