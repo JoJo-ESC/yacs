@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Edit } from "lucide-react";
+import { Edit, Loader2 } from "lucide-react";
 
 import { fetchJson } from "@/api/client";
 
@@ -159,9 +159,12 @@ const handleCancel = () => {
         )}
 
         {isLoading ? (
-          <div className="rounded-xl border bg-white p-6 shadow-sm dark:bg-slate-900">
-            Loading profile...
-          </div>
+            <div className="flex min-h-[300px] items-center justify-center">
+                <div className="flex flex-col items-center gap-3">
+                  <Loader2 className="h-10 w-10 animate-spin text-blue-500" />
+                  <p className="text-sm text-gray-500">Loading profile...</p>
+                </div>
+            </div>
         ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
