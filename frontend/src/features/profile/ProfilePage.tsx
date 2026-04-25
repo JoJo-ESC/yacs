@@ -161,8 +161,8 @@ const handleCancel = () => {
         {isLoading ? (
             <div className="flex min-h-[300px] items-center justify-center">
                 <div className="flex flex-col items-center gap-3">
-                  <Loader2 className="h-10 w-10 animate-spin text-blue-500" />
-                  <p className="text-sm text-gray-500">Loading profile...</p>
+                  <Loader2 className="h-20 w-20 animate-spin text-white-500" />
+                  <p className="text-sm text-white-600">Loading profile...</p>
                 </div>
             </div>
         ) : (
