@@ -2,6 +2,7 @@ from fastapi import APIRouter, Request, status
 from fastapi.responses import JSONResponse
 
 from schemas.api_models import PreferredSemesterPydantic, UserPydantic
+from schemas.user_schemas import UserProfileResponse, UserProfileUpdate
 from services import user_service
 
 router = APIRouter(prefix="/api", tags=["Users"])
@@ -38,3 +39,19 @@ async def set_preferred_semester(request: Request, payload: PreferredSemesterPyd
     if result.get("success"):
         return JSONResponse(status_code=status.HTTP_200_OK, content=result)
     return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=result)
+
+
+@router.get("/profile", response_model=UserProfileResponse)
+async def get_profile(request: Request):
+    if 'user' not in request.session:
+        return JSONResponse(status_code=status.HTTP_403_FORBIDDEN, content={"success": False, "message": "Not authorized."})
+    user_id = request.session['user']['user_id']
+    return user_service.get_user_profile(user_id)
+
+
+@router.patch("/profile", response_model=UserProfileResponse)
+async def update_profile(request: Request, profile_data: UserProfileUpdate):
+    if 'user' not in request.session:
+        return JSONResponse(status_code=status.HTTP_403_FORBIDDEN, content={"success": False, "message": "Not authorized."})
+    user_id = request.session['user']['user_id']
+    return user_service.update_user_profile(user_id, profile_data.dict(exclude_unset=True))
