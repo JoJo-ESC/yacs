@@ -47,6 +47,35 @@ class UserCoursePydantic(BaseModel):
     semester: str
     cid: str
 
+class UserCreate(BaseModel):
+    name: str
+    email: str
+    phone: str
+    password: str
+    major: str
+    degree: str
+
+
+class UserProfileResponse(BaseModel):
+    id: int
+    name: str
+    email: str
+    phone: str
+    major: str
+    degree: str
+    profile_image_url: str | None = None
+
+
+class UserProfileUpdate(BaseModel):
+    name: str | None = None
+    email: str | None = None
+    phone: str | None = None
+    major: str | None = None
+    degree: str | None = None
+    profile_image_url: str | None = None
+
+
+
 class SubsemesterPydantic(BaseModel):
     semester: Optional[str] = None
 

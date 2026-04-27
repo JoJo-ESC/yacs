@@ -50,6 +50,16 @@ def init_db(retries: int = 5, delay: int = 2):
 
     raise Exception("Could not connect to database after multiple attempts.")
 
+
+def reset_course_tables():
+    """Drop and recreate course import tables for local schema resets."""
+    from .database import Base
+    from .course import Course
+    from .meeting_time import MeetingTime
+
+    Base.metadata.drop_all(bind=engine, tables=[MeetingTime.__table__, Course.__table__])
+    Base.metadata.create_all(bind=engine, tables=[Course.__table__, MeetingTime.__table__])
+
 if __name__=="__main__":
     import time
 

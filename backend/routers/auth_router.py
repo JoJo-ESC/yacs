@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Request, status
 from fastapi.responses import JSONResponse
 
-from schemas.api_models import SessionPydantic
+from schemas.auth_schemas import SessionPydantic
 from services import auth_service
 
 router = APIRouter(prefix="/api", tags=["Authentication"])
