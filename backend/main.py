@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 from starlette.middleware.sessions import SessionMiddleware
 
 from middleware.admin_middleware import AdminMiddleware
-from routers import user_router, auth_router, corequisite_router, admin_router
+from routers import user_router, auth_router, corequisite_router, admin_router, course_router
 from models import init_db
 from utils import load_secrets
 
@@ -52,7 +52,7 @@ app.add_middleware(
 app.add_middleware(AdminMiddleware)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=["http://localhost:3000", "http://localhost:5173"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -63,6 +63,7 @@ app.include_router(user_router.router)
 app.include_router(auth_router.router)
 app.include_router(corequisite_router.router)
 app.include_router(admin_router.router)
+app.include_router(course_router.router)
 
 
 # --- Root Endpoint ---

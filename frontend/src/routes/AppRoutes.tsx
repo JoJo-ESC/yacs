@@ -1,29 +1,34 @@
 import React from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import App from "@/app/App";
-import HomePage from "@/features/schedule/routes/HomePage";
-import FourYearPlannerPage from "@/features/planner/routes/FourYearPlannerPage";
-import ProfilePage from "@/features/profile/routes/ProfilePage";
+import ClassSectionsPage from "@/features/courses/ClassSectionsPage";
+import SubjectBrowserPage from "@/features/courses/SubjectBrowserPage";
+import SubjectCoursesPage from "@/features/courses/SubjectCoursesPage";
+import SchedulePage from "@/features/schedule/SchedulePage";
+import FourYearPlannerPage from "@/features/planner/FourYearPlannerPage";
+import ProfilePage from "@/features/profile/ProfilePage";
 import LandingAuthPage from "@/features/auth/routes/LandingAuthPage";
 import RequireAppAccess from "@/features/auth/components/RequireAppAccess";
 import RequireAuthenticated from "@/features/auth/components/RequireAuthenticated";
-import { Navigate } from "react-router-dom";
 
 export function AppRoutes() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<LandingAuthPage />} />
+        <Route path="/login" element={<LandingAuthPage />} />
         <Route element={<RequireAppAccess />}>
-          <Route path="/app" element={<App />}>
-            <Route index element={<HomePage />} />
+          <Route path="/" element={<App />}>
+            <Route index element={<SubjectBrowserPage />} />
+            <Route path="schedule" element={<SchedulePage />} />
+            <Route path="courses" element={<SubjectBrowserPage />} />
+            <Route path="courses/class/:courseId" element={<ClassSectionsPage />} />
+            <Route path="courses/:subjectCode" element={<SubjectCoursesPage />} />
             <Route path="planner" element={<FourYearPlannerPage />} />
             <Route element={<RequireAuthenticated />}>
               <Route path="profile" element={<ProfilePage />} />
             </Route>
           </Route>
         </Route>
-        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   );

@@ -10,8 +10,8 @@ export default function RequireAuthenticated() {
   }
 
   if (isGuest) {
-    return <Navigate to="/app" replace />;
+    return <Navigate to="/" replace />;
   }
 
-  return <Navigate to="/" replace />;
+  return <Navigate to="/login" replace />;
 }

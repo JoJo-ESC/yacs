@@ -6,7 +6,7 @@ export default function RequireAppAccess() {
   const { isAuthenticated, isGuest } = useAuth();
 
   if (!isAuthenticated && !isGuest) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/login" replace />;
   }
 
   return <Outlet />;

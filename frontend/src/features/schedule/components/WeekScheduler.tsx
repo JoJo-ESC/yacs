@@ -1,6 +1,8 @@
-import React, { useMemo, useRef, useEffect } from "react";
-import { useSchedule } from "../context/schedule-context";
-import type { Course } from "../types/schedule";
+import React, { useMemo, useRef, useEffect, useState } from "react";
+import { useSchedule } from "@/context/schedule/schedule-context";
+import type { Course } from "@/types/schedule";
+import { AlertTriangle } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export type DayIndex = 0 | 1 | 2 | 3 | 4 | 5 | 6; // 0=Mon, 6=Sun
 
@@ -33,16 +35,14 @@ type Interval = {
 export const dayNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const;
 
 const PALETTE = [
-  "bg-blue-500 border-blue-600",
-  "bg-emerald-500 border-emerald-600",
-  "bg-amber-500 border-amber-600",
-  "bg-violet-500 border-violet-600",
-  "bg-rose-500 border-rose-600",
-  "bg-cyan-500 border-cyan-600",
-  "bg-fuchsia-500 border-fuchsia-600",
-  "bg-lime-500 border-lime-600",
-  "bg-orange-500 border-orange-600",
-  "bg-sky-500 border-sky-600",
+  "border-sky-200 bg-sky-50 text-sky-900 dark:border-sky-900/70 dark:bg-sky-950/40 dark:text-sky-100",
+  "border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-900/70 dark:bg-emerald-950/40 dark:text-emerald-100",
+  "border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-900/70 dark:bg-amber-950/40 dark:text-amber-100",
+  "border-violet-200 bg-violet-50 text-violet-900 dark:border-violet-900/70 dark:bg-violet-950/40 dark:text-violet-100",
+  "border-rose-200 bg-rose-50 text-rose-900 dark:border-rose-900/70 dark:bg-rose-950/40 dark:text-rose-100",
+  "border-cyan-200 bg-cyan-50 text-cyan-900 dark:border-cyan-900/70 dark:bg-cyan-950/40 dark:text-cyan-100",
+  "border-fuchsia-200 bg-fuchsia-50 text-fuchsia-900 dark:border-fuchsia-900/70 dark:bg-fuchsia-950/40 dark:text-fuchsia-100",
+  "border-lime-200 bg-lime-50 text-lime-900 dark:border-lime-900/70 dark:bg-lime-950/40 dark:text-lime-100",
 ] as const;
 
 function useCourseColors(courseIds: string[]) {
@@ -150,7 +150,7 @@ function expandCoursesToRenderEvents(courses: Course[]): RenderEvent[] {
         const dayIdx = DAY_MAP[d];
         if (dayIdx === undefined) continue;
         out.push({
-          key: `${c.id}-${m.section}-${d}`,
+          key: `${c.id}-${m.type}-${m.section}-${m.crn}-${m.start}-${m.end}-${d}`,
           id: c.id,
           title: c.title,
           location: m.location,
@@ -221,12 +221,14 @@ function computeConflictingEventKeys(
 export default function WeekScheduler({
   events,
   startHour = 8,
-  endHour = 20,
+  endHour = 22,
   slotMinutes = 60,
   showWeekend = true,
   onEventClick,
 }: WeekSchedulerProps) {
   const { courses } = useSchedule();
+  const [scrollingEventKey, setScrollingEventKey] = useState<string | null>(null);
+  const scrollHideTimeoutRef = useRef<number | null>(null);
   const daysToRender = showWeekend ? 7 : 5;
   const totalMinutes = (endHour - startHour) * 60;
 
@@ -243,8 +245,8 @@ export default function WeekScheduler({
   const layout = useMemo(() => {
     return (eventsExpanded || [])
       .map((e) => {
-        const { topPct, heightPct } = computeEventPosition(e.start, e.end, startHour, endHour);
-        return { ...e, topPct, heightPct, colorClass: getColor(e.id) };
+        const { topPct, heightPct, duration } = computeEventPosition(e.start, e.end, startHour, endHour);
+        return { ...e, topPct, heightPct, duration, colorClass: getColor(e.id) };
       })
       .filter((e) => e.heightPct > 0);
   }, [eventsExpanded, startHour, endHour, getColor]);
@@ -270,24 +272,50 @@ export default function WeekScheduler({
   const conflicts = useMemo(() => {
     const set = new Set<string>();
     const byKey = new Map(eventsExpanded.map((e) => [e.key, e]));
-    for (const k of conflictKeys) {
+    conflictKeys.forEach((k) => {
       const ev = byKey.get(k);
       if (ev) set.add(ev.title);
-    }
+    });
     return Array.from(set);
   }, [conflictKeys, eventsExpanded]);
 
+  useEffect(() => {
+    return () => {
+      if (scrollHideTimeoutRef.current !== null) {
+        window.clearTimeout(scrollHideTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const handleEventScroll = (eventKey: string) => {
+    setScrollingEventKey(eventKey);
+    if (scrollHideTimeoutRef.current !== null) {
+      window.clearTimeout(scrollHideTimeoutRef.current);
+    }
+    scrollHideTimeoutRef.current = window.setTimeout(() => {
+      setScrollingEventKey((current) => (current === eventKey ? null : current));
+      scrollHideTimeoutRef.current = null;
+    }, 700);
+  };
+
   return (
-    <div className="w-full h-[720px] rounded-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden shadow-lg bg-gradient-to-br from-zinc-50 to-zinc-100 dark:from-zinc-900 dark:to-zinc-950">
+    <div className="space-y-3">
       {conflicts.length > 0 && (
-        <div className="p-4 bg-rose-50 border-l-4 border-rose-500 text-rose-700 font-medium space-y-2">
-          <div className="flex items-center gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-rose-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856a2 2 0 001.789-2.894l-6.928-12a2 2 0 00-3.578 0l-6.928 12A2 2 0 005.062 19z" />
-            </svg>
-            <span>Schedule conflicts detected</span>
+        <div className="rounded-[24px] border border-rose-200 bg-rose-50/80 px-5 py-4 dark:border-rose-900/60 dark:bg-rose-950/30">
+          <div className="flex items-start gap-3">
+            <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-rose-200 bg-white text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/50 dark:text-rose-200">
+              <AlertTriangle className="h-5 w-5" />
+            </span>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-rose-700 dark:text-rose-200">
+                Conflict detected
+              </p>
+              <p className="mt-1 text-sm text-rose-700 dark:text-rose-200">
+                One or more selected meetings overlap in the current schedule.
+              </p>
+            </div>
           </div>
-          <ul className="list-disc list-inside text-sm">
+          <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-rose-700 dark:text-rose-200">
             {conflicts.map((title, i) => (
               <li key={i}>{title}</li>
             ))}
@@ -295,97 +323,134 @@ export default function WeekScheduler({
         </div>
       )}
 
-      {/* Header row */}
-      <div className="grid" style={{ gridTemplateColumns: `80px repeat(${daysToRender}, 1fr)` }}>
-        <div className="bg-zinc-100 dark:bg-zinc-700 p-3 border-b border-zinc-200 dark:border-zinc-800" aria-hidden="true" />
-        {Array.from({ length: daysToRender }).map((_, d) => {
-          const isWeekend = d >= 5;
-          return (
+      <div className="overflow-x-auto">
+        <div className="min-w-[820px] overflow-hidden rounded-[28px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-muted)]">
+          <div className="grid" style={{ gridTemplateColumns: `72px repeat(${daysToRender}, minmax(120px, 1fr))` }}>
             <div
-              key={d}
-              className={`p-3 text-sm font-semibold text-center border-b border-zinc-200 dark:border-zinc-800
-                ${isWeekend ? "bg-rose-50/60 dark:bg-rose-900/10" : "bg-zinc-100 dark:bg-zinc-800"}
-                text-zinc-700 dark:text-zinc-100 tracking-wide shadow-sm`}
-            >
-              {dayNames[d]}
-            </div>
-          );
-        })}
-      </div>
-
-      {conflicts.length === 0 && (
-        <div
-          className="grid h-[calc(100%-44px)] mt-3 mb-3"
-          style={{ gridTemplateColumns: `80px repeat(${daysToRender}, 1fr)` }}
-        >
-          {/* Time column */}
-          <div className="relative">
-            <div className="absolute inset-0">
-              {timeMarks.map((m, i) =>
-                m.minutes % 60 === 0 ? (
-                  <div
-                    key={i}
-                    className="absolute left-0 right-0 flex items-center justify-end pr-2 text-xs text-zinc-500"
-                    style={{ top: `${((m.minutes - startHour * 60) / totalMinutes) * 100}%` }}
-                  >
-                    <span className="translate-y-[-50%] select-none">{formatTime12h(m.minutes)}</span>
-                  </div>
-                ) : null
-              )}
-            </div>
+              className="border-b border-[color:var(--app-border)] bg-[color:var(--app-surface)] p-3"
+              aria-hidden="true"
+            />
+            {Array.from({ length: daysToRender }).map((_, d) => {
+              const isWeekend = d >= 5;
+              return (
+                <div
+                  key={d}
+                  className={cn(
+                    "border-b border-l border-[color:var(--app-border)] p-3 text-center text-sm font-semibold tracking-[0.16em]",
+                    isWeekend
+                      ? "bg-[color:var(--app-accent-soft)] app-accent-text"
+                      : "bg-[color:var(--app-surface)] text-slate-700 dark:text-slate-100",
+                  )}
+                >
+                  {dayNames[d]}
+                </div>
+              );
+            })}
           </div>
 
-          {/* Day columns */}
-          {Array.from({ length: daysToRender }).map((_, d) => (
-            <div key={d} className="relative border-l border-zinc-100 dark:border-zinc-800">
-              {/* faint horizontal lines */}
-              <div className="absolute inset-0 pointer-events-none">
-                {timeMarks.map((m, i) => (
-                  <div
-                    key={i}
-                    className="absolute left-0 right-0 border-t border-zinc-200/60 dark:border-zinc-800/60"
-                    style={{ top: `${((m.minutes - startHour * 60) / totalMinutes) * 100}%` }}
-                  />
-                ))}
-              </div>
+          <div
+            className="grid min-h-[720px]"
+            style={{ gridTemplateColumns: `72px repeat(${daysToRender}, minmax(120px, 1fr))` }}
+          >
+            <div className="relative bg-[color:var(--app-surface)]">
+              <div className="absolute inset-0">
+                {timeMarks.map((m, i) => {
+                  if (m.minutes % 60 !== 0) return null;
 
-              <div className="absolute inset-0 p-1">
-                {layout
-                  .filter((e) => e.day === d)
-                  .map((e) => {
-                    const start12 = formatClock12h(e.start);
-                    const end12 = formatClock12h(e.end);
-                    const titleLabel = `${e.title} • ${start12}–${end12}${e.location ? ` @ ${e.location}` : ""}`;
+                  const isLastMark = i === timeMarks.length - 1;
 
-                    return (
-                      <button
-                        key={e.key}
-                        onClick={() => onEventClick?.(e)}
-                        className={`group absolute w-[96%] left-[2%] rounded-xl border ${e.colorClass} bg-opacity-25 border-opacity-50 text-white shadow-sm hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-400/60 transition backdrop-blur-sm`}
-                        style={{ top: `${e.topPct}%`, height: `${e.heightPct}%` }}
-                        title={titleLabel}
+                  return (
+                    <div
+                      key={i}
+                      className="absolute inset-x-0 flex justify-end pr-3 text-[11px] font-medium app-text-muted"
+                      style={{ top: `${((m.minutes - startHour * 60) / totalMinutes) * 100}%` }}
+                    >
+                      <span
+                        className={cn(
+                          "select-none rounded-full bg-[color:var(--app-surface)] px-2 py-0.5",
+                          isLastMark ? "-translate-y-full" : "-translate-y-1/2",
+                        )}
                       >
-                        <div className="h-full w-full p-2 flex flex-col items-center justify-center overflow-hidden relative text-input-foreground">
-                          <div className="w-full text-center text-[10px] sm:text-[12px] font-semibold leading-tight whitespace-pre-wrap break-words">
-                            {e.title}
-                          </div>
-                          <div className="text-[9px] opacity-90 mt-1">
-                            {start12}–{end12}
-                          </div>
-                          {e.location && (
-                            <div className="text-[9px] opacity-80 mt-1 whitespace-pre-wrap break-words">
-                              {e.location}
-                            </div>
-                          )}
-                        </div>
-                      </button>
-                    );
-                  })}
+                        {formatTime12h(m.minutes)}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
-          ))}
+
+            {Array.from({ length: daysToRender }).map((_, d) => (
+              <div key={d} className="relative border-l border-[color:var(--app-border)] bg-[color:var(--app-surface)]">
+                <div className="pointer-events-none absolute inset-0">
+                  {timeMarks.map((m, i) => (
+                    <div
+                      key={i}
+                      className="absolute inset-x-0 border-t border-[color:var(--app-border)]/70"
+                      style={{ top: `${((m.minutes - startHour * 60) / totalMinutes) * 100}%` }}
+                    />
+                  ))}
+                </div>
+
+                <div className="absolute inset-0 p-1.5">
+                  {layout
+                    .filter((e) => e.day === d)
+                    .map((e) => {
+                      const start12 = formatClock12h(e.start);
+                      const end12 = formatClock12h(e.end);
+                      const titleLabel = `${e.title} • ${start12}–${end12}${e.location ? ` @ ${e.location}` : ""}`;
+                      const isCompact = e.duration <= 75;
+
+                      return (
+                        <button
+                          key={e.key}
+                          onClick={() => onEventClick?.(e)}
+                          className={cn(
+                            "group absolute left-[4%] w-[92%] overflow-hidden rounded-2xl border text-left shadow-sm transition-all hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[var(--app-accent)] focus:ring-offset-2 focus:ring-offset-[color:var(--app-surface)]",
+                            e.colorClass,
+                            conflictKeys.has(e.key) && "border-rose-300 bg-rose-50 text-rose-900 dark:border-rose-900/70 dark:bg-rose-950/40 dark:text-rose-100",
+                          )}
+                          style={{ top: `${e.topPct}%`, height: `${e.heightPct}%` }}
+                          title={titleLabel}
+                        >
+                          <div
+                            className={cn(
+                              "scrollbar-pop flex h-full min-h-0 max-h-full flex-col overflow-x-hidden overflow-y-auto overscroll-contain",
+                              scrollingEventKey === e.key && "scrollbar-pop-active",
+                              isCompact ? "justify-start px-2 py-1 pr-3" : "px-2.5 py-2 pr-4",
+                            )}
+                            onScroll={() => handleEventScroll(e.key)}
+                          >
+                            <div
+                              className={cn(
+                                "break-words font-semibold leading-tight [overflow-wrap:anywhere]",
+                                isCompact ? "text-[10px] sm:text-[11px]" : "text-[11px] sm:text-xs",
+                              )}
+                            >
+                              {e.title}
+                            </div>
+                            <div className={cn("font-medium opacity-80", isCompact ? "mt-0.5 text-[9px] sm:text-[10px]" : "mt-1 text-[10px]")}>
+                              {start12}–{end12}
+                            </div>
+                            {e.location ? (
+                              <div
+                                className={cn(
+                                  "break-words opacity-75 [overflow-wrap:anywhere]",
+                                  isCompact ? "mt-0.5 text-[9px] leading-tight" : "mt-1 text-[10px]",
+                                )}
+                              >
+                                {e.location}
+                              </div>
+                            ) : null}
+                          </div>
+                        </button>
+                      );
+                    })}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }
