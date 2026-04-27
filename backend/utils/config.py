@@ -51,10 +51,9 @@ def load_secrets(secrets_path: str = None) -> Dict[str, Any]:
         secrets_path: Path to the secrets YAML file. Defaults to configs/secrets.yaml.
 
     Returns:
-        Secrets dict (may be empty if you're using a secrets manager setup).
-
-    Raises:
-        FileNotFoundError: If the secrets file is not found.
+        Secrets dict, or empty dict if the file doesn't exist (callers fall back to env vars / defaults).
     """
     path = secrets_path if secrets_path else _DEFAULT_SECRETS_PATH
+    if not os.path.exists(path):
+        return {}
     return _load_yaml_file(path, "secrets.yaml")

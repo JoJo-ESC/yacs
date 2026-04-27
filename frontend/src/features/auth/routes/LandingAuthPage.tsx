@@ -44,14 +44,11 @@ export default function LandingAuthPage() {
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    console.log("Form submitted, mode:", mode);
-
     const success =
       mode === "login"
         ? await login({ email, password })
         : await signup({ name, email, password, preferredSemester });
 
-    console.log("Signup/login result:", success);
     if (success) {
       navigate("/app", { replace: true });
     }

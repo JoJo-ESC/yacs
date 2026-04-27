@@ -1,7 +1,9 @@
 #!/usr/bin/python3
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, status
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from starlette.middleware.sessions import SessionMiddleware
 
 from middleware.admin_middleware import AdminMiddleware
@@ -29,6 +31,14 @@ async def lifespan(app: FastAPI):
 
 # --- Initialize FastAPI App ---
 app = FastAPI(lifespan=lifespan)
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    return JSONResponse(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        content={"success": False, "status": "error", "message": "Invalid request data."},
+    )
 
 # --- Add Middleware ---
 secrets = load_secrets()

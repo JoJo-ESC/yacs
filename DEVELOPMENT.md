@@ -31,7 +31,17 @@ Before we start, make sure you have these tools installed:
     git clone https://github.com/[YourProfile]/yacs.git
     ```
 
-## 3. Setup Docker
+## 3. Configure Secrets (Optional)
+
+The backend runs with safe defaults out of the box. For local development you can skip this step entirely. If you want to customize the database credentials or session key, copy the example file:
+
+```
+cp backend/configs/secrets.yaml.example backend/configs/secrets.yaml
+```
+
+Then edit `backend/configs/secrets.yaml` with your values. This file is gitignored — never commit it.
+
+## 4. Setup Docker
 
 Change working directory to yacs
 ```
@@ -43,7 +53,7 @@ cd yacs
     docker compose -p new_yacs up -d
     ```
 
-## 4. Setup Live Frontend
+## 5. Setup Live Frontend
 1. Setup Node Version
     * **macOS Users**:
         ```

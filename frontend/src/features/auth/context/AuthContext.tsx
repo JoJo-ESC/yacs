@@ -243,12 +243,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     try {
       const signupResponse = await signupUser(input);
-      console.log("Signup response:", signupResponse);
-      if (!signupResponse.ok || !signupResponse.success) {
-        console.log("Setting error:", signupResponse.message);
-        const errorMessage = signupResponse.message ?? "Unable to create account.";
-        setError(errorMessage);
-        window.alert("Signup failed: " + errorMessage);
+      if (!signupResponse.ok) {
+        setError(signupResponse.message ?? "Unable to create account.");
         setIsBusy(false);
         return false;
       }
@@ -283,7 +279,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
       return true;
     } catch (error) {
-      console.log("Signup error:", error);
       setError(error instanceof Error ? error.message : "Network error during signup.");
       return false;
     } finally {
