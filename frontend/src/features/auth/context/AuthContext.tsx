@@ -7,12 +7,10 @@ import {
 } from "@/features/auth/api/authApi";
 
 type AuthState = "anonymous" | "guest" | "authenticated";
-type UserSource = "backend" | "local";
 
 export type AuthUser = {
   name: string;
   email: string;
-  source: UserSource;
   preferredSemester?: string;
 };
 
@@ -22,12 +20,6 @@ type LoginInput = {
 };
 
 type SignupInput = {
-  name: string;
-  email: string;
-  password: string;
-};
-
-type MockAccount = {
   name: string;
   email: string;
   password: string;
@@ -49,7 +41,6 @@ type AuthContextValue = {
 
 const STORAGE_AUTH_USER = "yacs.auth.user";
 const STORAGE_GUEST = "yacs.auth.guest";
-const STORAGE_MOCK_ACCOUNTS = "yacs.auth.mockAccounts";
 
 function readStorage<T>(key: string): T | null {
   try {
@@ -66,35 +57,6 @@ function writeStorage(key: string, value: unknown) {
 
 function clearStorage(key: string) {
   localStorage.removeItem(key);
-}
-
-function getMockAccounts() {
-  return readStorage<MockAccount[]>(STORAGE_MOCK_ACCOUNTS) ?? [];
-}
-
-function saveMockAccounts(accounts: MockAccount[]) {
-  writeStorage(STORAGE_MOCK_ACCOUNTS, accounts);
-}
-
-function findMockAccount(email: string) {
-  return getMockAccounts().find(
-    (account) => account.email.toLowerCase() === email.toLowerCase()
-  );
-}
-
-function upsertMockAccount(input: SignupInput) {
-  const existing = findMockAccount(input.email);
-  if (existing) {
-    throw new Error("An account with this email already exists.");
-  }
-
-  const accounts = getMockAccounts();
-  accounts.push({
-    name: input.name,
-    email: input.email,
-    password: input.password,
-  });
-  saveMockAccounts(accounts);
 }
 
 function getInitialAuth() {
@@ -155,13 +117,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setAuthenticated({
             name: response.user.name,
             email: response.user.email,
-            source: "backend",
             preferredSemester: response.user.preferred_semester,
           });
           return;
         }
 
-        if (response.statusCode === 401 && mountedInitial.user?.source === "backend") {
+        if (response.statusCode === 401 && mountedInitial.state === "authenticated") {
           clearAuthenticated();
         }
       } catch {
@@ -190,18 +151,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setAuthenticated({
           name: response.user?.name ?? input.email,
           email: response.user?.email ?? input.email,
-          source: "backend",
           preferredSemester: response.user?.preferred_semester,
-        });
-        return true;
-      }
-
-      const mockAccount = findMockAccount(input.email);
-      if (mockAccount && mockAccount.password === input.password) {
-        setAuthenticated({
-          name: mockAccount.name,
-          email: mockAccount.email,
-          source: "local",
         });
         return true;
       }
@@ -219,17 +169,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setError(response.message ?? "Unable to log in with those credentials.");
       return false;
     } catch {
-      const mockAccount = findMockAccount(input.email);
-      if (mockAccount && mockAccount.password === input.password) {
-        setAuthenticated({
-          name: mockAccount.name,
-          email: mockAccount.email,
-          source: "local",
-        });
-        return true;
-      }
-
-      setError("Login failed. Please check your credentials and try again.");
+      setError("Login failed. Please check your connection and try again.");
       return false;
     } finally {
       setIsBusy(false);
@@ -248,14 +188,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return false;
       }
 
-      // Signup succeeded, now log in
-      try {
-        upsertMockAccount(input);
-      } catch (mockError) {
-        // Mock account error is non-fatal
-        console.warn("Mock account upsert failed:", mockError);
-      }
-
       const loginResponse = await loginUser({
         email: input.email,
         password: input.password,
@@ -265,20 +197,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setAuthenticated({
           name: input.name,
           email: input.email,
-          source: "backend",
           preferredSemester: loginResponse.user?.preferred_semester,
         });
         return true;
       }
 
-      setAuthenticated({
-        name: input.name,
-        email: input.email,
-        source: "local",
-      });
-      return true;
-    } catch (error) {
-      setError(error instanceof Error ? error.message : "Network error during signup.");
+      setError("Account created but login failed. Please try logging in.");
+      return false;
+    } catch {
+      setError("Network error. Please check your connection and try again.");
       return false;
     } finally {
       setIsBusy(false);
