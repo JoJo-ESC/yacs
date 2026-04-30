@@ -45,7 +45,7 @@ def create_user(user_data: dict):
             password_hash=password_hash,
             major=user_data.get("major", "Undeclared").strip() or "Undeclared",
             degree=user_data.get("degree", "BS").strip() or "BS",
-            preferred_semester=user_data.get("preferred_semester", "Fall 2025").strip() or "Fall 2025",
+            preferred_semester=(user_data.get("preferred_semester") or "Fall 2025").strip() or "Fall 2025",
             role="user",
         )
         db.add(new_user)
