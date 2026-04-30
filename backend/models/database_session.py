@@ -31,16 +31,28 @@ def init_db(retries: int = 5, delay: int = 2):
         try:
             Base.metadata.create_all(bind=engine)
             with engine.connect() as conn:
-                conn.execute(
-                    text(
-                        "ALTER TABLE users ADD COLUMN IF NOT EXISTS preferred_semester VARCHAR(64) NOT NULL DEFAULT 'Fall 2025'"
-                    )
-                )
-                conn.execute(
-                    text(
-                        "ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(32) NOT NULL DEFAULT 'user'"
-                    )
-                )
+                # Rename legacy 'password' column to 'password_hash' if it hasn't been already.
+                conn.execute(text("""
+                    DO $$
+                    BEGIN
+                        IF EXISTS (
+                            SELECT 1 FROM information_schema.columns
+                            WHERE table_name='users' AND column_name='password'
+                        ) THEN
+                            ALTER TABLE users RENAME COLUMN password TO password_hash;
+                        END IF;
+                    END $$;
+                """))
+                conn.execute(text(
+                    "ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash VARCHAR(255) NOT NULL DEFAULT ''"
+                ))
+                conn.execute(text(
+                    "ALTER TABLE users ADD COLUMN IF NOT EXISTS preferred_semester VARCHAR(64) NOT NULL DEFAULT 'Fall 2025'"
+                ))
+                conn.execute(text(
+                    "ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(32) NOT NULL DEFAULT 'user'"
+                ))
+                conn.commit()
             print("Database initialized successfully.")
             return
         except Exception as err:

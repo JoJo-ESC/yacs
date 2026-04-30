@@ -135,7 +135,11 @@ export default function LandingAuthPage() {
                   placeholder="********"
                   className="w-full rounded-lg border border-border bg-input px-3 py-2.5 text-input-foreground outline-none ring-blue-500 transition focus:ring-2"
                   required
+                  minLength={8}
                 />
+                {mode === "signup" && password.length > 0 && password.length < 8 && (
+                  <span className="text-xs text-red-500">Password must be at least 8 characters.</span>
+                )}
               </label>
 
               <button
