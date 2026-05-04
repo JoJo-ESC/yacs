@@ -14,6 +14,7 @@ def _serialize_user(user: User) -> dict:
         "preferred_semester": user.preferred_semester,
         "role": user.role,
         "profile_image_url": getattr(user, "profile_image_url", None),
+        "entry_year": user.entry_year,
     }
 
 
@@ -47,6 +48,7 @@ def create_user(user_data: dict):
             degree=user_data.get("degree", "BS").strip() or "BS",
             preferred_semester=(user_data.get("preferred_semester") or "Fall 2025").strip() or "Fall 2025",
             role="user",
+            entry_year=user_data.get("entry_year"),
         )
         db.add(new_user)
         db.commit()

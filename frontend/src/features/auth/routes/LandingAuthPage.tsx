@@ -20,6 +20,7 @@ export default function LandingAuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
+  const [entryYear, setEntryYear] = useState<number | "">("");
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -36,7 +37,7 @@ export default function LandingAuthPage() {
     const success =
       mode === "login"
         ? await login({ email, password })
-        : await signup({ name, email, password });
+        : await signup({ name, email, password, entryYear: entryYear || undefined });
 
     if (success) {
       navigate("/", { replace: true });
@@ -110,6 +111,20 @@ export default function LandingAuthPage() {
                       className="w-full rounded-lg border border-border bg-input px-3 py-2.5 text-input-foreground outline-none ring-blue-500 transition focus:ring-2"
                       required
                     />
+                  </label>
+                  <label className="block space-y-1.5">
+                    <span className="text-sm font-medium">Entry year</span>
+                    <select
+                      value={entryYear}
+                      onChange={(event) => setEntryYear(event.target.value ? Number(event.target.value) : "")}
+                      className="w-full rounded-lg border border-border bg-input px-3 py-2.5 text-input-foreground outline-none ring-blue-500 transition focus:ring-2"
+                      required
+                    >
+                      <option value="">Select your entry year</option>
+                      {Array.from({ length: 7 }, (_, i) => 2026 - i).map((year) => (
+                        <option key={year} value={year}>{year}</option>
+                      ))}
+                    </select>
                   </label>
                 </>
               )}

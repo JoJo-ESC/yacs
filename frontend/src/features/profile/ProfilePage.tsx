@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { Edit } from "lucide-react";
+import { Edit, LogOut } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
-import { fetchJson } from "@/api/client";
+import { apiFetch } from "@/api/client";
+import { useAuth } from "@/features/auth/hooks/useAuth";
 
 type ProfileResponse = {
   id: number;
@@ -14,6 +16,9 @@ type ProfileResponse = {
 };
 
 export default function ProfilePage() {
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+
   const fallbackName = "New Student";
   const fallbackEmail = "student@example.com";
 
@@ -44,14 +49,9 @@ export default function ProfilePage() {
     async function loadProfile() {
       try {
         setError(null);
-        const profile = await fetchJson<ProfileResponse>("/api/profile", {
+        const profile = await apiFetch<ProfileResponse>("/api/profile", {
           credentials: "include",
         });
-
-        if ("error" in profile) {
-          setError(String(profile.error));
-          return;
-        }
 
         setUser((current) => ({
           ...current,
@@ -90,7 +90,7 @@ export default function ProfilePage() {
   const handleSave = async () => {
     try {
       setError(null);
-      const updatedProfile = await fetchJson<ProfileResponse>("/api/profile", {
+      const updatedProfile = await apiFetch<ProfileResponse>("/api/profile", {
         method: "PATCH",
         credentials: "include",
         headers: {
@@ -101,11 +101,6 @@ export default function ProfilePage() {
           email: formData.email,
         }),
       });
-
-      if ("error" in updatedProfile) {
-        setError(String(updatedProfile.error));
-        return;
-      }
 
       setUser({
         ...user,
@@ -191,9 +186,16 @@ const handleCancel = () => {
                   Cohort: {user.cohort}
                 </span>
 
-                <button onClick = {handleEditProfile} className="w-full border rounded-md py-2 text-sm flex items-center justify-center gap-2 hover:bg-gray-50 hover:dark:bg-slate-800">
+                <button onClick={handleEditProfile} className="w-full border rounded-md py-2 text-sm flex items-center justify-center gap-2 hover:bg-gray-50 hover:dark:bg-slate-800">
                   <Edit className="size-4" />
                   Edit Profile
+                </button>
+                <button
+                  onClick={async () => { await logout(); navigate("/login", { replace: true }); }}
+                  className="w-full border border-red-200 rounded-md py-2 text-sm flex items-center justify-center gap-2 text-red-600 hover:bg-red-50 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-950/30 mt-2"
+                >
+                  <LogOut className="size-4" />
+                  Log out
                 </button>
                 
 
