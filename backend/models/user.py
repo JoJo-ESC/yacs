@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, Integer, String, SmallInteger
 
 from .database import Base
 
@@ -15,3 +15,4 @@ class User(Base):
     degree = Column(String(length=64), nullable=False, default="BS")
     preferred_semester = Column(String(length=64), nullable=False, default="Fall 2025")
     role = Column(String(length=32), nullable=False, default="user")
+    entry_year = Column(SmallInteger, nullable=True)

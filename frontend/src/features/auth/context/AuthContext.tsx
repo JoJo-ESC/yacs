@@ -23,6 +23,7 @@ type SignupInput = {
   name: string;
   email: string;
   password: string;
+  entryYear?: number;
 };
 
 type AuthContextValue = {
