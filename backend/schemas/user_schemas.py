@@ -12,6 +12,7 @@ class UserProfileResponse(BaseModel):
     degree: Optional[str] = None
     entry_year: Optional[int] = None
     profile_image_url: Optional[str] = None
+    entry_year: Optional[int] = None
 
     class Config:
         from_attributes = True

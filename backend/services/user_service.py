@@ -15,6 +15,7 @@ def _serialize_user(user: User) -> dict:
         "role": user.role,
         "entry_year": user.entry_year,
         "profile_image_url": getattr(user, "profile_image_url", None),
+        "entry_year": user.entry_year,
     }
 
 
