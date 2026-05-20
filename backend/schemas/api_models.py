@@ -31,6 +31,7 @@ class UserPydantic(BaseModel):
      major: str
      degree: str
      preferred_semester: Optional[str] = None
+     entry_year: Optional[int] = None
 
 class PreferredSemesterPydantic(BaseModel):
     preferred_semester: str

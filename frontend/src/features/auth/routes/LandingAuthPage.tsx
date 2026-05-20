@@ -20,6 +20,9 @@ export default function LandingAuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
+  const [entryYear, setEntryYear] = useState<number>(new Date().getFullYear());
+
+  const entryYearOptions = Array.from({ length: 8 }, (_, i) => new Date().getFullYear() - 3 + i);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -36,7 +39,7 @@ export default function LandingAuthPage() {
     const success =
       mode === "login"
         ? await login({ email, password })
-        : await signup({ name, email, password });
+        : await signup({ name, email, password, entryYear });
 
     if (success) {
       navigate("/", { replace: true });
@@ -110,6 +113,19 @@ export default function LandingAuthPage() {
                       className="w-full rounded-lg border border-border bg-input px-3 py-2.5 text-input-foreground outline-none ring-blue-500 transition focus:ring-2"
                       required
                     />
+                  </label>
+                  <label className="block space-y-1.5">
+                    <span className="text-sm font-medium">Year you started at RPI</span>
+                    <select
+                      value={entryYear}
+                      onChange={(e) => setEntryYear(Number(e.target.value))}
+                      className="w-full rounded-lg border border-border bg-input px-3 py-2.5 text-input-foreground outline-none ring-blue-500 transition focus:ring-2"
+                      required
+                    >
+                      {entryYearOptions.map((y) => (
+                        <option key={y} value={y}>{y}</option>
+                      ))}
+                    </select>
                   </label>
                 </>
               )}

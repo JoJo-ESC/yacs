@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { GripVertical } from "lucide-react";
 import { apiFetch } from "@/api/client";
+import { useAuth } from "@/features/auth/hooks/useAuth";
 
 // ---------------------- Types ----------------------
 type Course = { id: string; title: string; credits: number };
@@ -217,7 +218,9 @@ function normalizeStoredPlan(terms: TermId[], parsed: unknown): PlanState {
 
 // ---------------------- Main Page ----------------------
 export default function FourYearPlannerPage() {
-  const terms = useMemo(() => defaultTerms(2023), []);
+  const { user } = useAuth();
+  const startYear = user?.entryYear ?? new Date().getFullYear();
+  const terms = useMemo(() => defaultTerms(startYear), [startYear]);
 
   const [plan, setPlan] = useState<PlanState>(() => {
     const raw = typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEY) : null;

@@ -52,6 +52,9 @@ def init_db(retries: int = 5, delay: int = 2):
                 conn.execute(text(
                     "ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(32) NOT NULL DEFAULT 'user'"
                 ))
+                conn.execute(text(
+                    "ALTER TABLE users ADD COLUMN IF NOT EXISTS entry_year SMALLINT"
+                ))
                 conn.execute(text("""
                     CREATE TABLE IF NOT EXISTS user_plans (
                         id SERIAL PRIMARY KEY,

@@ -10,6 +10,7 @@ class UserProfileResponse(BaseModel):
     phone: Optional[str] = None
     major: Optional[str] = None
     degree: Optional[str] = None
+    entry_year: Optional[int] = None
     profile_image_url: Optional[str] = None
 
     class Config:
@@ -21,6 +22,7 @@ class UserProfileUpdate(BaseModel):
     phone: Optional[str] = None
     major: Optional[str] = None
     degree: Optional[str] = None
+    entry_year: Optional[int] = None
 
 class UserPydantic(BaseModel):
     name: str
