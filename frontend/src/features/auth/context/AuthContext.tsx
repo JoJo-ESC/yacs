@@ -1,4 +1,4 @@
-import React, { createContext, useEffect, useRef, useState } from "react";
+import React, { createContext, useCallback, useEffect, useRef, useState } from "react";
 import {
   getCurrentSessionUser,
   loginUser,
@@ -12,6 +12,7 @@ export type AuthUser = {
   name: string;
   email: string;
   preferredSemester?: string;
+  entryYear?: number | null;
 };
 
 type LoginInput = {
@@ -119,6 +120,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             name: response.user.name,
             email: response.user.email,
             preferredSemester: response.user.preferred_semester,
+            entryYear: response.user.entry_year,
           });
           return;
         }
@@ -153,6 +155,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           name: response.user?.name ?? input.email,
           email: response.user?.email ?? input.email,
           preferredSemester: response.user?.preferred_semester,
+          entryYear: response.user?.entry_year,
         });
         return true;
       }
@@ -182,7 +185,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsBusy(true);
 
     try {
-      const signupResponse = await signupUser(input);
+      const signupResponse = await signupUser({ ...input, entryYear: input.entryYear });
       if (!signupResponse.ok) {
         setError(signupResponse.message ?? "Unable to create account.");
         setIsBusy(false);
@@ -199,6 +202,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           name: input.name,
           email: input.email,
           preferredSemester: loginResponse.user?.preferred_semester,
+          entryYear: loginResponse.user?.entry_year,
         });
         return true;
       }
@@ -235,7 +239,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     clearStorage(STORAGE_AUTH_USER);
   };
 
-  const clearError = () => setError(null);
+  const clearError = useCallback(() => setError(null), []);
 
   const value: AuthContextValue = {
     state,

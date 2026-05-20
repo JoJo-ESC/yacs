@@ -20,7 +20,9 @@ export default function LandingAuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
-  const [entryYear, setEntryYear] = useState<number | "">("");
+  const [entryYear, setEntryYear] = useState<number>(new Date().getFullYear());
+
+  const entryYearOptions = Array.from({ length: 8 }, (_, i) => new Date().getFullYear() - 3 + i);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -37,7 +39,7 @@ export default function LandingAuthPage() {
     const success =
       mode === "login"
         ? await login({ email, password })
-        : await signup({ name, email, password, entryYear: entryYear || undefined });
+        : await signup({ name, email, password, entryYear });
 
     if (success) {
       navigate("/", { replace: true });
@@ -113,16 +115,15 @@ export default function LandingAuthPage() {
                     />
                   </label>
                   <label className="block space-y-1.5">
-                    <span className="text-sm font-medium">Entry year</span>
+                    <span className="text-sm font-medium">Year you started at RPI</span>
                     <select
                       value={entryYear}
-                      onChange={(event) => setEntryYear(event.target.value ? Number(event.target.value) : "")}
+                      onChange={(e) => setEntryYear(Number(e.target.value))}
                       className="w-full rounded-lg border border-border bg-input px-3 py-2.5 text-input-foreground outline-none ring-blue-500 transition focus:ring-2"
                       required
                     >
-                      <option value="">Select your entry year</option>
-                      {Array.from({ length: 7 }, (_, i) => 2026 - i).map((year) => (
-                        <option key={year} value={year}>{year}</option>
+                      {entryYearOptions.map((y) => (
+                        <option key={y} value={y}>{y}</option>
                       ))}
                     </select>
                   </label>

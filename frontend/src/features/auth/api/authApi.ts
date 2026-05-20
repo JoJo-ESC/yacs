@@ -8,7 +8,10 @@ type ApiEnvelope = {
   user?: {
     user_id: number;
     email: string;
-    name: string;    preferred_semester?: string;  };
+    name: string;
+    preferred_semester?: string;
+    entry_year?: number | null;
+  };
 };
 
 export type LoginRequest = {

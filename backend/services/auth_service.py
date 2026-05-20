@@ -104,6 +104,7 @@ def log_user_in(credentials: dict, session: dict, client_ip: str | None = None):
                 "name": user.name,
                 "preferred_semester": user.preferred_semester,
                 "role": user.role,
+                "entry_year": user.entry_year,
             },
         }
     finally:
@@ -146,6 +147,7 @@ def get_current_user_session(session: dict):
                 "name": user.name,
                 "preferred_semester": user.preferred_semester,
                 "role": user.role,
+                "entry_year": user.entry_year,
             },
         }
     finally:

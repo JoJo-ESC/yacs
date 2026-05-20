@@ -9,3 +9,4 @@ from .user_session import UserSession
 from .user import User
 from .course import Course
 from .meeting_time import MeetingTime
+from .user_plan import UserPlan
