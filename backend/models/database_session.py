@@ -52,6 +52,13 @@ def init_db(retries: int = 5, delay: int = 2):
                 conn.execute(text(
                     "ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(32) NOT NULL DEFAULT 'user'"
                 ))
+                conn.execute(text("""
+                    CREATE TABLE IF NOT EXISTS user_plans (
+                        id SERIAL PRIMARY KEY,
+                        user_id INTEGER NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+                        plan_data JSONB NOT NULL DEFAULT '{}'
+                    )
+                """))
                 conn.commit()
             print("Database initialized successfully.")
             return

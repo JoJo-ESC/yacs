@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { GripVertical } from "lucide-react";
 import { apiFetch } from "@/api/client";
 
@@ -227,8 +227,33 @@ export default function FourYearPlannerPage() {
     return createEmptyPlan(terms);
   });
 
+  // Load plan from backend on mount; merge over localStorage if available
   useEffect(() => {
+    apiFetch<{ plan: Record<string, unknown> }>("/api/plan", { credentials: "include" })
+      .then((res) => {
+        if (res.plan && Object.keys(res.plan).length > 0) {
+          setPlan(normalizeStoredPlan(terms, res.plan));
+        }
+      })
+      .catch(() => { /* guest or network error — keep localStorage plan */ });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Persist to localStorage immediately and to backend with 1s debounce
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isFirstRender = useRef(true);
+  useEffect(() => {
+    if (isFirstRender.current) { isFirstRender.current = false; return; }
     localStorage.setItem(STORAGE_KEY, JSON.stringify(plan));
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => {
+      apiFetch("/api/plan", {
+        method: "PUT",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan }),
+      }).catch(() => { /* silent — localStorage is the fallback */ });
+    }, 1000);
   }, [plan]);
 
   function handleDrop(term: TermId, c: Course) {
