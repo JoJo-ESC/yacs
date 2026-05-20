@@ -1,4 +1,4 @@
-import React, { createContext, useEffect, useRef, useState } from "react";
+import React, { createContext, useCallback, useEffect, useRef, useState } from "react";
 import {
   getCurrentSessionUser,
   loginUser,
@@ -239,7 +239,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     clearStorage(STORAGE_AUTH_USER);
   };
 
-  const clearError = () => setError(null);
+  const clearError = useCallback(() => setError(null), []);
 
   const value: AuthContextValue = {
     state,
