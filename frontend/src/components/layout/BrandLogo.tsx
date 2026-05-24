@@ -11,12 +11,12 @@ function BrandLogoImage({ imageClassName }: Pick<BrandLogoProps, "imageClassName
   return (
     <>
       <img
-        src="/logo/color-sticker.png"
+        src="/logo/color-illustrator.svg"
         alt="YACS logo"
         className={cn("block h-10 w-auto dark:hidden", imageClassName)}
       />
       <img
-        src="/logo/color-sticker.png"
+        src="/logo/color-illustrator-dark.svg"
         alt="YACS logo"
         className={cn("hidden h-10 w-auto dark:block", imageClassName)}
       />
