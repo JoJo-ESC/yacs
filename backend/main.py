@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
@@ -43,11 +44,24 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     )
 
 
-# --- Add Middleware ---
+# --- Load Secrets ---
 secrets = load_secrets()
+
+# SECRET_KEY is required — it signs every session cookie.
+# A missing or weak key means anyone can forge a valid session for any user.
+# Fail loudly at startup rather than silently run with an insecure default.
+_secret_key = secrets.get("SECRET_KEY") or os.environ.get("SECRET_KEY")
+if not _secret_key:
+    raise RuntimeError(
+        "SECRET_KEY is not set. "
+        "Add it to configs/secrets.yaml or set the SECRET_KEY environment variable. "
+        "The server will not start without it."
+    )
+
+# --- Add Middleware ---
 app.add_middleware(
     SessionMiddleware,
-    secret_key=secrets.get("SECRET_KEY", "dev_secret_key"),
+    secret_key=_secret_key,
     same_site=secrets.get("SESSION_SAME_SITE", "lax"),
     https_only=_as_bool(secrets.get("SESSION_HTTPS_ONLY"), default=False),
     max_age=int(secrets.get("SESSION_MAX_AGE_SECONDS", 12 * 60 * 60)),
