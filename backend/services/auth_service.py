@@ -7,6 +7,10 @@ from models import SessionLocal
 from models.user import User
 from services.password_service import hash_password, needs_rehash, verify_password
 
+# Pre-computed dummy hash used when a login email doesn't match any account.
+# verify_password is always called (even on unknown emails) so response time
+# is consistent and attackers cannot enumerate registered emails via timing.
+_DUMMY_HASH = hash_password("dummy_password_that_is_never_used_yacs")
 
 MAX_FAILED_ATTEMPTS = 5
 FAILED_WINDOW_SECONDS = 15 * 60
@@ -76,7 +80,14 @@ def log_user_in(credentials: dict, session: dict, client_ip: str | None = None):
     db = SessionLocal()
     try:
         user = db.query(User).filter(User.email == email).first()
-        if user is None or not verify_password(password, user.password_hash):
+
+        # Always run verify_password regardless of whether the user exists.
+        # Using _DUMMY_HASH for unknown emails keeps response time consistent
+        # so attackers cannot tell which emails are registered.
+        hash_to_check = user.password_hash if user is not None else _DUMMY_HASH
+        password_valid = verify_password(password, hash_to_check)
+
+        if user is None or not password_valid:
             _record_failed_attempt(throttle_key)
             return {"success": False, "status": "error", "code": "invalid_credentials", "message": "Invalid credentials."}
 
