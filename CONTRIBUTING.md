@@ -48,6 +48,16 @@ git push origin main
 ## Development Setup
 Follow [DEVELOPMENT.md](./DEVELOPMENT.md) to install dependencies and run the frontend/backend.
 
+After cloning, create your local secrets file before starting the backend:
+```bash
+cp backend/configs/secrets.yaml.example backend/configs/secrets.yaml
+```
+Then open `backend/configs/secrets.yaml` and replace the `SECRET_KEY` value with a generated one:
+```bash
+python3 -c "import secrets; print(secrets.token_hex(32))"
+```
+This file is gitignored — never commit it.
+
 ## Coding Best Practices
 - Keep PRs small and focused on a single change.
 - Follow existing patterns and project structure.
@@ -99,6 +109,8 @@ If there are no tests for your area, explain how you manually verified changes i
 ## Security and Secrets
 - Do not commit secrets or credentials.
 - Use environment variables for sensitive data.
+- `backend/configs/secrets.yaml` is gitignored — keep your real values there, never in `secrets.yaml.example` or any committed file.
+- The backend will refuse to start if `SECRET_KEY` is missing. See the Development Setup section for how to generate one.
 - If you accidentally commit a secret, notify maintainers immediately and rotate it.
 
 ## Large Changes

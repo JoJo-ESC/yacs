@@ -5,4 +5,5 @@ itsdangerous
 sqlalchemy
 psycopg2-binary
 pyyaml
+requests
 pytest
