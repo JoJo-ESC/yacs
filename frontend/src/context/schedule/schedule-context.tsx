@@ -157,7 +157,18 @@ export function ScheduleProvider({ children }: { children: React.ReactNode }) {
     const request = (async () => {
       try {
         const nextCatalog = await fetchAllCourses(semester);
-        startTransition(() => setCatalog(nextCatalog));
+        const catalogMap = new Map(nextCatalog.map((c) => [c.id, c]));
+        startTransition(() => {
+          setCatalog(nextCatalog);
+          setCourses((prev) =>
+            prev.map((c) => {
+              const fresh = catalogMap.get(c.id);
+              return fresh && c.credits === 0 && fresh.credits > 0
+                ? { ...c, credits: fresh.credits }
+                : c;
+            })
+          );
+        });
         setCatalogStatus("loaded");
       } catch (err) {
         setCatalogStatus("error");

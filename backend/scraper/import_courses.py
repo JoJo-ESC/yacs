@@ -66,7 +66,7 @@ def import_courses_from_file(filepath: str, db_session) -> int:
             'subject_description': course_json.get('subjectDescription'),
             'course_number': course_json.get('courseNumber'),
             'course_title': course_json.get('courseTitle'),
-            'credit_hours': course_json.get('creditHours') or course_json.get('creditHourHigh'),
+            'credit_hours': course_json.get('creditHours') or course_json.get('creditHourHigh') or course_json.get('creditHourLow'),
             'max_enrollment': course_json.get('maximumEnrollment'),
             'enrollment': course_json.get('enrollment'),
             'seats_available': course_json.get('seatsAvailable'),

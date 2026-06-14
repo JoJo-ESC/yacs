@@ -8,6 +8,9 @@ import {
 import { Course, Meeting } from "../types/schedule";
 import { decodeHtmlEntities } from "@/lib/utils";
 
+const allCoursesCache = new Map<string, Course[]>();
+const allCoursesRequests = new Map<string, Promise<Course[]>>();
+
 const departmentCourseCache = new Map<string, Course[]>();
 const departmentCourseRequests = new Map<string, Promise<Course[]>>();
 
@@ -63,7 +66,11 @@ function apiCoursesToCourses(raw: ApiCourseResponse[]): Course[] {
     const meetings = buildMeetings(row);
 
     if (map.has(key)) {
-      map.get(key)!.meetings.push(...meetings);
+      const existing = map.get(key)!;
+      existing.meetings.push(...meetings);
+      if (existing.credits === 0 && row.credit_hours) {
+        existing.credits = row.credit_hours;
+      }
     } else {
       map.set(key, {
         id: key,
@@ -87,20 +94,38 @@ function apiCoursesToCourses(raw: ApiCourseResponse[]): Course[] {
 }
 
 export async function fetchAllCourses(semester?: string): Promise<Course[]> {
-  const allRaw: ApiCourseResponse[] = [];
-  let page = 1;
-  let totalPages = 1;
+  const key = semester ?? "";
+  const cached = allCoursesCache.get(key);
+  if (cached) return cached;
 
-  do {
-    const params = new URLSearchParams({ page: String(page), per_page: "100" });
-    if (semester) params.set("semester", semester);
-    const res = await apiFetch<ApiCourseListResponse>(`/api/courses?${params}`);
-    allRaw.push(...res.data);
-    totalPages = res.pagination.total_pages;
-    page++;
-  } while (page <= totalPages);
+  const inFlight = allCoursesRequests.get(key);
+  if (inFlight) return inFlight;
 
-  return apiCoursesToCourses(allRaw);
+  const request = (async () => {
+    const allRaw: ApiCourseResponse[] = [];
+    let page = 1;
+    let totalPages = 1;
+
+    do {
+      const params = new URLSearchParams({ page: String(page), per_page: "100" });
+      if (semester) params.set("semester", semester);
+      const res = await apiFetch<ApiCourseListResponse>(`/api/courses?${params}`);
+      allRaw.push(...res.data);
+      totalPages = res.pagination.total_pages;
+      page++;
+    } while (page <= totalPages);
+
+    const courses = apiCoursesToCourses(allRaw);
+    allCoursesCache.set(key, courses);
+    allCoursesRequests.delete(key);
+    return courses;
+  })().catch((err) => {
+    allCoursesRequests.delete(key);
+    throw err;
+  });
+
+  allCoursesRequests.set(key, request);
+  return request;
 }
 
 export async function fetchCoursesByDepartment(
