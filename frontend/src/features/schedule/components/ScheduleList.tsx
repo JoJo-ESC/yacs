@@ -4,66 +4,16 @@ import { CalendarDays, ChevronDown, ChevronUp, Download, Trash2 } from "lucide-r
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useSchedule } from "@/context/schedule/schedule-context";
-import { SectionOptionCard } from "@/features/courses/components/SectionOptionCard";
+import { fetchCoursesByDepartment } from "@/api";
+import {
+  groupMeetingOptions,
+  getSelectedOptionKey,
+  isMultiSectionSelected,
+  SectionOptionList,
+} from "@/features/courses/components/SectionOptionList";
+import type { SectionOption } from "@/features/courses/components/SectionOptionList";
 import { buildScheduleIcs, hasExportableMeetings } from "@/lib/schedule/calendarExport";
-import { hasScheduleConflict } from "@/lib/schedule/schedule";
 import type { Course, Meeting } from "@/types/schedule";
-
-type MeetingOption = {
-  key: string;
-  type: string;
-  section: string;
-  crn: string;
-  meetings: Meeting[];
-  instructor: string;
-  seatsAvailable: number;
-  enrolled: number;
-  maxEnroll: number;
-};
-
-function groupMeetingOptions(meetings: Meeting[]) {
-  const options: MeetingOption[] = [];
-
-  for (const meeting of meetings) {
-    const key = `${meeting.type}::${meeting.section}::${meeting.crn}`;
-    const existing = options.find((option) => option.key === key);
-
-    if (existing) {
-      existing.meetings.push(meeting);
-      if (!existing.instructor && meeting.instructor) existing.instructor = meeting.instructor;
-      continue;
-    }
-
-    options.push({
-      key,
-      type: meeting.type,
-      section: meeting.section,
-      crn: meeting.crn,
-      meetings: [meeting],
-      instructor: meeting.instructor,
-      seatsAvailable: meeting.seatsAvailable,
-      enrolled: meeting.enrolled,
-      maxEnroll: meeting.maxEnroll,
-    });
-  }
-
-  return [...options].sort((a, b) =>
-    a.key.localeCompare(b.key, undefined, {
-      numeric: true,
-      sensitivity: "base",
-    }),
-  );
-}
-
-function getSelectedOptionKey(meetings: Meeting[]) {
-  const selectedMeeting = meetings[0];
-  if (!selectedMeeting) return null;
-  return `${selectedMeeting.type}::${selectedMeeting.section}::${selectedMeeting.crn}`;
-}
-
-function getMeetingKey(meeting: Meeting) {
-  return `${meeting.type}::${meeting.section}::${meeting.crn}::${meeting.start}::${meeting.end}`;
-}
 
 interface CourseCardProps {
   course: Course;
@@ -73,6 +23,7 @@ interface CourseCardProps {
   allMeetingsForCourse: Meeting[];
   otherCourses: Course[];
   replaceCourseMeetings: (course: Course, meetings: Meeting[]) => void;
+  removeCourse: (id: string) => void;
 }
 
 function CourseCard({
@@ -83,25 +34,43 @@ function CourseCard({
   allMeetingsForCourse,
   otherCourses,
   replaceCourseMeetings,
+  removeCourse,
 }: CourseCardProps): JSX.Element {
   const allOptions = React.useMemo(() => groupMeetingOptions(allMeetingsForCourse), [allMeetingsForCourse]);
   const sectionCount = allOptions.length;
-  const selectedLabels = React.useMemo(
-    () => {
-      const selectedKey = getSelectedOptionKey(course.meetings);
-      const selectedOption = allOptions.find((option) => option.key === selectedKey);
-      return selectedOption ? [`${selectedOption.type} ${selectedOption.section}`] : [];
-    },
-    [allOptions, course.meetings],
-  );
+  const selectedLabels = React.useMemo(() => {
+    if (isMultiSectionSelected(course.meetings)) return ["All available"];
+    const selectedKey = getSelectedOptionKey(course.meetings);
+    const selectedOption = allOptions.find((option) => option.key === selectedKey);
+    return selectedOption ? [`${selectedOption.type} ${selectedOption.section}`] : [];
+  }, [allOptions, course.meetings]);
 
   const otherMeetings = React.useMemo(() => otherCourses.flatMap((otherCourse) => otherCourse.meetings), [otherCourses]);
 
   const applyOption = React.useCallback(
-    (selected: MeetingOption) => {
-      replaceCourseMeetings(course, selected.meetings);
+    (selected: SectionOption) => {
+      const isMulti = isMultiSectionSelected(course.meetings);
+      const isSameOptionSelected =
+        !isMulti && getSelectedOptionKey(course.meetings) === selected.key;
+      if (isSameOptionSelected) {
+        removeCourse(course.id);
+      } else {
+        replaceCourseMeetings(course, selected.meetings);
+      }
     },
-    [course, replaceCourseMeetings],
+    [course, replaceCourseMeetings, removeCourse],
+  );
+
+  const applyAllNonConflicting = React.useCallback(
+    (nonConflictingOptions: SectionOption[], isAllSelected: boolean) => {
+      if (isAllSelected) {
+        removeCourse(course.id);
+      } else {
+        const allMeetings = nonConflictingOptions.flatMap((opt) => opt.meetings);
+        replaceCourseMeetings(course, allMeetings);
+      }
+    },
+    [course, replaceCourseMeetings, removeCourse],
   );
 
   return (
@@ -172,30 +141,13 @@ function CourseCard({
 
       {expanded ? (
         <div className="border-t border-slate-200/70 bg-slate-50/60 px-5 py-4 dark:border-[#343434] dark:bg-[#1a1a1a]">
-          <div className="space-y-3">
-            {allOptions.map((option) => {
-              const isSelected = getSelectedOptionKey(course.meetings) === option.key;
-              const conflictingMeetings = option.meetings.filter((meeting) => hasScheduleConflict(otherMeetings, meeting));
-              const hasConflict = conflictingMeetings.length > 0;
-
-              return (
-                <SectionOptionCard
-                  key={option.key}
-                  onClick={() => applyOption(option)}
-                  sectionLabel={`${option.type} ${option.section}`}
-                  instructor={option.instructor}
-                  crn={option.crn}
-                  seatsAvailable={option.seatsAvailable}
-                  enrolled={option.enrolled}
-                  maxEnroll={option.maxEnroll}
-                  meetings={option.meetings}
-                  isSelected={isSelected}
-                  hasConflict={hasConflict}
-                  conflictingMeetingKeys={conflictingMeetings.map(getMeetingKey)}
-                />
-              );
-            })}
-          </div>
+          <SectionOptionList
+            options={allOptions}
+            selectedMeetings={course.meetings}
+            otherMeetings={otherMeetings}
+            onApplyOption={applyOption}
+            onApplyAllNonConflicting={applyAllNonConflicting}
+          />
         </div>
       ) : null}
     </article>
@@ -203,15 +155,27 @@ function CourseCard({
 }
 
 export default function ScheduleList(): JSX.Element {
-  const { courses, removeCourse, catalog, catalogStatus, loadCatalog, updateCourse } = useSchedule();
+  const { courses, removeCourse, catalog, updateCourse } = useSchedule();
   const [copiedCrn, setCopiedCrn] = React.useState<string | null>(null);
   const [exportOpen, setExportOpen] = React.useState(false);
 
+  // Fetch only the departments in the schedule instead of loading the full catalog.
+  // SchedulePage handles the full catalog load for schedule-variant cycling.
+  const [deptCourseMap, setDeptCourseMap] = React.useState<Map<string, Course>>(new Map());
   React.useEffect(() => {
-    if (courses.length > 0 && catalogStatus === "idle") {
-      void loadCatalog();
-    }
-  }, [courses.length, catalogStatus, loadCatalog]);
+    const departments = Array.from(new Set(courses.map((c) => c.department).filter(Boolean)));
+    if (departments.length === 0) return;
+    let cancelled = false;
+    Promise.all(departments.map((dept) => fetchCoursesByDepartment(dept))).then((results) => {
+      if (cancelled) return;
+      const map = new Map<string, Course>();
+      for (const deptCourses of results) {
+        for (const c of deptCourses) map.set(c.id, c);
+      }
+      setDeptCourseMap(map);
+    });
+    return () => { cancelled = true; };
+  }, [courses]);
 
   const orderRef = React.useRef<Map<string, number>>(new Map());
   React.useEffect(() => {
@@ -246,10 +210,11 @@ export default function ScheduleList(): JSX.Element {
 
   const getAllMeetingsForCourse = React.useCallback(
     (courseId: string): Meeting[] =>
+      deptCourseMap.get(courseId)?.meetings ||
       catalog.find((course) => course.id === courseId)?.meetings ||
       courses.find((course) => course.id === courseId)?.meetings ||
       [],
-    [catalog, courses],
+    [deptCourseMap, catalog, courses],
   );
 
   const selectedCrns = React.useMemo(
@@ -389,6 +354,7 @@ export default function ScheduleList(): JSX.Element {
               allMeetingsForCourse={getAllMeetingsForCourse(course.id)}
               otherCourses={displayCourses.filter((other) => other.id !== course.id)}
               replaceCourseMeetings={replaceCourseMeetings}
+              removeCourse={removeCourse}
             />
           ))}
         </div>
