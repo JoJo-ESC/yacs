@@ -6,78 +6,19 @@ import {
 } from "lucide-react";
 import { useSchedule } from "@/context/schedule/schedule-context";
 import type { Course, Meeting } from "@/types/schedule";
-import { hasScheduleConflict } from "@/lib/schedule/schedule";
 import { cn } from "@/lib/utils";
-import { SectionOptionCard } from "./SectionOptionCard";
-
-type SectionOption = {
-  key: string;
-  type: string;
-  section: string;
-  crn: string;
-  meetings: Meeting[];
-  instructor: string;
-  seatsAvailable: number;
-  enrolled: number;
-  maxEnroll: number;
-};
-
-function groupMeetingOptions(meetings: Meeting[]) {
-  const options: SectionOption[] = [];
-
-  for (const meeting of meetings) {
-    const optionKey = `${meeting.type}::${meeting.section}::${meeting.crn}`;
-    const existing = options.find((option) => option.key === optionKey);
-
-    if (existing) {
-      existing.meetings.push(meeting);
-      if (!existing.instructor && meeting.instructor) existing.instructor = meeting.instructor;
-      continue;
-    }
-
-    options.push({
-      key: optionKey,
-      type: meeting.type,
-      section: meeting.section,
-      crn: meeting.crn,
-      meetings: [meeting],
-      instructor: meeting.instructor,
-      seatsAvailable: meeting.seatsAvailable,
-      enrolled: meeting.enrolled,
-      maxEnroll: meeting.maxEnroll,
-    });
-  }
-
-  return [...options].sort((a, b) =>
-    a.key.localeCompare(b.key, undefined, { numeric: true, sensitivity: "base" }),
-  );
-}
-
-function buildDefaultSelection(course: Course, override?: SectionOption): Meeting[] {
-  const options = groupMeetingOptions(course.meetings);
-  const option = override ?? options[0];
-  return option?.meetings ?? [];
-}
-
-function getSelectedOptionKey(meetings: Meeting[]) {
-  const selectedMeeting = meetings[0];
-  if (!selectedMeeting) return null;
-  return `${selectedMeeting.type}::${selectedMeeting.section}::${selectedMeeting.crn}`;
-}
-
-function getMeetingKey(meeting: Meeting) {
-  return `${meeting.type}::${meeting.section}::${meeting.crn}::${meeting.start}::${meeting.end}`;
-}
+import {
+  groupMeetingOptions,
+  getSelectedOptionKey,
+  isMultiSectionSelected,
+  SectionOptionList,
+} from "./SectionOptionList";
+import type { SectionOption } from "./SectionOptionList";
 
 function getOtherCourseMeetings(courses: Course[], courseId: string) {
   return courses
     .filter((course) => course.id !== courseId)
     .flatMap((course) => course.meetings);
-}
-
-function hasOptionConflict(otherMeetings: Meeting[], option: SectionOption, currentCourse: Course | undefined) {
-  const meetingsToCheck = currentCourse && getSelectedOptionKey(currentCourse.meetings) === option.key ? otherMeetings : otherMeetings;
-  return option.meetings.some((meeting) => hasScheduleConflict(meetingsToCheck, meeting));
 }
 
 interface SubjectCourseListProps {
@@ -119,18 +60,27 @@ export function SubjectCourseList({
   const applyOption = React.useCallback(
     (course: Course, option: SectionOption) => {
       const selectedCourse = selectedCourseMap.get(course.id);
-      const isSameOptionSelected = selectedCourse && getSelectedOptionKey(selectedCourse.meetings) === option.key;
-      const nextMeetings = selectedCourse
-        ? isSameOptionSelected
-          ? []
-          : option.meetings
-        : buildDefaultSelection(course, option);
+      const isMulti = selectedCourse ? isMultiSectionSelected(selectedCourse.meetings) : false;
+      const isSameOptionSelected =
+        selectedCourse && !isMulti && getSelectedOptionKey(selectedCourse.meetings) === option.key;
 
       if (selectedCourse) removeCourse(course.id);
-      if (nextMeetings.length > 0) addCourse({ ...course, meetings: nextMeetings });
+      if (!isSameOptionSelected) addCourse({ ...course, meetings: option.meetings });
       setOpenCards((prev) => ({ ...prev, [course.id]: true }));
     },
     [addCourse, removeCourse, selectedCourseMap],
+  );
+
+  const applyAllNonConflicting = React.useCallback(
+    (course: Course, nonConflictingOptions: SectionOption[], isAllSelected: boolean) => {
+      removeCourse(course.id);
+      if (!isAllSelected) {
+        const allMeetings = nonConflictingOptions.flatMap((opt) => opt.meetings);
+        if (allMeetings.length > 0) addCourse({ ...course, meetings: allMeetings });
+      }
+      setOpenCards((prev) => ({ ...prev, [course.id]: true }));
+    },
+    [addCourse, removeCourse],
   );
 
   if (courses.length === 0) {
@@ -154,10 +104,13 @@ export function SubjectCourseList({
         const options = groupMeetingOptions(course.meetings);
         const sectionCount = options.length;
         const selectedLabels = (() => {
-          const key = getSelectedOptionKey(selectedCourse?.meetings ?? []);
+          if (!selectedCourse) return [];
+          if (isMultiSectionSelected(selectedCourse.meetings)) return ["All available"];
+          const key = getSelectedOptionKey(selectedCourse.meetings);
           const option = options.find((entry) => entry.key === key);
           return option ? [`${option.type} ${option.section}`] : [];
         })();
+        const otherMeetings = otherMeetingsByCourse.get(course.id) ?? [];
 
         return (
           <article
@@ -224,32 +177,15 @@ export function SubjectCourseList({
                   showCourseHeader && "bg-slate-50/60 px-5 py-4 dark:bg-[#1a1a1a]",
                 )}
               >
-                <div className="space-y-3">
-                  {options.map((option) => {
-                    const selectedKey = getSelectedOptionKey(selectedCourse?.meetings ?? []);
-                    const otherMeetings = otherMeetingsByCourse.get(course.id) ?? [];
-                    const isSelected = selectedKey === option.key;
-                    const conflictingMeetings = option.meetings.filter((meeting) => hasScheduleConflict(otherMeetings, meeting));
-                    const hasConflict = conflictingMeetings.length > 0;
-
-                    return (
-                      <SectionOptionCard
-                        key={option.key}
-                        onClick={() => applyOption(course, option)}
-                        sectionLabel={`Section ${option.section}`}
-                        instructor={option.instructor}
-                        crn={option.crn}
-                        seatsAvailable={option.seatsAvailable}
-                        enrolled={option.enrolled}
-                        maxEnroll={option.maxEnroll}
-                        meetings={option.meetings}
-                        isSelected={isSelected}
-                        hasConflict={hasConflict}
-                        conflictingMeetingKeys={conflictingMeetings.map(getMeetingKey)}
-                      />
-                    );
-                  })}
-                </div>
+                <SectionOptionList
+                  options={options}
+                  selectedMeetings={selectedCourse?.meetings ?? []}
+                  otherMeetings={otherMeetings}
+                  onApplyOption={(option) => applyOption(course, option)}
+                  onApplyAllNonConflicting={(nonConflicting, isAllSelected) =>
+                    applyAllNonConflicting(course, nonConflicting, isAllSelected)
+                  }
+                />
               </div>
             ) : null}
           </article>
