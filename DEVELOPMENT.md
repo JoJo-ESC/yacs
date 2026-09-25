@@ -80,6 +80,10 @@ cd yacs
 - Development UI: `http://localhost:3000`
 - FastAPI: `http://localhost:8000`
 - Postgres: `http://localhost:5432`
+- Redis: `http://localhost:6379`
+
+## Redis
+`docker compose up` also starts a Redis container (used for login-attempt throttling, with caching planned next). You don't need to install anything for it — it's just another service in `docker-compose.yml`. It's an optional dependency: the backend still starts and serves requests if Redis is unreachable, degrading login throttling to a per-process fallback until Redis comes back.
 
 ## Developer Notes
 - Remember to stop the YACS docker container when you're done to relieve system resources. Click the red Stop button under Actions in Docker Desktop next to `new_yacs`.

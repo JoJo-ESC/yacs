@@ -9,6 +9,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from middleware.admin_middleware import AdminMiddleware
 from routers import user_router, auth_router, corequisite_router, admin_router, course_router, planner_router
 from models import init_db
+from services import redis_client
 from utils import load_secrets
 
 
@@ -23,10 +24,20 @@ def _as_bool(value, default=False):
 # --- Lifespan (startup/shutdown events) ---
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: create database tables
     init_db()
+
+    # Redis is an optional dependency — connect() itself never raises, but
+    # guard the call anyway so a startup-time misconfiguration (e.g. a bad
+    # REDIS_URL) can't take down the rest of the API either.
+    redis_url = load_secrets().get("REDIS_URL", "redis://localhost:6379/0")
+    try:
+        await redis_client.connect(redis_url)
+    except Exception:
+        import logging
+        logging.getLogger(__name__).warning("Failed to configure Redis client; continuing without it.")
+
     yield
-    # Shutdown: cleanup if needed
+    await redis_client.disconnect()
 
 
 # --- Initialize FastAPI App ---
