@@ -1,11 +1,12 @@
 # backend/routers/course_router.py
 
+from typing import Callable, List, Optional
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from typing import List, Optional
 
 from models import SessionLocal
-from services import course_service
+from services import cache_service, course_service
 from schemas.course_schemas import (
     CourseResponse,
     CourseListResponse,
@@ -13,6 +14,16 @@ from schemas.course_schemas import (
     DepartmentResponse,
     SemesterResponse,
 )
+
+# Course listings (enrollment/seats change as the scraper re-syncs and as
+# students register) get a short TTL: enough to absorb a traffic spike
+# without serving badly stale seat counts.
+COURSE_LIST_TTL_SECONDS = 30
+
+# Departments/semesters only change when the catalog itself changes, so a
+# longer TTL is safe and keeps these near-static lookups off the database
+# almost entirely.
+LOOKUP_TABLE_TTL_SECONDS = 600
 
 
 # --- Database Dependency ---
@@ -47,6 +58,46 @@ def build_course_list_response(
     )
 
 
+async def _cached_course_list(
+    namespace: str,
+    cache_params: dict,
+    compute: Callable[[], tuple],
+    *,
+    page: int,
+    per_page: int,
+) -> CourseListResponse:
+    """Read-through cache wrapper shared by the paginated course-list endpoints.
+
+    On a cache miss (or if Redis is unavailable — `cache_service` fails open
+    to that on any error) this runs `compute()` against the database exactly
+    as before and caches the result; a hit skips the database entirely.
+    """
+    cache_key = cache_service.build_key(namespace, **cache_params)
+
+    cached = await cache_service.get_json(cache_key)
+    if cached is not None:
+        return CourseListResponse(**cached)
+
+    courses, total = compute()
+    response = build_course_list_response(courses, page=page, per_page=per_page, total=total)
+
+    await cache_service.set_json(cache_key, response.model_dump(mode="json"), COURSE_LIST_TTL_SECONDS)
+    return response
+
+
+async def _cached_lookup_list(namespace: str, compute: Callable[[], list]) -> list:
+    """Read-through cache wrapper for the small, near-static lookup endpoints."""
+    cache_key = cache_service.build_key(namespace)
+
+    cached = await cache_service.get_json(cache_key)
+    if cached is not None:
+        return cached
+
+    result = compute()
+    await cache_service.set_json(cache_key, result, LOOKUP_TABLE_TTL_SECONDS)
+    return result
+
+
 @router.get('/courses', response_model=CourseListResponse)
 async def get_courses(
     page: int = Query(1, ge=1, description="Page number"),
@@ -55,13 +106,12 @@ async def get_courses(
     db: Session = Depends(get_db)
 ):
     """Get all courses with pagination."""
-    courses, total = course_service.get_all_courses(db, page, per_page, semester)
-
-    return build_course_list_response(
-        courses,
+    return await _cached_course_list(
+        "courses:list",
+        {"page": page, "per_page": per_page, "semester": semester},
+        lambda: course_service.get_all_courses(db, page, per_page, semester),
         page=page,
         per_page=per_page,
-        total=total,
     )
 
 
@@ -74,27 +124,26 @@ async def search_courses(
     db: Session = Depends(get_db)
 ):
     """Search courses by name or course code."""
-    courses, total = course_service.search_courses(db, q, page, per_page, semester)
-
-    return build_course_list_response(
-        courses,
+    return await _cached_course_list(
+        "courses:search",
+        {"q": q, "page": page, "per_page": per_page, "semester": semester},
+        lambda: course_service.search_courses(db, q, page, per_page, semester),
         page=page,
         per_page=per_page,
-        total=total,
     )
 
 
 @router.get('/departments', response_model=List[DepartmentResponse])
 async def get_departments(db: Session = Depends(get_db)):
     """Get all departments."""
-    departments = course_service.get_departments(db)
+    departments = await _cached_lookup_list("departments", lambda: course_service.get_departments(db))
     return [DepartmentResponse(**d) for d in departments]
 
 
 @router.get('/semesters', response_model=List[SemesterResponse])
 async def get_semesters(db: Session = Depends(get_db)):
     """Get all available semesters."""
-    semesters = course_service.get_semesters(db)
+    semesters = await _cached_lookup_list("semesters", lambda: course_service.get_semesters(db))
     return [SemesterResponse(**s) for s in semesters]
 
 
@@ -107,13 +156,12 @@ async def get_courses_by_department(
     db: Session = Depends(get_db)
 ):
     """Get courses by department."""
-    courses, total = course_service.get_courses_by_department(db, dept, page, per_page, semester)
-
-    return build_course_list_response(
-        courses,
+    return await _cached_course_list(
+        "courses:department",
+        {"dept": dept, "page": page, "per_page": per_page, "semester": semester},
+        lambda: course_service.get_courses_by_department(db, dept, page, per_page, semester),
         page=page,
         per_page=per_page,
-        total=total,
     )
 
 
