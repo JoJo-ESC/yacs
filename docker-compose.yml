@@ -30,6 +30,15 @@ services:
 
   redis:
     image: redis:7-alpine
+    # Everything stored here has a TTL and is safe to lose (cache entries,
+    # login-throttle counters), so cap memory and evict least-recently-used
+    # keys rather than letting Redis grow without bound.
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
     ports:
       - "6379:6379"
     volumes:
