@@ -15,8 +15,8 @@ from schemas.course_schemas import (
     SemesterResponse,
 )
 
-# Course listings (enrollment/seats change as the scraper re-syncs and as
-# students register) get a short TTL: enough to absorb a traffic spike
+# Course listings and single-course details (enrollment/seats change as the
+# scraper re-syncs and as students register) get a short TTL: enough to absorb a traffic spike
 # without serving badly stale seat counts.
 COURSE_LIST_TTL_SECONDS = 30
 
@@ -168,9 +168,19 @@ async def get_courses_by_department(
 @router.get('/courses/{course_id}', response_model=CourseResponse)
 async def get_course(course_id: int, db: Session = Depends(get_db)):
     """Get a single course by ID."""
+    cache_key = cache_service.build_key("courses:detail", course_id=course_id)
+
+    cached = await cache_service.get_json(cache_key)
+    if cached is not None:
+        return CourseResponse(**cached)
+
     course = course_service.get_course_by_id(db, course_id)
 
+    # 404s aren't cached, so a course added by the next import shows up
+    # right away rather than after a negative-cache TTL.
     if not course:
         raise HTTPException(status_code=404, detail="Course not found")
 
-    return CourseResponse.model_validate(course)
+    response = CourseResponse.model_validate(course)
+    await cache_service.set_json(cache_key, response.model_dump(mode="json"), COURSE_LIST_TTL_SECONDS)
+    return response
