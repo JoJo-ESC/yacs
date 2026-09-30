@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 import logging
+import os
 
 import redis.asyncio as aioredis
 from fastapi import Request
+
+from utils import load_secrets
 
 logger = logging.getLogger(__name__)
 
@@ -13,6 +16,19 @@ _CONNECT_TIMEOUT_SECONDS = 0.5
 _SOCKET_TIMEOUT_SECONDS = 0.5
 
 _redis: aioredis.Redis | None = None
+
+_DEFAULT_REDIS_URL = "redis://localhost:6379/0"
+
+
+def resolve_url() -> str:
+    """Returns the Redis URL: the REDIS_URL env var, then secrets.yaml, then
+    localhost.
+
+    The env var wins so docker-compose can point the backend at the `redis`
+    service regardless of what a developer's (gitignored) secrets.yaml says —
+    `localhost` inside the backend container is the container itself.
+    """
+    return os.environ.get("REDIS_URL") or load_secrets().get("REDIS_URL") or _DEFAULT_REDIS_URL
 
 
 async def connect(url: str) -> None:

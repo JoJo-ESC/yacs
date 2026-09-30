@@ -16,6 +16,10 @@ services:
 
   backend:
     build: ./backend
+    environment:
+      # Overrides secrets.yaml: inside this container `localhost` is the
+      # backend itself, so Redis must be reached by its service name.
+      REDIS_URL: redis://redis:6379/0
     ports:
       - "8000:8000"
     volumes:

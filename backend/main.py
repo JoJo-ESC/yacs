@@ -29,7 +29,7 @@ async def lifespan(app: FastAPI):
     # Redis is an optional dependency — connect() itself never raises, but
     # guard the call anyway so a startup-time misconfiguration (e.g. a bad
     # REDIS_URL) can't take down the rest of the API either.
-    redis_url = load_secrets().get("REDIS_URL", "redis://localhost:6379/0")
+    redis_url = redis_client.resolve_url()
     try:
         await redis_client.connect(redis_url)
     except Exception:

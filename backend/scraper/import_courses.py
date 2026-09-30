@@ -11,7 +11,6 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 from models import SessionLocal, Course, MeetingTime, init_db, reset_course_tables
 from services import cache_service, redis_client
-from utils import load_secrets
 
 try:
     from .terms import get_active_term_codes
@@ -128,7 +127,7 @@ async def _invalidate_course_cache() -> None:
     Every current `yacs:cache:*` entry is derived from course data, so the
     whole namespace is cleared. Redis being down is not an import failure.
     """
-    redis_url = load_secrets().get("REDIS_URL", "redis://localhost:6379/0")
+    redis_url = redis_client.resolve_url()
     await redis_client.connect(redis_url)
     try:
         deleted = await cache_service.invalidate_prefix("yacs:cache:")

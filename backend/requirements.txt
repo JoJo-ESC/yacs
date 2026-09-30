@@ -8,3 +8,4 @@ pyyaml
 redis[hiredis]>=5
 slowapi>=0.1
 pytest
+fakeredis>=2.20

@@ -94,19 +94,16 @@ async def invalidate_prefix(prefix: str = "yacs:cache:") -> int | None:
     Unlike reads/writes this ignores the retry backoff: invalidation runs
     after the underlying data changed, so it's always worth attempting. If
     it does fail, the TTLs still bound how long stale entries can live.
-    Uses SCAN rather than KEYS so a large keyspace doesn't block Redis.
+    Uses SCAN rather than KEYS so a large keyspace doesn't block Redis, and
+    finishes the scan before deleting so it never mutates the keyspace
+    mid-iteration (which can make some SCAN implementations skip keys).
     """
     deleted = 0
-    batch: list[str] = []
     try:
         client = redis_client.get_client()
-        async for key in client.scan_iter(match=f"{prefix}*", count=500):
-            batch.append(key)
-            if len(batch) >= 500:
-                deleted += await client.delete(*batch)
-                batch.clear()
-        if batch:
-            deleted += await client.delete(*batch)
+        keys = [key async for key in client.scan_iter(match=f"{prefix}*", count=500)]
+        for start in range(0, len(keys), 500):
+            deleted += await client.delete(*keys[start:start + 500])
     except Exception:
         logger.warning("Redis unavailable while invalidating cache prefix %s; entries will expire via TTL.", prefix)
         _mark_unavailable()

@@ -96,8 +96,9 @@ def _is_locked_memory(key: str) -> bool:
 async def _reset_attempts(key: str) -> None:
     _reset_attempts_memory(key)
 
-    if not _redis_should_be_tried():
-        return
+    # Deliberately ignores the retry backoff: if a lockout was written to
+    # Redis just before a blip, skipping this delete would let it outlive a
+    # successful login. Only successful logins pay the possible timeout.
     try:
         client = redis_client.get_client()
         await client.delete(f"yacs:login:attempts:{key}", f"yacs:login:lockout:{key}")
@@ -111,9 +112,14 @@ async def _record_failed_attempt(key: str) -> None:
         try:
             client = redis_client.get_client()
             attempts_key = f"yacs:login:attempts:{key}"
-            failed_count = await client.incr(attempts_key)
-            if failed_count == 1:
-                await client.expire(attempts_key, FAILED_WINDOW_SECONDS)
+            # Create the counter with its window TTL and increment it in one
+            # transaction. A separate INCR then EXPIRE could leave a counter
+            # with no TTL if the EXPIRE failed, locking the key out forever.
+            # SET NX only creates it when absent; INCR keeps the existing TTL.
+            async with client.pipeline(transaction=True) as pipe:
+                pipe.set(attempts_key, 0, ex=FAILED_WINDOW_SECONDS, nx=True)
+                pipe.incr(attempts_key)
+                _, failed_count = await pipe.execute()
             if failed_count >= MAX_FAILED_ATTEMPTS:
                 await client.set(f"yacs:login:lockout:{key}", "1", ex=LOCKOUT_SECONDS)
             return
