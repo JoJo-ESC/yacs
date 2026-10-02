@@ -16,12 +16,33 @@ services:
 
   backend:
     build: ./backend
+    environment:
+      # Overrides secrets.yaml: inside this container `localhost` is the
+      # backend itself, so Redis must be reached by its service name.
+      REDIS_URL: redis://redis:6379/0
     ports:
       - "8000:8000"
     volumes:
       - ./backend:/app
     depends_on:
       - db
+      - redis
+
+  redis:
+    image: redis:7-alpine
+    # Everything stored here has a TTL and is safe to lose (cache entries,
+    # login-throttle counters), so cap memory and evict least-recently-used
+    # keys rather than letting Redis grow without bound.
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
 
   db:
     image: postgres:15
@@ -36,3 +57,4 @@ services:
 
 volumes:
   postgres_data:
+  redis_data:

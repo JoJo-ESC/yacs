@@ -10,7 +10,7 @@ router = APIRouter(prefix="/api", tags=["Authentication"])
 @router.post('/session')
 async def log_in(request: Request, credentials: SessionPydantic):
     """Log a user in and create a session."""
-    result = auth_service.log_user_in(
+    result = await auth_service.log_user_in(
         credentials.dict(),
         request.session,
         client_ip=request.client.host if request.client else None,

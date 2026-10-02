@@ -2,7 +2,10 @@ fastapi>=0.104,<1
 uvicorn[standard]
 pydantic>=2,<3
 itsdangerous
-sqlalchemy
+sqlalchemy>=2.0,<2.1
 psycopg2-binary
 pyyaml
+redis[hiredis]>=5
+slowapi>=0.1
 pytest
+fakeredis>=2.20

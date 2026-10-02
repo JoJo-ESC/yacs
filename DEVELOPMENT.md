@@ -80,6 +80,21 @@ cd yacs
 - Development UI: `http://localhost:3000`
 - FastAPI: `http://localhost:8000`
 - Postgres: `http://localhost:5432`
+- Redis: `redis://localhost:6379`
+
+## Redis
+`docker compose up` also starts a Redis container, used for login-attempt throttling and for caching course, department, and semester API responses. You don't need to install anything for it — it's just another service in `docker-compose.yml`.
+
+- **After pulling Redis changes, rebuild:** run `docker compose up --build` so the backend image picks up the new Python dependencies. Without it the backend crashes on startup with `ModuleNotFoundError: No module named 'redis'`.
+- **It's optional.** If Redis is unreachable the backend still starts and serves requests: caching turns into straight database reads, and login throttling falls back to a per-process in-memory limiter until Redis comes back. Look for `Redis unavailable` warnings in the backend logs.
+- **Connection URL:** resolved from the `REDIS_URL` environment variable, then `REDIS_URL` in `backend/configs/secrets.yaml`, then `redis://localhost:6379/0`. Docker Compose sets the env var to `redis://redis:6379/0` for you; `localhost` only works when running the backend outside Docker.
+- **Cache freshness:** course listings are cached for 30 seconds and departments/semesters for 10 minutes. Running the course importer clears the cache automatically.
+- **Inspecting or clearing it:**
+    ```
+    docker compose exec redis redis-cli --scan --pattern 'yacs:*'   # list keys
+    docker compose exec redis redis-cli flushdb                    # clear everything
+    ```
+- **Tests** use `fakeredis`, so `pytest` doesn't need a running Redis.
 
 ## Developer Notes
 - Remember to stop the YACS docker container when you're done to relieve system resources. Click the red Stop button under Actions in Docker Desktop next to `new_yacs`.

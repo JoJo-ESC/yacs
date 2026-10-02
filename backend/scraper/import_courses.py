@@ -1,6 +1,7 @@
 # backend/scraper/import_courses.py
 
 import argparse
+import asyncio
 import json
 import os
 import sys
@@ -9,6 +10,7 @@ import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 from models import SessionLocal, Course, MeetingTime, init_db, reset_course_tables
+from services import cache_service, redis_client
 
 try:
     from .terms import get_active_term_codes
@@ -118,6 +120,26 @@ def import_courses_from_file(filepath: str, db_session) -> int:
     return count
 
 
+async def _invalidate_course_cache() -> None:
+    """Clears the API's cached course/department/semester responses so the
+    freshly imported data is served immediately instead of after the TTLs.
+
+    Every current `yacs:cache:*` entry is derived from course data, so the
+    whole namespace is cleared. Redis being down is not an import failure.
+    """
+    redis_url = redis_client.resolve_url()
+    await redis_client.connect(redis_url)
+    try:
+        deleted = await cache_service.invalidate_prefix("yacs:cache:")
+    finally:
+        await redis_client.disconnect()
+
+    if deleted is None:
+        print("WARNING: Could not clear the API cache (Redis unavailable); stale entries will expire via TTL.", file=sys.stderr)
+    else:
+        print(f"Cleared {deleted} cached API responses")
+
+
 def main():
     parser = argparse.ArgumentParser(description='Import course data from JSON files into database')
     parser.add_argument(
@@ -173,6 +195,9 @@ def main():
         print(f"\nTotal: {total} courses imported")
     finally:
         db.close()
+        # Runs even if a later file failed: earlier files were already
+        # committed, so the cache may be stale either way.
+        asyncio.run(_invalidate_course_cache())
 
 
 if __name__ == '__main__':
