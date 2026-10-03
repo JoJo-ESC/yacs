@@ -150,8 +150,10 @@ function Navbar() {
           </div>
           <Bars3Icon className="h-6 w-6 text-slate-700 sm:hidden dark:text-neutral-200" />
         </div>
+        {/* Search results render here (via portal), inside the fixed wrapper so
+            they float a set gap below the bar instead of sitting under it. */}
+        <div id="class-search-results-slot" className="mx-auto mt-3 w-full max-w-7xl"></div>
       </div>
-      <div id="class-search-results-slot" className="w-full"></div>
     </>
   );
 }

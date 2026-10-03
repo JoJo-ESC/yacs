@@ -10,6 +10,7 @@ import React, {
 } from "react";
 import type { Course } from "@/types/schedule";
 import { fetchAllCourses } from "@/api";
+import { useSemester } from "@/context/semester/semester-context";
 
 type CatalogStatus = "idle" | "loading" | "loaded" | "error";
 
@@ -154,9 +155,14 @@ export function ScheduleProvider({ children }: { children: React.ReactNode }) {
     setCatalogLoading(true);
     setCatalogError(null);
 
+    // A request for a semester that's no longer selected (the user switched,
+    // or the startup guess was corrected) must not overwrite the newer one.
+    const isCurrent = () => catalogSemesterRef.current === semester;
+
     const request = (async () => {
       try {
         const nextCatalog = await fetchAllCourses(semester);
+        if (!isCurrent()) return;
         const catalogMap = new Map(nextCatalog.map((c) => [c.id, c]));
         startTransition(() => {
           setCatalog(nextCatalog);
@@ -171,18 +177,37 @@ export function ScheduleProvider({ children }: { children: React.ReactNode }) {
         });
         setCatalogStatus("loaded");
       } catch (err) {
+        if (!isCurrent()) return;
         setCatalogStatus("error");
         setCatalogError(err instanceof Error ? err.message : "Failed to load catalog");
         throw err;
       } finally {
-        setCatalogLoading(false);
-        catalogPromiseRef.current = null;
+        if (isCurrent()) {
+          setCatalogLoading(false);
+          catalogPromiseRef.current = null;
+        }
       }
     })();
 
     catalogPromiseRef.current = request;
     return request;
   }, [catalogStatus]);
+
+  // Load the catalog in the background as soon as a semester is known (at
+  // startup that's the guessed newest one), and reload when it changes. Never
+  // load without one: that fetches every term on record (~93K sections).
+  // Keyed on the semester only (via a ref to the loader), so a failed load
+  // isn't retried in a loop; ClassSearch retries when the user opens it.
+  const { selectedSemester } = useSemester();
+  const loadCatalogRef = useRef(loadCatalog);
+  loadCatalogRef.current = loadCatalog;
+  useEffect(() => {
+    if (selectedSemester) {
+      loadCatalogRef.current(selectedSemester).catch(() => {
+        // Already recorded in catalogStatus/catalogError for the UI.
+      });
+    }
+  }, [selectedSemester]);
 
   const catalogValue = useMemo<CatalogCtx>(
     () => ({ catalog, catalogStatus, catalogLoading, catalogError, loadCatalog }),

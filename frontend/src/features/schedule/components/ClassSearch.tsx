@@ -59,9 +59,11 @@ export function ClassSearch({
     return () => document.removeEventListener("mousedown", onDocClick);
   }, []);
 
+  // ScheduleProvider loads the catalog in the background at startup; this
+  // only retries if that load failed and the user opens the search.
   React.useEffect(() => {
-    if (open && catalogStatus === "idle") {
-      void loadCatalog(selectedSemester);
+    if (open && catalogStatus === "error" && selectedSemester) {
+      loadCatalog(selectedSemester).catch(() => {});
     }
   }, [open, catalogStatus, loadCatalog, selectedSemester]);
 
@@ -106,7 +108,10 @@ export function ClassSearch({
   const dropdown = isOpen ? (
     <div
       ref={dropdownRef}
-      className={cn("w-full overflow-hidden bg-header text-input-foreground")}
+      className={cn(
+        "w-full overflow-hidden rounded-[22px] border border-white/65 bg-header text-input-foreground",
+        "shadow-[0_22px_60px_-28px_rgba(15,23,42,0.25)] dark:border-white/10 dark:shadow-[0_26px_70px_-32px_rgba(0,0,0,0.7)]",
+      )}
       id="class-search-dropdown-listbox"
       role="listbox"
       aria-label="Search results"
