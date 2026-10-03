@@ -1,5 +1,5 @@
 import React from "react";
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, useNavigate } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
@@ -8,9 +8,10 @@ jest.mock("@/features/schedule/components/ClassSearch", () => () => <input aria-
 jest.mock("@/features/schedule/components/SemesterSelect", () => () => <select aria-label="Semester" />);
 jest.mock("@/components/theme/ThemeToggle", () => () => <button>Toggle theme</button>);
 
+let navigate: ReturnType<typeof useNavigate>;
 function RouteChange() {
-  const navigate = useNavigate();
-  return <button onClick={() => navigate("/profile")}>Change route</button>;
+  navigate = useNavigate();
+  return null;
 }
 
 function renderNavbar() {
@@ -18,19 +19,22 @@ function renderNavbar() {
   return screen.getByRole("button", { name: "Open navigation menu" });
 }
 
-test("toggles navigation with the keyboard and restores focus on Escape", () => {
+test("opens a modal drawer with the keyboard and restores focus on Escape", async () => {
   const toggle = renderNavbar();
   expect(toggle).toHaveAttribute("aria-expanded", "false");
   toggle.focus();
   userEvent.keyboard("{Enter}");
   expect(toggle).toHaveAttribute("aria-expanded", "true");
-  expect(screen.getByRole("navigation")).not.toHaveClass("hidden");
+  expect(screen.getByRole("dialog", { name: "Navigation" })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Close navigation menu" })).toHaveFocus();
+  expect(document.body).toHaveAttribute("data-scroll-locked");
   screen.getByRole("link", { name: "Login" }).focus();
   userEvent.keyboard("{Escape}");
   expect(toggle).toHaveAttribute("aria-expanded", "false");
-  expect(toggle).toHaveFocus();
+  await waitFor(() => expect(toggle).toHaveFocus());
+  expect(document.body).not.toHaveAttribute("data-scroll-locked");
   userEvent.click(toggle);
-  userEvent.click(toggle);
+  userEvent.click(screen.getByRole("button", { name: "Close navigation menu" }));
   expect(toggle).toHaveAttribute("aria-expanded", "false");
 });
 
@@ -49,13 +53,14 @@ test("provides all destinations and closes even when selecting the current route
   expect(screen.getByRole("link", { name: "Professors" })).toHaveAttribute("aria-current", "page");
 });
 
-test("dismisses on outside taps and external route changes", () => {
+test("dismisses on backdrop taps and external route changes", async () => {
   const toggle = renderNavbar();
   userEvent.click(toggle);
-  fireEvent.pointerDown(document.body);
+  await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
+  fireEvent.pointerDown(document.querySelector(".mobile-nav-backdrop")!, { button: 0, ctrlKey: false });
   expect(toggle).toHaveAttribute("aria-expanded", "false");
   userEvent.click(toggle);
-  userEvent.click(screen.getByRole("button", { name: "Change route" }));
+  act(() => navigate("/profile"));
   expect(toggle).toHaveAttribute("aria-expanded", "false");
 });
 
@@ -76,4 +81,16 @@ test("resets the mobile menu when switching to desktop", () => {
   } finally {
     matchMedia.mockRestore();
   }
+});
+
+
+test("keeps keyboard focus inside the open drawer", () => {
+  userEvent.click(renderNavbar());
+  const close = screen.getByRole("button", { name: "Close navigation menu" });
+  const theme = screen.getByRole("button", { name: "Toggle theme" });
+  theme.focus();
+  userEvent.tab();
+  expect(close).toHaveFocus();
+  userEvent.tab({ shift: true });
+  expect(theme).toHaveFocus();
 });

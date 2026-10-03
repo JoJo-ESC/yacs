@@ -1,4 +1,6 @@
 import React from "react";
+import * as Dialog from "@radix-ui/react-dialog";
+import "./Navbar.css";
 import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/solid";
 import ClassSearch from "@/features/schedule/components/ClassSearch";
 import SemesterSelect from "@/features/schedule/components/SemesterSelect";
@@ -15,8 +17,6 @@ const links = [
 
 function Navbar() {
   const [menuOpen, setMenuOpen] = React.useState(false);
-  const headerRef = React.useRef<HTMLElement>(null);
-  const toggleRef = React.useRef<HTMLButtonElement>(null);
   const location = useLocation();
 
   React.useEffect(() => setMenuOpen(false), [location]);
@@ -30,62 +30,67 @@ function Navbar() {
     return () => desktop.removeEventListener("change", closeOnDesktop);
   }, []);
 
-  React.useEffect(() => {
-    if (!menuOpen) return;
-    const onPointerDown = (event: PointerEvent) => {
-      if (!headerRef.current?.contains(event.target as Node)) setMenuOpen(false);
-    };
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setMenuOpen(false);
-        toggleRef.current?.focus();
-      }
-    };
-    document.addEventListener("pointerdown", onPointerDown);
-    document.addEventListener("keydown", onKeyDown);
-    return () => {
-      document.removeEventListener("pointerdown", onPointerDown);
-      document.removeEventListener("keydown", onKeyDown);
-    };
-  }, [menuOpen]);
+  const navigationLinks = links.map(({ to, label }) => (
+    <NavLink
+      key={to}
+      to={to}
+      end={to === "/"}
+      onClick={() => setMenuOpen(false)}
+      className={({ isActive }) => `flex min-h-[44px] items-center rounded px-3 py-2 hover:bg-muted hover:text-blue-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 ${isActive ? "text-blue-400" : "text-foreground"}`}
+    >
+      {label}
+    </NavLink>
+  ));
 
   return (
     <>
-      <header ref={headerRef} className="border-b border-border bg-header p-4 text-input-foreground">
+      <header className="border-b border-border bg-header p-4 text-input-foreground">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <a href="/" className="text-l font-bold">YACS</a>
-          <button
-            ref={toggleRef}
-            type="button"
-            className="flex h-11 w-11 items-center justify-center rounded-md hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 xl:hidden"
-            aria-label={menuOpen ? "Close navigation menu" : "Open navigation menu"}
-            aria-expanded={menuOpen}
-            aria-controls="primary-navigation"
-            onClick={() => setMenuOpen((open) => !open)}
-          >
-            {menuOpen ? <XMarkIcon className="h-6 w-6" aria-hidden="true" /> : <Bars3Icon className="h-6 w-6" aria-hidden="true" />}
-          </button>
+          <Dialog.Root open={menuOpen} onOpenChange={setMenuOpen}>
+            <Dialog.Trigger asChild>
+              <button
+                type="button"
+                className="flex h-11 w-11 items-center justify-center rounded-md hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 xl:hidden"
+                aria-label="Open navigation menu"
+              >
+                <Bars3Icon className="h-6 w-6" aria-hidden="true" />
+              </button>
+            </Dialog.Trigger>
+            <Dialog.Portal>
+              <Dialog.Overlay className="mobile-nav-backdrop fixed inset-0 z-50 bg-black/50" />
+              <Dialog.Content
+                aria-describedby={undefined}
+                className="mobile-nav-drawer fixed inset-y-0 right-0 z-50 flex w-80 max-w-[calc(100%-2rem)] flex-col overflow-y-auto overscroll-contain border-l border-border bg-header p-4 text-input-foreground shadow-xl"
+              >
+                <div className="mb-4 flex items-center justify-between gap-4 border-b border-border pb-3">
+                  <Dialog.Title className="text-lg font-semibold">Navigation</Dialog.Title>
+                  <Dialog.Close asChild>
+                    <button
+                      type="button"
+                      aria-label="Close navigation menu"
+                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+                    >
+                      <XMarkIcon className="h-6 w-6" aria-hidden="true" />
+                    </button>
+                  </Dialog.Close>
+                </div>
+                <nav aria-label="Mobile navigation" className="flex flex-col gap-1">
+                  {navigationLinks}
+                </nav>
+                <div className="mt-4 border-t border-border pt-4">
+                  <ThemeToggle className="h-11 w-11" />
+                </div>
+              </Dialog.Content>
+            </Dialog.Portal>
+          </Dialog.Root>
           <div className="order-2 flex w-full min-w-0 flex-col gap-3 sm:flex-row sm:items-center xl:order-none xl:w-auto xl:flex-1">
             <div className="min-w-0 flex-1"><ClassSearch /></div>
             <SemesterSelect />
           </div>
-          <nav
-            id="primary-navigation"
-            aria-label="Primary navigation"
-            className={`${menuOpen ? "flex" : "hidden"} order-3 w-full flex-col gap-1 border-t border-border pt-3 xl:order-none xl:flex xl:w-auto xl:flex-row xl:items-center xl:gap-2 xl:border-0 xl:pt-0`}
-          >
-            {links.map(({ to, label }) => (
-              <NavLink
-                key={to}
-                to={to}
-                end={to === "/"}
-                onClick={() => setMenuOpen(false)}
-                className={({ isActive }) => `flex min-h-[44px] items-center rounded px-3 py-2 hover:bg-muted hover:text-blue-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 ${isActive ? "text-blue-400" : "text-foreground"}`}
-              >
-                {label}
-              </NavLink>
-            ))}
-            <ThemeToggle className="h-11 w-11 self-start xl:self-auto" />
+          <nav aria-label="Primary navigation" className="hidden items-center gap-2 xl:flex">
+            {navigationLinks}
+            <ThemeToggle className="h-11 w-11" />
           </nav>
         </div>
       </header>
