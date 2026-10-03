@@ -93,6 +93,25 @@ function apiCoursesToCourses(raw: ApiCourseResponse[]): Course[] {
   return Array.from(map.values());
 }
 
+// Fetches every page of a paginated course endpoint. The first page reports
+// how many pages there are; the rest are requested at the same time rather
+// than one after another (~2 round trips instead of ~30 for a semester).
+async function fetchAllPages(path: string, semester?: string): Promise<ApiCourseResponse[]> {
+  const pageUrl = (page: number) => {
+    const params = new URLSearchParams({ page: String(page), per_page: "100" });
+    if (semester) params.set("semester", semester);
+    return `${path}?${params}`;
+  };
+
+  const first = await apiFetch<ApiCourseListResponse>(pageUrl(1));
+  const remaining = await Promise.all(
+    Array.from({ length: Math.max(0, first.pagination.total_pages - 1) }, (_, i) =>
+      apiFetch<ApiCourseListResponse>(pageUrl(i + 2)),
+    ),
+  );
+  return [first, ...remaining].flatMap((res) => res.data);
+}
+
 export async function fetchAllCourses(semester?: string): Promise<Course[]> {
   const key = semester ?? "";
   const cached = allCoursesCache.get(key);
@@ -102,19 +121,7 @@ export async function fetchAllCourses(semester?: string): Promise<Course[]> {
   if (inFlight) return inFlight;
 
   const request = (async () => {
-    const allRaw: ApiCourseResponse[] = [];
-    let page = 1;
-    let totalPages = 1;
-
-    do {
-      const params = new URLSearchParams({ page: String(page), per_page: "100" });
-      if (semester) params.set("semester", semester);
-      const res = await apiFetch<ApiCourseListResponse>(`/api/courses?${params}`);
-      allRaw.push(...res.data);
-      totalPages = res.pagination.total_pages;
-      page++;
-    } while (page <= totalPages);
-
+    const allRaw = await fetchAllPages("/api/courses", semester);
     const courses = apiCoursesToCourses(allRaw);
     allCoursesCache.set(key, courses);
     allCoursesRequests.delete(key);
@@ -144,21 +151,7 @@ export async function fetchCoursesByDepartment(
   }
 
   const request = (async () => {
-  const allRaw: ApiCourseResponse[] = [];
-  let page = 1;
-  let totalPages = 1;
-
-  do {
-    const params = new URLSearchParams({ page: String(page), per_page: "100" });
-    if (semester) params.set("semester", semester);
-    const res = await apiFetch<ApiCourseListResponse>(
-      `/api/courses/department/${encodeURIComponent(department)}?${params}`,
-    );
-    allRaw.push(...res.data);
-    totalPages = res.pagination.total_pages;
-    page++;
-  } while (page <= totalPages);
-
+    const allRaw = await fetchAllPages(`/api/courses/department/${encodeURIComponent(department)}`, semester);
     const courses = apiCoursesToCourses(allRaw);
     departmentCourseCache.set(cacheKey, courses);
     departmentCourseRequests.delete(cacheKey);

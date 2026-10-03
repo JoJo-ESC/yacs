@@ -4,6 +4,7 @@ import { CalendarDays, ChevronDown, ChevronUp, Download, Trash2 } from "lucide-r
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useSchedule } from "@/context/schedule/schedule-context";
+import { useSemester } from "@/context/semester/semester-context";
 import { fetchCoursesByDepartment } from "@/api";
 import {
   groupMeetingOptions,
@@ -156,6 +157,7 @@ function CourseCard({
 
 export default function ScheduleList(): JSX.Element {
   const { courses, removeCourse, catalog, updateCourse } = useSchedule();
+  const { selectedSemester } = useSemester();
   const [copiedCrn, setCopiedCrn] = React.useState<string | null>(null);
   const [exportOpen, setExportOpen] = React.useState(false);
 
@@ -163,10 +165,13 @@ export default function ScheduleList(): JSX.Element {
   // SchedulePage handles the full catalog load for schedule-variant cycling.
   const [deptCourseMap, setDeptCourseMap] = React.useState<Map<string, Course>>(new Map());
   React.useEffect(() => {
+    // Without a semester the API returns every term on record, and sections
+    // from all of them get merged into one course (e.g. 826 MATH-2400 sections).
+    if (!selectedSemester) return;
     const departments = Array.from(new Set(courses.map((c) => c.department).filter(Boolean)));
     if (departments.length === 0) return;
     let cancelled = false;
-    Promise.all(departments.map((dept) => fetchCoursesByDepartment(dept))).then((results) => {
+    Promise.all(departments.map((dept) => fetchCoursesByDepartment(dept, selectedSemester))).then((results) => {
       if (cancelled) return;
       const map = new Map<string, Course>();
       for (const deptCourses of results) {
@@ -175,7 +180,7 @@ export default function ScheduleList(): JSX.Element {
       setDeptCourseMap(map);
     });
     return () => { cancelled = true; };
-  }, [courses]);
+  }, [courses, selectedSemester]);
 
   const orderRef = React.useRef<Map<string, number>>(new Map());
   React.useEffect(() => {

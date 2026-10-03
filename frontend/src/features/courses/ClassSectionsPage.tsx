@@ -2,6 +2,7 @@ import * as React from "react";
 import { ArrowLeft, BookOpenText, Grid2X2 } from "lucide-react";
 import { Link, Navigate, useLocation, useParams } from "react-router-dom";
 import { fetchCoursesByDepartment, getCachedCoursesByDepartment } from "@/api";
+import { useSemester } from "@/context/semester/semester-context";
 import { SubjectCourseList } from "@/features/courses/components/SubjectCourseList";
 import { useSubjects } from "@/hooks/courses/useSubjects";
 import { getSubjectBadgeClasses } from "@/lib/courses/subjectColors";
@@ -27,8 +28,11 @@ export default function ClassSectionsPage() {
   const decodedCourseId = decodeURIComponent(courseId);
   const departmentCode = getDepartmentFromCourseId(decodedCourseId).toUpperCase();
   const { subjects } = useSubjects();
+  const { selectedSemester, semestersLoading } = useSemester();
 
-  const cachedDepartmentCourses = getCachedCoursesByDepartment(departmentCode) ?? [];
+  const cachedDepartmentCourses = selectedSemester
+    ? getCachedCoursesByDepartment(departmentCode, selectedSemester) ?? []
+    : [];
   const initialCourse =
     locationState?.course?.id === decodedCourseId
       ? locationState.course
@@ -63,6 +67,19 @@ export default function ClassSectionsPage() {
       return;
     }
 
+    // Without a semester the API returns every term on record, so wait for
+    // one rather than merging all of them into this course's sections.
+    if (!selectedSemester) {
+      if (semestersLoading) {
+        setLoading(true);
+      } else {
+        setLoading(false);
+        setError("No semester is available to load sections for.");
+      }
+      return;
+    }
+    const semester = selectedSemester;
+
     let cancelled = false;
 
     async function loadCourse() {
@@ -70,7 +87,7 @@ export default function ClassSectionsPage() {
       setError(null);
 
       try {
-        const departmentCourses = await fetchCoursesByDepartment(departmentCode);
+        const departmentCourses = await fetchCoursesByDepartment(departmentCode, semester);
         if (cancelled) return;
 
         const matchedCourse = departmentCourses.find((entry) => entry.id === decodedCourseId) ?? null;
@@ -95,7 +112,7 @@ export default function ClassSectionsPage() {
     return () => {
       cancelled = true;
     };
-  }, [decodedCourseId, departmentCode, initialCourse]);
+  }, [decodedCourseId, departmentCode, initialCourse, selectedSemester, semestersLoading]);
 
   if (!decodedCourseId) {
     return <Navigate to="/courses" replace />;

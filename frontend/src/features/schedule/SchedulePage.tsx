@@ -2,7 +2,6 @@ import React from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSchedule } from "@/context/schedule/schedule-context";
-import { useSemester } from "@/context/semester/semester-context";
 import ScheduleList from "@/features/schedule/components/ScheduleList";
 import WeekScheduler from "@/features/schedule/components/WeekScheduler";
 import { hasScheduleConflict } from "@/lib/schedule/schedule";
@@ -126,8 +125,7 @@ function buildScheduleVariants(selectedCourses: Course[], catalogById: Map<strin
 }
 
 export default function SchedulePage() {
-  const { courses, catalog, catalogStatus, loadCatalog, replaceCourses } = useSchedule();
-  const { selectedSemester } = useSemester();
+  const { courses, catalog, catalogStatus, replaceCourses } = useSchedule();
 
   React.useEffect(() => {
     const normalizedCourses = courses.map(normalizeCourseMeetings);
@@ -138,11 +136,6 @@ export default function SchedulePage() {
     }
   }, [courses, replaceCourses]);
 
-  React.useEffect(() => {
-    if (courses.length > 0 && catalogStatus === "idle") {
-      void loadCatalog(selectedSemester);
-    }
-  }, [courses.length, catalogStatus, loadCatalog, selectedSemester]);
 
   const catalogById = React.useMemo(() => {
     return new Map(catalog.map((course) => [course.id, course]));
