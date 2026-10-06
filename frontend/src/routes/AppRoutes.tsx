@@ -1,7 +1,8 @@
 import React from "react";
   import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
   import { trackPageview } from "@/lib/analytics";
-  import App from "@/app/App";                        
+  import App from "@/app/App";
+  import NotFoundPage from "@/app/NotFoundPage";                        
   import ClassSectionsPage from "@/features/courses/ClassSectionsPage";
   import SubjectBrowserPage from "@/features/courses/SubjectBrowserPage";           
   import SubjectCoursesPage from "@/features/courses/SubjectCoursesPage";           
@@ -41,6 +42,7 @@ import React from "react";
               <Route element={<RequireAuthenticated />}>                            
                 <Route path="profile" element={<ProfilePage />} />
               </Route>                                                              
+              <Route path="*" element={<NotFoundPage />} />
             </Route>                                                                
           </Route>
         </Routes>                                                                   
