@@ -49,7 +49,7 @@ export default function ProfessorsPage() {
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
                   placeholder="Search by professor name"
-                  className="h-11 w-full sm:w-64 rounded-md border border-border bg-background px-3 text-sm text-foreground outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20"
+                  className="h-11 w-full sm:w-64 rounded-md border border-border bg-background px-3 text-base text-foreground outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20"
                 />
               </label>
             </div>

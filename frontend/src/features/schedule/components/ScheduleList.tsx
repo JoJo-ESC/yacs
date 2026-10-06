@@ -46,6 +46,7 @@ function SectionRow({
       type="button"
       onClick={onSelect}
       disabled={disabled}
+      aria-pressed={isSelected}
       variant="ghost" 
       className={cn(
         "relative flex h-auto w-full flex-col items-start gap-2 rounded-md border p-3 text-left transition-all shadow-sm",
@@ -203,6 +204,7 @@ function CourseCard({
           <Button
             variant="ghost"
             size="icon"
+            aria-label={`Remove ${course.id}`}
             className="h-11 w-11 text-foreground/50 hover:text-red-600 hover:bg-red-100/50"
             onClick={(e) => {
               e.stopPropagation();
@@ -211,7 +213,7 @@ function CourseCard({
           >
             <Trash2 className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="icon" className="h-11 w-11 text-foreground/50">
+          <Button variant="ghost" size="icon" aria-label={`${expanded ? "Collapse" : "Expand"} ${course.id}`} aria-expanded={expanded} className="h-11 w-11 text-foreground/50">
              {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </Button>
         </div>

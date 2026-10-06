@@ -263,7 +263,7 @@ export default function FourYearPlannerPage() {
             <input
               aria-label="Search catalog"
               placeholder="Search catalog…"
-              className="min-w-0 w-full sm:w-auto min-h-[44px] px-2 py-1 rounded-md bg-input text-[color:var(--input-foreground)] border border-border text-sm"
+              className="min-w-0 w-full sm:w-auto min-h-[44px] px-2 py-1 rounded-md bg-input text-[color:var(--input-foreground)] border border-border text-base"
               onChange={(e) => {
                 const q = e.target.value.toLowerCase();
                 const items = document.querySelectorAll<HTMLElement>("[data-catalog-item]");

@@ -17,7 +17,7 @@ function pickDefaultMeetings(c: Course): Meeting[] {
 export function ClassSearch({
   dropdownContainerId = "class-search-results-slot",
   maxResults = 100,
-  itemHeight = 40,
+  itemHeight = 44,
   listMaxHeight = 320,
 }: {
   dropdownContainerId?: string;
@@ -42,7 +42,7 @@ export function ClassSearch({
   }, [dropdownContainerId]);
 
   React.useEffect(() => {
-    const onDocClick = (e: MouseEvent) => {
+    const onDocClick = (e: PointerEvent) => {
       const t = e.target as Node;
       if (
         (wrapperRef.current && wrapperRef.current.contains(t)) ||
@@ -51,8 +51,8 @@ export function ClassSearch({
         return;
       setOpen(false);
     };
-    document.addEventListener("mousedown", onDocClick);
-    return () => document.removeEventListener("mousedown", onDocClick);
+    document.addEventListener("pointerdown", onDocClick);
+    return () => document.removeEventListener("pointerdown", onDocClick);
   }, []);
 
   type Indexed = { id: string; title: string; idL: string; titleL: string; raw: Course };
@@ -148,9 +148,10 @@ export function ClassSearch({
                   >
                     <li
                       className={cn(
-                        "flex cursor-pointer items-center gap-2 px-3 border-b border-border h-[40px]",
+                        "flex cursor-pointer items-center gap-2 px-3 border-b border-border",
                         already ? "opacity-60 cursor-not-allowed" : "hover:bg-muted"
                       )}
+                      style={{ height: itemHeight }}
                       onMouseDown={(e) => e.preventDefault()}
                       onClick={() => {
                         if (already) return;
@@ -214,6 +215,7 @@ export function ClassSearch({
             }
           }}
           className="min-w-0 flex-1 bg-transparent text-foreground placeholder:opacity-60 outline-none"
+          aria-label="Search classes"
           aria-expanded={isOpen}
           aria-haspopup="listbox"
           aria-controls="class-search-dropdown-listbox"
@@ -224,7 +226,7 @@ export function ClassSearch({
         {query && (
           <button
             type="button"
-            className="rounded p-1 hover:bg-muted"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded hover:bg-muted"
             onClick={(e) => {
               e.stopPropagation();
               setQuery("");
