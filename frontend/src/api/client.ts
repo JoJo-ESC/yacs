@@ -1,7 +1,7 @@
-const apiBaseUrl = process.env.REACT_APP_API_BASE_URL ?? "http://localhost:8000";
+import { getApiBaseUrl } from "@/config";
 
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${apiBaseUrl}${path}`, init);
+  const response = await fetch(`${getApiBaseUrl()}${path}`, init);
   if (!response.ok) {
     throw new Error(`API error ${response.status}: ${response.statusText}`);
   }

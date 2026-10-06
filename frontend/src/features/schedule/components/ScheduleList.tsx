@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useSchedule } from "@/context/schedule/schedule-context";
 import { useSemester } from "@/context/semester/semester-context";
+import { track } from "@/lib/analytics";
 import { fetchCoursesByDepartment } from "@/api";
 import {
   groupMeetingOptions,
@@ -274,6 +275,7 @@ export default function ScheduleList(): JSX.Element {
 
   const downloadIcs = React.useCallback(() => {
     if (!canExportSchedule) return;
+    track("schedule_exported", { courses: exportCourses.length });
 
     const blob = new Blob([buildScheduleIcs(exportCourses)], { type: "text/calendar;charset=utf-8" });
     const url = URL.createObjectURL(blob);

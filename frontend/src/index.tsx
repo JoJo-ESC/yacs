@@ -4,6 +4,9 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { AppProviders } from "@/providers/AppProviders";
 import { AppRoutes } from "@/routes/AppRoutes";
+import { initAnalytics } from "@/lib/analytics";
+
+initAnalytics();
 
 const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement);
 root.render(

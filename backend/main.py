@@ -10,7 +10,7 @@ from middleware.admin_middleware import AdminMiddleware
 from routers import user_router, auth_router, corequisite_router, admin_router, course_router, planner_router
 from models import init_db
 from services import redis_client
-from utils import load_secrets
+from utils import get_secret_key, is_production, load_secrets
 
 
 def _as_bool(value, default=False):
@@ -55,15 +55,21 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 
 
 # --- Add Middleware ---
+# Starlette runs middleware in reverse order of add_middleware calls, so a
+# middleware that reads request.session (AdminMiddleware) must be added
+# *before* SessionMiddleware, which then runs first and loads the session.
+app.add_middleware(AdminMiddleware)
+
 secrets = load_secrets()
 app.add_middleware(
     SessionMiddleware,
-    secret_key=secrets.get("SECRET_KEY", "dev_secret_key"),
+    secret_key=get_secret_key(secrets),
     same_site=secrets.get("SESSION_SAME_SITE", "lax"),
-    https_only=_as_bool(secrets.get("SESSION_HTTPS_ONLY"), default=False),
+    # Production is always served over HTTPS, so session cookies are always
+    # Secure there regardless of config; development stays configurable.
+    https_only=is_production() or _as_bool(secrets.get("SESSION_HTTPS_ONLY"), default=False),
     max_age=int(secrets.get("SESSION_MAX_AGE_SECONDS", 12 * 60 * 60)),
 )
-app.add_middleware(AdminMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000", "http://localhost:5173"],

@@ -1,4 +1,5 @@
 import React, { createContext, useCallback, useEffect, useRef, useState } from "react";
+import { identifyUser, resetUser, track } from "@/lib/analytics";
 import {
   getCurrentSessionUser,
   loginUser,
@@ -151,6 +152,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const response = await loginUser(input);
       if (response.ok && response.success) {
+        identifyUser(response.user?.user_id);
+        track("logged_in");
         setAuthenticated({
           name: response.user?.name ?? input.email,
           email: response.user?.email ?? input.email,
@@ -198,6 +201,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
 
       if (loginResponse.ok && loginResponse.success) {
+        identifyUser(loginResponse.user?.user_id);
+        track("signed_up");
         setAuthenticated({
           name: input.name,
           email: input.email,
@@ -226,12 +231,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch {
       // Ignore network errors during logout; local state still clears.
     } finally {
+      track("logged_out");
+      resetUser();
       clearAuthenticated();
       setIsBusy(false);
     }
   };
 
   const continueAsGuest = () => {
+    track("continued_as_guest");
     setError(null);
     setState("guest");
     setUser(null);

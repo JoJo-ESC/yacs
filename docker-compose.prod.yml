@@ -1,0 +1,113 @@
+# Production stack. Run on the server from the repo root:
+#
+#   cp .env.production.example .env     # then fill in the values
+#   docker compose -f docker-compose.prod.yml up -d --build
+#
+# Differences from docker-compose.yml (development):
+#   - Code is baked into images (Dockerfile.prod); nothing is mounted for live
+#     editing and there's no --reload.
+#   - Only Caddy (web) is reachable from the internet, on ports 80/443. The
+#     backend, Postgres and Redis publish no ports; the backend's trust of
+#     proxy headers (--forwarded-allow-ips "*") depends on that.
+#   - Secrets come from .env, and missing required ones stop startup.
+#   - Every service restarts automatically and keeps its logs bounded.
+
+x-logging: &default-logging
+  # Docker keeps container logs forever by default, which would slowly fill
+  # the disk. Keep at most 5 x 10 MB per service.
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
+services:
+  web:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+      args:
+        # Baked into the JS at build time; empty = analytics off.
+        REACT_APP_POSTHOG_KEY: ${POSTHOG_KEY:-}
+        REACT_APP_POSTHOG_UI_HOST: ${POSTHOG_UI_HOST:-https://us.posthog.com}
+    environment:
+      DOMAIN: ${DOMAIN:?Set DOMAIN in .env (e.g. yacs.example.com)}
+      API_UPSTREAM: backend:8000
+      POSTHOG_HOST: ${POSTHOG_HOST:-us.i.posthog.com}
+      POSTHOG_ASSETS_HOST: ${POSTHOG_ASSETS_HOST:-us-assets.i.posthog.com}
+    ports:
+      - "80:80"      # HTTP; Caddy redirects it to HTTPS and uses it for certificates
+      - "443:443"    # HTTPS
+      - "443:443/udp" # HTTP/3 (optional; also allow UDP 443 in the firewall to use it)
+    volumes:
+      # HTTPS certificates. Must persist: re-requesting them on every restart
+      # would hit Let's Encrypt's rate limits.
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - backend
+    restart: unless-stopped
+    logging: *default-logging
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.prod
+    environment:
+      # Turns on production checks: refuses to start without a real
+      # SECRET_KEY, and always marks session cookies Secure.
+      APP_ENV: production
+      SECRET_KEY: ${SECRET_KEY:?Set SECRET_KEY in .env (python3 -c "import secrets; print(secrets.token_hex(32))")}
+      SESSION_SAME_SITE: lax
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_NAME: ${DB_NAME:-yacsdb}
+      DB_USER: ${DB_USER:-yacs}
+      DB_PASS: ${DB_PASS:?Set DB_PASS in .env}
+      REDIS_URL: redis://redis:6379/0
+    volumes:
+      # Scraped course JSON isn't in the image (it's 300+ MB); mounted read-only
+      # so the importer can run inside this container:
+      #   docker compose -f docker-compose.prod.yml exec backend python scraper/import_courses.py --term 202609
+      - ./backend/scraper/data:/app/scraper/data:ro
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    restart: unless-stopped
+    logging: *default-logging
+
+  db:
+    # Same major version as development so dumps move between them cleanly.
+    image: postgres:15
+    environment:
+      POSTGRES_DB: ${DB_NAME:-yacsdb}
+      POSTGRES_USER: ${DB_USER:-yacs}
+      POSTGRES_PASSWORD: ${DB_PASS:?Set DB_PASS in .env}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+    logging: *default-logging
+
+  redis:
+    image: redis:7-alpine
+    # Cache entries and login-throttle counters all have TTLs and are safe to
+    # lose, so skip saving to disk entirely; cap memory and evict LRU keys.
+    command: redis-server --save "" --appendonly no --maxmemory 256mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+    logging: *default-logging
+
+volumes:
+  postgres_data:
+  caddy_data:
+  caddy_config:
