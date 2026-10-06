@@ -342,9 +342,11 @@ export function buildFinalsPrintHtml(finals: FinalExam[]) {
 }
 
 export function printFinalsPdf(finals: FinalExam[]) {
-  const popup = window.open("", "_blank", "noopener,noreferrer");
+  const popup = window.open("", "_blank");
   if (!popup) return;
 
+  // Retain the blank window handle to populate it, then sever its opener.
+  popup.opener = null;
   popup.document.open();
   popup.document.write(buildFinalsPrintHtml(finals));
   popup.document.close();
@@ -584,9 +586,11 @@ export function buildSchedulePrintHtml(courses: Course[]) {
 }
 
 export function printSchedulePdf(courses: Course[]) {
-  const popup = window.open("", "_blank", "noopener,noreferrer");
+  const popup = window.open("", "_blank");
   if (!popup) return;
 
+  // Retain the blank window handle to populate it, then sever its opener.
+  popup.opener = null;
   popup.document.open();
   popup.document.write(buildSchedulePrintHtml(courses));
   popup.document.close();

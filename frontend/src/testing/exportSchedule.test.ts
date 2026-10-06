@@ -1,4 +1,4 @@
-import { buildFinalsIcs, buildFinalsImageSvg, buildFinalsPrintHtml, buildFinalsText, buildScheduleIcs, buildScheduleImageSvg, buildSchedulePrintHtml, buildScheduleText } from "@/features/schedule/utils/exportSchedule";
+import { printSchedulePdf, printFinalsPdf, buildFinalsIcs, buildFinalsImageSvg, buildFinalsPrintHtml, buildFinalsText, buildScheduleIcs, buildScheduleImageSvg, buildSchedulePrintHtml, buildScheduleText } from "@/features/schedule/utils/exportSchedule";
 import type { FinalExam } from "@/features/finals/utils/finalsSchedule";
 import type { Course } from "@/features/schedule/types/schedule";
 
@@ -167,4 +167,26 @@ test("builds plain text finals output for clipboard export", () => {
   expect(text).toContain("CSCI-1100 - Computer Science 1");
   expect(text).toContain("DCC 308");
   expect(text).toContain("Placeholder finals slot until backend data is available.");
+});
+
+test.each(["schedule", "finals"])("populates and prints the %s popup with no opener", (kind) => {
+  const popup = {
+    opener: window,
+    document: { open: jest.fn(), write: jest.fn(), close: jest.fn() },
+    focus: jest.fn(),
+    print: jest.fn(),
+  };
+  const open = jest.spyOn(window, "open").mockImplementation((_url, _target, features) => {
+    // Browsers return null when noopener is requested, even if a window opens.
+    return features?.includes("noopener") ? null : popup as unknown as Window;
+  });
+  try {
+    if (kind === "schedule") printSchedulePdf(courses);
+    else printFinalsPdf([{courseId: "CSCI-1100", courseTitle: "Computer Science 1", startDateTime: "2024-12-12T13:00:00", endDateTime: "2024-12-12T16:00:00", location: "DCC 308"}]);
+    expect(popup.document.write).toHaveBeenCalledWith(expect.stringContaining("CSCI-1100"));
+    expect(popup.opener).toBeNull();
+    expect(popup.print).toHaveBeenCalledTimes(1);
+  } finally {
+    open.mockRestore();
+  }
 });
