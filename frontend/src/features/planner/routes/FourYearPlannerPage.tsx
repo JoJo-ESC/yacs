@@ -67,18 +67,18 @@ const HeaderBar: React.FC<{ total: number; max?: number; onSave: () => void; onA
     <div className="h-2 w-full rounded bg-muted overflow-hidden">
       <div className="h-full bg-footer" style={{ width: `${Math.min((total / max) * 100, 100)}%` }} />
     </div>
-    <div className="mt-2 flex items-center justify-between">
+    <div className="mt-2 flex flex-wrap gap-2 items-center justify-between">
       <span className="text-foreground/90 text-sm">{total} / {max} credits</span>
       <div className="flex gap-2">
         <button
           onClick={onAdd}
-          className="px-3 py-1 rounded-lg bg-surface text-foreground border border-border hover:brightness-110"
+          className="min-h-[44px] px-3 py-1 rounded-lg bg-surface text-foreground border border-border hover:brightness-110"
         >
           ADD +
         </button>
         <button
           onClick={onSave}
-          className="px-3 py-1 rounded-lg bg-footer text-white hover:brightness-110"
+          className="min-h-[44px] px-3 py-1 rounded-lg bg-footer text-white hover:brightness-110"
         >
           SAVE
         </button>
@@ -95,7 +95,7 @@ const TermColumn: React.FC<{
 }> = ({ id, items, onDropCourse, onRemove }) => {
   const credits = termCredits(items);
   return (
-    <div className="rounded-lg bg-surface border border-border p-3 min-h-[160px]">
+    <div className="rounded-lg bg-surface border border-border min-w-0 p-3 min-h-[160px]">
       <div className="flex items-baseline justify-between">
         <div>
           <div className="font-semibold text-foreground">{id.split(" ")[0]} {id.split(" ")[1]}</div>
@@ -106,7 +106,7 @@ const TermColumn: React.FC<{
 
       {/* Drop area */}
       <div
-        className="mt-3 rounded-lg border border-dashed border-border h-40 overflow-y-auto flex flex-col items-center justify-center gap-2"
+        className="mt-3 rounded-lg border border-dashed border-border min-h-[160px] max-h-64 overflow-y-auto flex flex-col items-center gap-2"
         style={{ backgroundColor: "color-mix(in oklab, var(--surface), var(--background) 35%)" }}
         onDragOver={(e) => e.preventDefault()}
         onDrop={(e) => {
@@ -121,18 +121,19 @@ const TermColumn: React.FC<{
       >
         {items.length === 0 && (
           <div className="text-sm" style={{ color: "var(--foreground)", opacity: 0.6 }}>
-            Drop some classes here!
+            Use the course picker above or drag a course here.
           </div>
         )}
         <ul className="space-y-2 w-full p-2">
           {items.map((c) => (
             <li key={c.key} className="flex items-center justify-between rounded-md bg-background dark:bg-slate-600 px-2 py-2 border border-border">
-              <div className="text-md text-foreground truncate" title={`${c.id} : ${c.title}`}>
+              <div className="min-w-0 text-md text-foreground break-words" title={`${c.id} : ${c.title}`}>
                 <b>{c.id}</b> : {c.title}
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex shrink-0 items-center gap-2">
                 <button
-                  className="text-xs items-center justify-center rounded w-6 h-6 text-foreground"
+                  aria-label={`Remove ${c.id} from ${id}`}
+                  className="text-xs items-center justify-center rounded w-11 h-11 text-foreground"
                   onClick={() => onRemove(id, c.key)}
                 >
                   ✕
@@ -177,11 +178,16 @@ const RightSidebar: React.FC<{ }> = () => (
 );
 
 // ---------------------- Main Page ----------------------
+const selectableCourses = Array.from(new Map([...catalog, ...requirementBuckets.flatMap((bucket) => bucket.items)].map((course) => [course.id, course])).values());
+
 const STORAGE_KEY = "four_year_plan_v1";
 type PlanState = Record<TermId, PlacedCourse[]>;
 
 export default function FourYearPlannerPage() {
   const terms = useMemo(() => defaultTerms(2023), []);
+  const [selectedTerm, setSelectedTerm] = useState<TermId>(terms[0]);
+  const [selectedCourse, setSelectedCourse] = useState(selectableCourses[0].id);
+  const [addedMessage, setAddedMessage] = useState("");
   const [plan, setPlan] = useState<PlanState>(() => {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) { try { return JSON.parse(raw); } catch {} }
@@ -198,17 +204,36 @@ export default function FourYearPlannerPage() {
   function handleRemove(term: TermId, key: string){ setPlan((p) => ({ ...p, [term]: p[term].filter((x) => x.key !== key) })); }
   function handleSave() { alert("Plan saved locally (localStorage)"); }
   function handleAdd()  {
-    const firstEmpty = terms.find((t) => plan[t].length === 0) ?? terms[0];
-    handleDrop(firstEmpty as TermId, catalog[0]);
+    document.getElementById("planner-course")?.focus();
   }
 
   return (
     <div className="min-h-screen bg-background text-foreground">
       <HeaderBar total={totalCredits} onSave={handleSave} onAdd={handleAdd} />
 
-      <div className="mx-auto max-w-7xl px-3 py-4 grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4">
+      <form className="mx-auto grid max-w-7xl gap-3 px-3 pt-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end"
+        onSubmit={(event) => {
+          event.preventDefault();
+          const course = selectableCourses.find((item) => item.id === selectedCourse)!;
+          handleDrop(selectedTerm, course);
+          setAddedMessage(`Added ${course.id} to ${selectedTerm}.`);
+        }}>
+        <label className="min-w-0 text-sm">Course
+          <select aria-label="Course" id="planner-course" value={selectedCourse} onChange={(event) => setSelectedCourse(event.target.value)} className="mt-1 block min-h-[44px] w-full min-w-0 rounded-md border border-border bg-input px-2 text-base">
+            {selectableCourses.map((course) => <option key={course.id} value={course.id}>{course.id}: {course.title}</option>)}
+          </select>
+        </label>
+        <label className="min-w-0 text-sm">Term
+          <select aria-label="Term" value={selectedTerm} onChange={(event) => setSelectedTerm(event.target.value as TermId)} className="mt-1 block min-h-[44px] w-full min-w-0 rounded-md border border-border bg-input px-2 text-base">
+            {terms.map((term) => <option key={term}>{term}</option>)}
+          </select>
+        </label>
+        <button type="submit" className="min-h-[44px] rounded-md bg-footer px-4 py-2 text-white">Add course</button>
+        <p role="status" className="text-sm sm:col-span-3">{addedMessage}</p>
+      </form>
+      <div className="mx-auto max-w-7xl px-3 py-4 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-4">
         {/* Left: terms grid */}
-        <main className="space-y-4">
+        <main className="min-w-0 space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {terms.map((t) => (
               <TermColumn key={t} id={t} items={plan[t]} onDropCourse={handleDrop} onRemove={handleRemove} />
@@ -231,13 +256,14 @@ export default function FourYearPlannerPage() {
       </div>
 
       {/* Bottom catalog scroller */}
-      <div className="sticky bottom-0 bg-header border-t border-border">
+      <div className="lg:sticky lg:bottom-0 bg-header border-t border-border">
         <div className="mx-auto max-w-7xl px-3 py-2">
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-2">
             <div className="text-sm" style={{ color: "var(--foreground)", opacity: 0.9 }}>Catalog (drag to term)</div>
             <input
+              aria-label="Search catalog"
               placeholder="Search catalog…"
-              className="px-2 py-1 rounded-md bg-input text-[color:var(--input-foreground)] border border-border text-sm"
+              className="min-w-0 w-full sm:w-auto min-h-[44px] px-2 py-1 rounded-md bg-input text-[color:var(--input-foreground)] border border-border text-sm"
               onChange={(e) => {
                 const q = e.target.value.toLowerCase();
                 const items = document.querySelectorAll<HTMLElement>("[data-catalog-item]");
