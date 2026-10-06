@@ -175,7 +175,7 @@ function CourseCard({
       >
         <div className="flex min-w-0 flex-col gap-0.5">
           <div className="flex items-center gap-2">
-            <h3 className="font-bold text-foreground truncate text-base">
+            <h3 className="font-bold text-foreground break-words text-base">
               {course.id} <span className="opacity-40 font-normal">|</span> {course.title}
             </h3>
             {isStrictConflict && (
@@ -184,7 +184,7 @@ function CourseCard({
               </span>
             )}
           </div>
-          <div className="flex items-center gap-2 text-xs text-foreground/60">
+          <div className="flex flex-wrap items-center gap-2 text-xs text-foreground/60">
              <span>
                {Object.keys(allByType).length} Section Types
              </span>
@@ -199,11 +199,11 @@ function CourseCard({
           </div>
         </div>
 
-        <div className="flex items-center gap-1 pl-4">
+        <div className="flex shrink-0 items-center gap-1">
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 text-foreground/50 hover:text-red-600 hover:bg-red-100/50"
+            className="h-11 w-11 text-foreground/50 hover:text-red-600 hover:bg-red-100/50"
             onClick={(e) => {
               e.stopPropagation();
               onRemove();
@@ -211,7 +211,7 @@ function CourseCard({
           >
             <Trash2 className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="icon" className="h-8 w-8 text-foreground/50">
+          <Button variant="ghost" size="icon" className="h-11 w-11 text-foreground/50">
              {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </Button>
         </div>
@@ -343,7 +343,7 @@ export default function ScheduleList(): JSX.Element {
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-xl font-bold tracking-tight text-foreground">Your Schedule</h2>
           <p className="text-sm text-muted-foreground">
@@ -353,7 +353,7 @@ export default function ScheduleList(): JSX.Element {
           </p>
         </div>
         {displayCourses.length > 0 && (
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Button
               variant="outline"
               size="sm"
@@ -363,7 +363,7 @@ export default function ScheduleList(): JSX.Element {
                   window.setTimeout(() => setCopyStatus("idle"), 2000);
                 });
               }}
-              className="border-border text-muted-foreground hover:bg-surface hover:text-foreground"
+              className="min-h-[44px] border-border text-muted-foreground hover:bg-surface hover:text-foreground"
             >
               {copyStatus === "copied" ? "Copied" : "Copy text"}
             </Button>
@@ -373,7 +373,7 @@ export default function ScheduleList(): JSX.Element {
               onClick={() => {
                 void downloadSchedulePng(displayCourses);
               }}
-              className="border-border text-muted-foreground hover:bg-surface hover:text-foreground"
+              className="min-h-[44px] border-border text-muted-foreground hover:bg-surface hover:text-foreground"
             >
               Export PNG
             </Button>
@@ -381,7 +381,7 @@ export default function ScheduleList(): JSX.Element {
               variant="outline"
               size="sm"
               onClick={() => printSchedulePdf(displayCourses)}
-              className="border-border text-muted-foreground hover:bg-surface hover:text-foreground"
+              className="min-h-[44px] border-border text-muted-foreground hover:bg-surface hover:text-foreground"
             >
               Export PDF
             </Button>
@@ -389,7 +389,7 @@ export default function ScheduleList(): JSX.Element {
               variant="outline"
               size="sm"
               onClick={() => downloadScheduleIcs(displayCourses)}
-              className="border-border text-muted-foreground hover:bg-surface hover:text-foreground"
+              className="min-h-[44px] border-border text-muted-foreground hover:bg-surface hover:text-foreground"
             >
               Export ICS
             </Button>
@@ -397,7 +397,7 @@ export default function ScheduleList(): JSX.Element {
               variant="outline" 
               size="sm" 
               onClick={clear}
-              className="border-border text-muted-foreground hover:bg-surface hover:text-foreground"
+              className="min-h-[44px] border-border text-muted-foreground hover:bg-surface hover:text-foreground"
             >
               Clear all
             </Button>

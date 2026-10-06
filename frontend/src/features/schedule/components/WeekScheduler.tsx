@@ -278,7 +278,10 @@ export default function WeekScheduler({
   }, [conflictKeys, eventsExpanded]);
 
   return (
-    <div className="w-full h-[720px] rounded-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden shadow-lg bg-gradient-to-br from-zinc-50 to-zinc-100 dark:from-zinc-900 dark:to-zinc-950">
+    <section aria-label="Weekly schedule">
+      <p className="mb-2 text-sm text-foreground/70 lg:hidden">Scroll sideways to see all days.</p>
+      <div role="region" aria-label="Scrollable weekly calendar" tabIndex={0} className="max-w-full overflow-x-auto rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400">
+    <div style={{ minWidth: 80 + daysToRender * 140 }} className="w-full h-[720px] rounded-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden shadow-lg bg-gradient-to-br from-zinc-50 to-zinc-100 dark:from-zinc-900 dark:to-zinc-950">
       {conflicts.length > 0 && (
         <div className="p-4 bg-rose-50 border-l-4 border-rose-500 text-rose-700 font-medium space-y-2">
           <div className="flex items-center gap-2">
@@ -315,7 +318,7 @@ export default function WeekScheduler({
 
       {conflicts.length === 0 && (
         <div
-          className="grid h-[calc(100%-44px)] mt-3 mb-3"
+          className="grid h-[calc(100%-68px)] mt-3 mb-3"
           style={{ gridTemplateColumns: `80px repeat(${daysToRender}, 1fr)` }}
         >
           {/* Time column */}
@@ -387,5 +390,7 @@ export default function WeekScheduler({
         </div>
       )}
     </div>
+      </div>
+    </section>
   );
 }

@@ -16,7 +16,7 @@ export default function SemesterSelect() {
       <span className="hidden md:inline">Semester</span>
       <select
         aria-label="Semester"
-        className="h-9 min-w-44 rounded-md border border-border bg-background px-3 text-sm text-foreground outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 disabled:cursor-not-allowed disabled:opacity-70"
+        className="h-11 min-w-0 w-full sm:w-auto max-w-full rounded-md border border-border bg-background px-3 text-base sm:text-sm text-foreground outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 disabled:cursor-not-allowed disabled:opacity-70"
         disabled={disabled}
         value={selectedSemester || options[0] || ""}
         onChange={(event) => setSelectedSemester(event.target.value)}

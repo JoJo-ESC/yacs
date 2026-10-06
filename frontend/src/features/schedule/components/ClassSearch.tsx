@@ -213,7 +213,7 @@ export function ClassSearch({
               (e.target as HTMLInputElement).blur();
             }
           }}
-          className="flex-1 bg-transparent text-foreground placeholder:opacity-60 outline-none"
+          className="min-w-0 flex-1 bg-transparent text-foreground placeholder:opacity-60 outline-none"
           aria-expanded={isOpen}
           aria-haspopup="listbox"
           aria-controls="class-search-dropdown-listbox"
