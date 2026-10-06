@@ -14,9 +14,9 @@ export default function ProfessorsPage() {
   }, [professors, query]);
 
   return (
-    <main className="flex-1 px-6 py-8">
+    <main className="min-w-0 flex-1 break-words px-4 py-6 sm:px-6 sm:py-8">
       <div className="mx-auto max-w-6xl space-y-8">
-        <section className="rounded-3xl border border-border bg-surface/50 p-6">
+        <section className="rounded-3xl border border-border bg-surface/50 p-4 sm:p-6">
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-foreground/60">Professors</p>
           <h1 className="mt-2 text-3xl font-semibold text-foreground">Professor directory</h1>
           <p className="mt-3 max-w-2xl text-sm text-foreground/75">
@@ -34,14 +34,14 @@ export default function ProfessorsPage() {
           </section>
         ) : (
           <section className="space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h2 className="text-lg font-semibold text-foreground">All professors</h2>
                 <p className="mt-1 text-sm text-foreground/65">
                   {filteredProfessors.length} {filteredProfessors.length === 1 ? "professor" : "professors"} shown
                 </p>
               </div>
-              <label className="block">
+              <label className="block w-full sm:w-auto">
                 <span className="sr-only">Search professors</span>
                 <input
                   type="search"
@@ -49,7 +49,7 @@ export default function ProfessorsPage() {
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
                   placeholder="Search by professor name"
-                  className="h-10 w-64 rounded-md border border-border bg-background px-3 text-sm text-foreground outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20"
+                  className="h-11 w-full sm:w-64 rounded-md border border-border bg-background px-3 text-sm text-foreground outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20"
                 />
               </label>
             </div>

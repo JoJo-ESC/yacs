@@ -18,9 +18,9 @@ export default function ProfessorDetailPage() {
   );
 
   return (
-    <main className="flex-1 px-6 py-8">
+    <main className="min-w-0 flex-1 break-words px-4 py-6 sm:px-6 sm:py-8">
       <div className="mx-auto max-w-4xl space-y-8">
-        <section className="rounded-3xl border border-border bg-surface/50 p-6">
+        <section className="rounded-3xl border border-border bg-surface/50 p-4 sm:p-6">
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-foreground/60">Professors</p>
           <h1 className="mt-2 text-3xl font-semibold text-foreground">
             {catalogLoading ? "Loading professor" : professor?.name ?? "Professor not found"}
@@ -50,7 +50,7 @@ export default function ProfessorDetailPage() {
           </section>
         ) : (
           <div className="space-y-6">
-            <section className="rounded-2xl border border-border bg-background/70 p-6 shadow-sm">
+            <section className="rounded-2xl border border-border bg-background/70 p-4 sm:p-6 shadow-sm">
               <div className="grid gap-6 md:grid-cols-2">
                 <article className="rounded-2xl border border-border bg-surface/35 p-5">
                   <p className="text-xs font-semibold uppercase tracking-[0.2em] text-foreground/55">Name</p>
@@ -79,8 +79,8 @@ export default function ProfessorDetailPage() {
               </div>
             </section>
 
-            <section className="rounded-2xl border border-border bg-background/70 p-6 shadow-sm">
-              <div className="flex items-center justify-between">
+            <section className="rounded-2xl border border-border bg-background/70 p-4 sm:p-6 shadow-sm">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <h2 className="text-lg font-semibold text-foreground">Courses taught</h2>
                 <p className="text-sm text-foreground/65">
                   {professor.courseCount} {professor.courseCount === 1 ? "course" : "courses"}

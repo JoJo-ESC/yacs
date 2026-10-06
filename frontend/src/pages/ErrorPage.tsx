@@ -22,7 +22,7 @@ export default function ErrorPage({
         </div>
         <h1 className="text-3xl font-semibold text-foreground">{title}</h1>
         <p className="text-foreground/80">{message}</p>
-        <div className="flex items-center justify-center gap-3">
+        <div className="flex flex-wrap items-center justify-center gap-3">
           {onAction && actionLabel ? (
             <button
               type="button"

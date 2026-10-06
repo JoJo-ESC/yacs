@@ -22,9 +22,9 @@ function Footer() {
 
   return (
     <footer className="bg-header text-input-foreground border-t border-b-border">
-      <div className="max-w-6xl mx-auto px-6 py-8 grid grid-cols-12 gap-6 items-start">
+      <div className="max-w-6xl mx-auto px-6 py-8 grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
         {/* logo */}
-        <div className="col-span-3 flex items-center">
+        <div className="md:col-span-3 flex flex-wrap gap-2 items-center">
           <div className="inline-flex items-center justify-center border-2 border-white rounded-xl px-4 py-2 bg-transparent text-white text-lg font-semibold">
             RCOS
           </div>
@@ -32,16 +32,16 @@ function Footer() {
         </div>
 
         {/* link columns */}
-        <nav className="col-span-6 grid grid-cols-2 gap-6">
+        <nav className="min-w-0 md:col-span-6 grid grid-cols-2 gap-6">
           <ul className="space-y-2">
-            <li><Link className="text-sm tracking-wider hover:underline" to="/schedule">schedule</Link></li>
+            <li><Link className="text-sm tracking-wider hover:underline" to="/">schedule</Link></li>
             <li><Link className="text-sm tracking-wider hover:underline" to="/explore">explore</Link></li>
             <li><Link className="text-sm tracking-wider hover:underline" to="/finals">finals</Link></li>
             <li><Link className="text-sm tracking-wider hover:underline" to="/professors">professors</Link></li>
             <li><Link className="text-sm tracking-wider hover:underline" to="/pathways">pathways</Link></li>
             <li><Link className="text-sm tracking-wider hover:underline" to="/prerequisites">prerequisites</Link></li>
             <li><Link className="text-sm tracking-wider hover:underline" to="/planner">degree planner</Link></li>
-            <li><Link className="text-sm tracking-wider hover:underline" to="/account">my account</Link></li>
+            <li><Link className="text-sm tracking-wider hover:underline" to="/profile">my account</Link></li>
           </ul>
 
           <ul className="space-y-2">
@@ -54,7 +54,7 @@ function Footer() {
         </nav>
 
         {/* spacer / optional content */}
-        <div className="col-span-3 flex items-start justify-end">
+        <div className="md:col-span-3 flex items-start justify-end">
           {/* place for social links or short info if needed */}
         </div>
       </div>
