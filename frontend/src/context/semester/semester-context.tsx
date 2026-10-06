@@ -9,6 +9,7 @@ import React, {
 } from "react";
 import { fetchSemesters } from "@/api";
 import type { ApiSemesterResponse } from "@/api/types";
+import { track } from "@/lib/analytics";
 
 type SemesterCtx = {
   semesters: ApiSemesterResponse[];
@@ -48,6 +49,7 @@ export function SemesterProvider({ children }: { children: React.ReactNode }) {
 
   const setSelectedSemester = useCallback((term: string) => {
     userPickedRef.current = true;
+    track("semester_changed", { semester: term });
     setSelectedSemesterState(term);
   }, []);
 

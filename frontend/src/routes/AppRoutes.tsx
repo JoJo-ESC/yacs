@@ -1,5 +1,6 @@
 import React from "react";
-  import { BrowserRouter, Route, Routes } from "react-router-dom";               
+  import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
+  import { trackPageview } from "@/lib/analytics";
   import App from "@/app/App";                        
   import ClassSectionsPage from "@/features/courses/ClassSectionsPage";
   import SubjectBrowserPage from "@/features/courses/SubjectBrowserPage";           
@@ -12,10 +13,21 @@ import React from "react";
   import RequireAuthenticated from
   "@/features/auth/components/RequireAuthenticated";
 
+  // Sends a page view on every route change. Lives directly under the router
+  // (not in the App layout) so pages outside that layout, like /login, count too.
+  function PageviewTracker() {
+    const location = useLocation();
+    React.useEffect(() => {
+      trackPageview();
+    }, [location.pathname]);
+    return null;
+  }
+
   export function AppRoutes() {                                                     
     return (
-      <BrowserRouter>                                                               
-        <Routes>       
+      <BrowserRouter>
+        <PageviewTracker />
+        <Routes>
           <Route path="/login" element={<LandingAuthPage />} />
           <Route element={<RequireAppAccess />}>
             <Route path="/" element={<App />}>

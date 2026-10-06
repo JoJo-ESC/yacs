@@ -11,6 +11,7 @@ import React, {
 import type { Course } from "@/types/schedule";
 import { fetchAllCourses } from "@/api";
 import { useSemester } from "@/context/semester/semester-context";
+import { track } from "@/lib/analytics";
 
 type CatalogStatus = "idle" | "loading" | "loaded" | "error";
 
@@ -103,6 +104,7 @@ export function ScheduleProvider({ children }: { children: React.ReactNode }) {
   }, [courses]);
 
   const addCourse = useCallback((c: Course) => {
+    track("course_added", { course: c.id, department: c.department });
     setCourses((prev) => {
       for (let i = 0; i < prev.length; i++) if (prev[i].id === c.id) return prev;
       return [...prev, c];
@@ -110,6 +112,7 @@ export function ScheduleProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const removeCourse = useCallback((id: string) => {
+    track("course_removed", { course: id });
     setCourses((prev) => prev.filter((x) => x.id !== id));
   }, []);
 

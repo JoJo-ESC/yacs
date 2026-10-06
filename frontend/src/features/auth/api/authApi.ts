@@ -1,4 +1,4 @@
-import { env } from "@/config";
+import { getApiBaseUrl } from "@/config";
 
 type ApiEnvelope = {
   success?: boolean;
@@ -34,13 +34,6 @@ export type AuthApiResult = ApiEnvelope & {
   ok: boolean;
   statusCode: number;
 };
-
-function getApiBaseUrl() {
-  if (env.apiBaseUrl) {
-    return env.apiBaseUrl;
-  }
-  return env.nodeEnv === "development" ? "http://localhost:8000" : "";
-}
 
 function buildApiUrl(path: string) {
   const base = getApiBaseUrl();

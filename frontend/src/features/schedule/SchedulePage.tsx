@@ -5,6 +5,7 @@ import { useSchedule } from "@/context/schedule/schedule-context";
 import ScheduleList from "@/features/schedule/components/ScheduleList";
 import WeekScheduler from "@/features/schedule/components/WeekScheduler";
 import { hasScheduleConflict } from "@/lib/schedule/schedule";
+import { track } from "@/lib/analytics";
 import type { Course, Meeting } from "@/types/schedule";
 
 type MeetingOption = {
@@ -169,6 +170,7 @@ export default function SchedulePage() {
             : scheduleVariants.length - 1
           : (currentVariantIndex + direction + scheduleVariants.length) % scheduleVariants.length;
 
+      track("schedule_variant_browsed", { direction, total: scheduleVariants.length });
       replaceCourses(scheduleVariants[nextIndex].courses);
     },
     [currentVariantIndex, replaceCourses, scheduleVariants],

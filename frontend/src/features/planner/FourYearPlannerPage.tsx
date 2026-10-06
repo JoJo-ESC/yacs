@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { GripVertical } from "lucide-react";
 import { apiFetch } from "@/api/client";
 import { useAuth } from "@/features/auth/hooks/useAuth";
+import { track } from "@/lib/analytics";
 
 // ---------------------- Types ----------------------
 type Course = { id: string; title: string; credits: number };
@@ -260,6 +261,7 @@ export default function FourYearPlannerPage() {
   }, [plan]);
 
   function handleDrop(term: TermId, c: Course) {
+    track("planner_course_added", { course: c.id, term });
     setPlan((p) => ({ ...p, [term]: [...p[term], courseToPlaced(c)] }));
   }
 

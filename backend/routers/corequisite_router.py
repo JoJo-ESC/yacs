@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
+from middleware.admin_middleware import require_admin
 from schemas.corequisite_schemas import CourseCorequisiteCreate
 from services import corequisite_service
 from models import SessionLocal
@@ -19,7 +20,8 @@ def get_db():
 router = APIRouter(prefix="/api", tags=["Corequisites"])
 
 
-@router.post('/corequisite')
+# Writes catalog data, so admins only (reads below stay public).
+@router.post('/corequisite', dependencies=[Depends(require_admin)])
 async def add_corequisite_endpoint(coreq: CourseCorequisiteCreate, db: Session = Depends(get_db)):
     """Add a new corequisite relationship."""
     result = corequisite_service.add_corequisite(
