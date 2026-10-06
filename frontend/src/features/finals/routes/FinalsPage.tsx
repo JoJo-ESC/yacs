@@ -16,9 +16,9 @@ export default function FinalsPage() {
   const finals = getFinalsForCourses(courses);
 
   return (
-    <main className="flex-1 px-6 py-8">
+    <main className="min-w-0 flex-1 break-words px-4 py-6 sm:px-6 sm:py-8">
       <div className="mx-auto max-w-6xl space-y-8">
-        <section className="rounded-3xl border border-border bg-surface/50 p-6">
+        <section className="rounded-3xl border border-border bg-surface/50 p-4 sm:p-6">
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-foreground/60">Finals</p>
           <h1 className="mt-2 text-3xl font-semibold text-foreground">Final exam schedule</h1>
           <p className="mt-3 max-w-2xl text-sm text-foreground/75">
@@ -28,7 +28,7 @@ export default function FinalsPage() {
 
         <section className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
           <div className="rounded-2xl border border-border bg-background/70 p-5">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-3">
               <div>
                 <h2 className="text-lg font-semibold text-foreground">Selected courses</h2>
                 <p className="text-sm text-foreground/65">
@@ -36,7 +36,7 @@ export default function FinalsPage() {
                 </p>
               </div>
               {finals.length > 0 && (
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <Button
                     variant="outline"
                     size="sm"
@@ -46,7 +46,7 @@ export default function FinalsPage() {
                         window.setTimeout(() => setCopyStatus("idle"), 2000);
                       });
                     }}
-                    className="border-border text-muted-foreground hover:bg-surface hover:text-foreground"
+                    className="min-h-[44px] border-border text-muted-foreground hover:bg-surface hover:text-foreground"
                   >
                     {copyStatus === "copied" ? "Copied" : "Copy finals text"}
                   </Button>
@@ -56,7 +56,7 @@ export default function FinalsPage() {
                     onClick={() => {
                       void downloadFinalsPng(finals);
                     }}
-                    className="border-border text-muted-foreground hover:bg-surface hover:text-foreground"
+                    className="min-h-[44px] border-border text-muted-foreground hover:bg-surface hover:text-foreground"
                   >
                     Export finals PNG
                   </Button>
@@ -64,7 +64,7 @@ export default function FinalsPage() {
                     variant="outline"
                     size="sm"
                     onClick={() => printFinalsPdf(finals)}
-                    className="border-border text-muted-foreground hover:bg-surface hover:text-foreground"
+                    className="min-h-[44px] border-border text-muted-foreground hover:bg-surface hover:text-foreground"
                   >
                     Export finals PDF
                   </Button>
@@ -72,7 +72,7 @@ export default function FinalsPage() {
                     variant="outline"
                     size="sm"
                     onClick={() => downloadFinalsIcs(finals)}
-                    className="border-border text-muted-foreground hover:bg-surface hover:text-foreground"
+                    className="min-h-[44px] border-border text-muted-foreground hover:bg-surface hover:text-foreground"
                   >
                     Export finals ICS
                   </Button>
