@@ -1,0 +1,36 @@
+Mobile touch review for issue #17
+
+Scenarios at each size:
+- Drawer open/close, backdrop dismissal, theme toggle, background scroll lock.
+- All five drawer navigation destinations.
+- Search-result swiping without accidental course selection; outside dismissal.
+- Clear search, add course, and change section.
+- Calendar horizontal swipes and normal vertical page scrolling.
+- Schedule and finals copy, PNG, ICS, and PDF actions.
+- Semester changes and course removal.
+- Professor search and detail navigation.
+- Login fields and submission against a mocked response.
+- Planner add/remove and horizontal catalog swiping.
+
+Fixes made during my review:
+- Enlarged search-clear and login-submit targets to at least 44px.
+- Increased default search result rows to 44px and kept their rendered height
+  consistent with the virtualizer's itemHeight setting.
+- Search outside dismissal now uses pointer events for touch, pen, and mouse.
+- Added accessible labels to course search, removal, and expansion controls;
+  section buttons expose their selected state.
+- Kept search and semester input text at 16px, including landscape, to reduce
+  unwanted focus zoom on mobile browsers.
+- Fixed blank PDF export windows: retain the newly opened blank window handle,
+  clear its opener, populate its content, and invoke print.
+
+Reproduction from the repository root (macOS with installed Google Chrome):
+  npm --prefix frontend run build
+  npm install --prefix /tmp/yacs-touch-tools playwright --no-audit --no-fund
+  NODE_PATH=/tmp/yacs-touch-tools/node_modules CHROME_PATH='/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' node frontend/scripts/touch-review.cjs
+still need a physical-device smoke test. These checks do not certify those flows.
+
+Final results:
+- 39/39 browser touch checks passed across the three viewports.
+- 30/30 frontend unit/integration tests passed (including two new PDF tests).
+- Production build succeeded.
