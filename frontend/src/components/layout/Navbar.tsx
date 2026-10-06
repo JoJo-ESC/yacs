@@ -1,5 +1,5 @@
 import React from "react";
-import { Bars3Icon, ChevronDownIcon } from "@heroicons/react/24/solid";
+import { Bars3Icon, ChevronDownIcon, XMarkIcon } from "@heroicons/react/24/solid";
 import ClassSearch from "@/features/schedule/components/ClassSearch";
 import { SubjectNavSearch } from "@/features/courses/components/SubjectNavSearch";
 import ThemeToggle from "@/components/theme/ThemeToggle";
@@ -29,6 +29,20 @@ function Navbar() {
   const { semesters, selectedSemester, setSelectedSemester, semestersLoading } = useSemester();
   const [semesterOpen, setSemesterOpen] = React.useState(false);
   const selectedSemesterName = semesters.find((s) => s.term === selectedSemester)?.name ?? selectedSemester;
+
+  // Below the lg breakpoint the links collapse into a menu opened by a button.
+  const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
+  React.useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [location.pathname]);
+  React.useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMobileMenuOpen(false);
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [mobileMenuOpen]);
 
   React.useEffect(() => {
     const updateBubble = () => {
@@ -66,7 +80,7 @@ function Navbar() {
               )}
             </div>
           </div>
-          <div className="invisible shrink-0 flex h-11 items-center gap-2 sm:visible">
+          <div className="hidden h-11 shrink-0 items-center gap-2 lg:flex">
             <div
               className="relative flex h-11 items-center gap-2"
               onMouseLeave={() => setHoveredKey(null)}
@@ -148,8 +162,65 @@ function Navbar() {
 
             <ThemeToggle className="h-11 w-11 rounded-full text-slate-700 hover:bg-[#faf5ee] hover:text-[#7a5230] dark:text-neutral-200 dark:hover:bg-[#201813]" />
           </div>
-          <Bars3Icon className="h-6 w-6 text-slate-700 sm:hidden dark:text-neutral-200" />
+          <button
+            type="button"
+            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-slate-700 transition-colors hover:bg-[#faf5ee] hover:text-[#7a5230] lg:hidden dark:text-neutral-200 dark:hover:bg-[#201813]"
+            aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={mobileMenuOpen}
+            aria-controls="mobile-nav-menu"
+            onClick={() => setMobileMenuOpen((open) => !open)}
+          >
+            {mobileMenuOpen ? <XMarkIcon className="h-6 w-6" /> : <Bars3Icon className="h-6 w-6" />}
+          </button>
         </div>
+        {mobileMenuOpen && (
+          <nav
+            id="mobile-nav-menu"
+            aria-label="Main"
+            className="mx-auto mt-3 w-full max-w-7xl rounded-[22px] border border-white/65 bg-header p-3 text-input-foreground shadow-[0_22px_60px_-28px_rgba(15,23,42,0.25)] lg:hidden dark:border-white/10 dark:shadow-[0_26px_70px_-32px_rgba(0,0,0,0.7)]"
+          >
+            <ul className="space-y-1">
+              {navItems.map((item) => (
+                <li key={item.key}>
+                  <Link
+                    to={item.to}
+                    onClick={() => setMobileMenuOpen(false)}
+                    aria-current={activeKey === item.key ? "page" : undefined}
+                    className={`flex h-11 items-center rounded-full px-5 text-sm font-semibold transition-colors ${
+                      activeKey === item.key
+                        ? "border border-[#dfc9ae] bg-[#f4ebe0] text-[#7a5230] dark:border-[#6d4f36] dark:bg-[#3a281d] dark:text-[#f4e6d6]"
+                        : "text-slate-700 hover:bg-[#faf5ee] dark:text-neutral-200 dark:hover:bg-[#201813]"
+                    }`}
+                  >
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+
+            <div className="mt-3 flex items-center justify-between gap-3 border-t border-slate-200/80 px-2 pt-3 dark:border-[#303030]">
+              {!semestersLoading && semesters.length > 0 ? (
+                <label className="flex min-w-0 items-center gap-2 text-sm font-semibold text-slate-700 dark:text-neutral-200">
+                  <span className="shrink-0">Semester</span>
+                  <select
+                    value={selectedSemester ?? ""}
+                    onChange={(event) => setSelectedSemester(event.target.value)}
+                    className="h-10 min-w-0 rounded-full border border-slate-200 bg-white px-3 text-sm font-medium text-slate-800 dark:border-[#3a3a3a] dark:bg-[#181818] dark:text-neutral-100"
+                  >
+                    {semesters.slice(0, 5).map((s) => (
+                      <option key={s.term} value={s.term}>
+                        {s.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ) : (
+                <span />
+              )}
+              <ThemeToggle className="h-11 w-11 shrink-0 rounded-full text-slate-700 hover:bg-[#faf5ee] hover:text-[#7a5230] dark:text-neutral-200 dark:hover:bg-[#201813]" />
+            </div>
+          </nav>
+        )}
         {/* Search results render here (via portal), inside the fixed wrapper so
             they float a set gap below the bar instead of sitting under it. */}
         <div id="class-search-results-slot" className="mx-auto mt-3 w-full max-w-7xl"></div>
