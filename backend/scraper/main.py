@@ -3,7 +3,13 @@ import requests
 import time
 import os
 import json
-from terms import get_active_term_codes
+
+try:
+    from .terms import get_active_term_codes
+except ImportError:
+    from terms import get_active_term_codes
+
+DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 
 
 class SIS9Scraper:
@@ -73,6 +79,25 @@ class SIS9Scraper:
         return aggregated_results
 
 
+def term_data_path(code: str, output_dir: str = DATA_DIR) -> str:
+    return os.path.join(output_dir, f"sis9_courses_{code}.json")
+
+
+def scrape_term(scraper: SIS9Scraper, code: str, output_dir: str = DATA_DIR) -> int:
+    """Fetch every section for a term and save it as JSON. Returns the count.
+
+    Writes to a temp file and renames it into place, so a failed or
+    interrupted scrape never leaves a half-written file for the importer.
+    """
+    os.makedirs(output_dir, exist_ok=True)
+    output_path = term_data_path(code, output_dir)
+    results = scraper.get_courses(code)
+    tmp_path = output_path + ".tmp"
+    with open(tmp_path, "w", encoding="utf-8") as file:
+        json.dump(results, file, indent=4)
+    os.replace(tmp_path, output_path)
+    return len(results)
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -84,26 +109,20 @@ def main():
 
     scraper = SIS9Scraper(args.sessionid)
     terms = scraper.get_terms()
-    output_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
-    os.makedirs(output_dir, exist_ok=True)
 
     active_terms = get_active_term_codes()
     skipped = 0
 
     for term in terms:
         code = term["code"]
-        output_path = os.path.join(output_dir, f"sis9_courses_{code}.json")
-
-        if os.path.exists(output_path) and code not in active_terms:
+        if os.path.exists(term_data_path(code)) and code not in active_terms:
             skipped += 1
             continue
 
         print(f"Fetching courses for term: {term['description']}")
         start = time.time()
-        results = scraper.get_courses(code)
-        with open(output_path, "w", encoding="utf-8") as file:
-            json.dump(results, file, indent=4)
-        print(f"  Saved {len(results)} courses ({time.time() - start:.1f}s)")
+        count = scrape_term(scraper, code)
+        print(f"  Saved {count} courses ({time.time() - start:.1f}s)")
 
     if skipped:
         print(f"\nSkipped {skipped} historical term(s) already on disk.")

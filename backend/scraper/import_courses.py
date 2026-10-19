@@ -17,6 +17,8 @@ try:
 except ImportError:
     from terms import get_active_term_codes
 
+DATA_DIR = os.path.join(os.path.dirname(__file__), 'data')
+
 
 def load_json_file(filepath: str) -> list:
     """Load and parse a JSON file."""
@@ -140,6 +142,35 @@ async def _invalidate_course_cache() -> None:
         print(f"Cleared {deleted} cached API responses")
 
 
+def import_files(files: list, data_dir: str = DATA_DIR) -> int:
+    """Import the given JSON files (names relative to data_dir), then clear
+    the API cache. Returns the total number of courses imported."""
+    db = SessionLocal()
+    total = 0
+
+    try:
+        for filename in files:
+            filepath = os.path.join(data_dir, filename)
+            if not os.path.exists(filepath):
+                print(f"File not found: {filename}")
+                continue
+
+            print(f"Importing {filename}...")
+            count = import_courses_from_file(filepath, db)
+            skipped = getattr(import_courses_from_file, 'last_skipped_count', 0)
+            print(f"  Imported {count} courses ({skipped} skipped)")
+            total += count
+
+        print(f"\nTotal: {total} courses imported")
+    finally:
+        db.close()
+        # Runs even if a later file failed: earlier files were already
+        # committed, so the cache may be stale either way.
+        asyncio.run(_invalidate_course_cache())
+
+    return total
+
+
 def main():
     parser = argparse.ArgumentParser(description='Import course data from JSON files into database')
     parser.add_argument(
@@ -164,8 +195,7 @@ def main():
         reset_course_tables()
         print("Reset course and meeting_time tables.")
 
-    # Get data directory
-    data_dir = os.path.join(os.path.dirname(__file__), 'data')
+    data_dir = DATA_DIR
 
     # Get list of files to import
     if args.term:
@@ -176,28 +206,7 @@ def main():
         active_codes = get_active_term_codes()
         files = [f'sis9_courses_{code}.json' for code in sorted(active_codes)]
 
-    db = SessionLocal()
-    total = 0
-
-    try:
-        for filename in files:
-            filepath = os.path.join(data_dir, filename)
-            if not os.path.exists(filepath):
-                print(f"File not found: {filename}")
-                continue
-
-            print(f"Importing {filename}...")
-            count = import_courses_from_file(filepath, db)
-            skipped = getattr(import_courses_from_file, 'last_skipped_count', 0)
-            print(f"  Imported {count} courses ({skipped} skipped)")
-            total += count
-
-        print(f"\nTotal: {total} courses imported")
-    finally:
-        db.close()
-        # Runs even if a later file failed: earlier files were already
-        # committed, so the cache may be stale either way.
-        asyncio.run(_invalidate_course_cache())
+    import_files(files, data_dir)
 
 
 if __name__ == '__main__':
