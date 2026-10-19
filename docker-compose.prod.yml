@@ -52,7 +52,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile.prod
-    environment:
+    environment: &backend-env
       # Turns on production checks: refuses to start without a real
       # SECRET_KEY, and always marks session cookies Secure.
       APP_ENV: production
@@ -74,6 +74,33 @@ services:
       # Fresh scrapes from the scheduled sync. A separate volume so sync never
       # writes into the git checkout above (which would block `git pull`).
       - course_sync_data:/app/scraper/synced
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    restart: unless-stopped
+    logging: *default-logging
+
+  sync:
+    # Same image as the backend, but runs the scheduled course sync instead
+    # of the API: scrapes the current and next terms from SIS9 and imports
+    # them every Sunday at 08:00 UTC.
+    #   Logs:         docker compose -f docker-compose.prod.yml logs -f sync
+    #   Sync now:     docker compose -f docker-compose.prod.yml exec sync python -m scraper.sync
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.prod
+    command: ["python", "-m", "scraper.schedule"]
+    environment: *backend-env
+    volumes:
+      - course_sync_data:/app/scraper/synced
+    # The image's healthcheck probes the API port, which this service doesn't serve.
+    healthcheck:
+      disable: true
+    # Forwards `docker stop`'s SIGTERM to Python (PID 1 would ignore it and
+    # stall shutdown for 10s).
+    init: true
     depends_on:
       db:
         condition: service_healthy
