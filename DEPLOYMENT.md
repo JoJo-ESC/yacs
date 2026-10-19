@@ -11,10 +11,13 @@ Internet ──► web (Caddy) ──┬─► /api/*     ──► backend (Fas
   :80/:443                 │                                                 └► redis (cache, login throttling)
                            ├─► /ingest/*  ──► PostHog (analytics)
                            └─► everything else: the built React app
+
+SIS9 (sis9.rpi.edu) ──► sync (weekly scrape + import) ──► db, redis
 ```
 
 - **web** serves the frontend, gets the HTTPS certificate automatically, compresses responses, and forwards `/api` to the backend. It is the only container reachable from the internet.
-- **backend**, **db** and **redis** publish no ports. The backend trusts Caddy's forwarded client IPs only because nothing else can reach it, so never add a `ports:` entry to it.
+- **sync** uses the backend's image to scrape the current and next terms from SIS9 and import them every Sunday at 08:00 UTC. See [Refreshing course data](#refreshing-course-data).
+- **backend**, **sync**, **db** and **redis** publish no ports. The backend trusts Caddy's forwarded client IPs only because nothing else can reach it, so never add a `ports:` entry to it.
 - Settings and secrets come from a `.env` file on the server (template: [`.env.production.example`](./.env.production.example)).
 
 ## Before you start
@@ -91,15 +94,22 @@ echo "alias dc='docker compose -f docker-compose.prod.yml'" >> ~/.bashrc && sour
 
 ```bash
 dc up -d --build   # first build takes several minutes
-dc ps              # backend, db and redis should show (healthy)
+dc ps              # backend, db and redis should show (healthy); sync shows Up (it has no healthcheck)
 ```
 
 ### 6. Load course data
 
-The scraped JSON lives in `backend/scraper/data/` and is mounted into the backend for importing. Import the semesters people will use (current, plus next once it's published):
+The `sync` service fills in the current and next terms every Sunday, but the database starts empty, so run the first sync now (about a minute):
 
 ```bash
-dc exec backend python scraper/import_courses.py --term 202609
+dc exec sync python -m scraper.sync
+```
+
+Optionally, import past semesters too. Their scraped JSON lives in the repo (`backend/scraper/data/`, mounted read-only into the backend):
+
+```bash
+dc exec backend python scraper/import_courses.py --all
+dc exec sync python -m scraper.sync   # --all includes old copies of the active terms; re-sync them
 ```
 
 ### 7. Check it works
@@ -118,19 +128,32 @@ All commands run in `~/yacs` on the server.
 | :--- | :--- |
 | Deploy the latest `main` | `git pull && dc up -d --build && docker image prune -f` |
 | See what's running | `dc ps` |
-| Follow logs | `dc logs -f --tail=100 backend` (or `web`, `db`, `redis`) |
+| Follow logs | `dc logs -f --tail=100 backend` (or `web`, `sync`, `db`, `redis`) |
 | Restart a service | `dc restart backend` |
-| Stop everything | `dc down` (**never** `dc down -v`: `-v` deletes the database) |
+| Stop everything | `dc down` (**never** `dc down -v`: `-v` deletes the database and synced course data) |
 | Memory/CPU per container | `docker stats` |
 | OS updates (monthly) | `sudo apt update && sudo apt upgrade -y`, then `sudo reboot` if asked. Containers restart on their own. |
 
 ### Refreshing course data
 
-The scraper starts its own anonymous SIS9 session (class search doesn't need a login), so no cookie is required:
+This is automatic. Every Sunday at 08:00 UTC (3–4 AM Eastern), the `sync` service scrapes the current and next terms from SIS9 and imports them. Which terms count as current and next is worked out from the date (`backend/scraper/terms.py`). SIS9's class search doesn't need a login, so there's no cookie to keep up to date. The import clears the API cache, so changes show up immediately. Deploys and restarts don't trigger a sync.
 
-1. Locally: `cd backend/scraper && python main.py`. This updates the JSON for the current and next terms. (`--sessionid <JSESSIONID>` still works if you want to reuse a browser session.)
-2. Commit and merge the updated JSON files.
-3. On the server: `git pull`, then rerun the import for each changed term (step 6). The import clears the API cache, so changes show up immediately.
+| Task | Command |
+| :--- | :--- |
+| Check the last sync | `dc logs --tail=40 sync` (ends with `Course sync finished` or `FAILED`, then `Next sync at ...`) |
+| Sync now (e.g. registration just opened) | `dc exec sync python -m scraper.sync` |
+| Sync a specific term | `dc exec sync python -m scraper.sync --term 202701` |
+
+Fresh scrapes are saved in the `course_sync_data` volume, not the repo, so the server's checkout stays clean for `git pull`. The JSON in `backend/scraper/data/` is the historical archive and only changes when someone commits it.
+
+**When a sync fails,** the term keeps its previous data and the other term still syncs. Nothing alerts you, so check the logs now and then. Common messages:
+
+- `came back empty` / `under 50% of the ... last saved`: SIS9 returned far fewer sections than the last sync, so the import was refused in case the response was broken. If the term really did shrink, run `dc exec sync python -m scraper.sync --term <code> --force`.
+- `isn't published on SIS9 yet` / `has no sections on SIS9 yet`: normal for the next term early in the semester. Not a failure.
+- `CERTIFICATE_VERIFY_FAILED`: the scraper checks SIS9's certificate against the OS's trusted roots, because the `certifi` bundle no longer includes the root SIS9's chain uses. If the OS bundle drops it too, point `SIS9_CA_BUNDLE` at a bundle that has it, or ask RPI to fix the chain.
+- Connection errors or timeouts: SIS9 was down. Each request is retried 4 times before giving up, and next Sunday's sync tries again. Run it by hand if you don't want to wait.
+
+To scrape on your own machine instead (e.g. to update the archive), run `cd backend && python -m scraper.sync`. Without `SYNC_DATA_DIR` set, it writes to `backend/scraper/data/` and imports into your local database.
 
 ### Making someone an admin
 
@@ -165,6 +188,7 @@ The role is read at login, so they need to log out and back in.
 | Symptom | Likely cause / fix |
 | :--- | :--- |
 | No HTTPS, or a certificate error | DNS doesn't point at the server yet (`dig +short <domain>`), or ports 80/443 aren't open in the security group. Details in `dc logs web`. Caddy retries automatically once fixed. |
+| Course data is out of date | The last sync failed or was refused: see `dc logs sync` and [Refreshing course data](#refreshing-course-data). |
 | Backend keeps restarting | A configuration error: `dc logs backend` starts with `Configuration error: ...` and says what to fix in `.env` (e.g. a missing or too-short `SECRET_KEY`). |
 | Site loads but data doesn't (502 errors) | The backend is down or starting. Check `dc ps` and `dc logs backend`. |
 | `Redis unavailable` warnings | Redis is down. The site keeps working (slower, with per-worker login limits) until `dc restart redis`. |
