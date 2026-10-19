@@ -11,10 +11,24 @@ class SIS9Scraper:
     TERMS_PATH = "/StudentRegistrationSsb/ssb/classSearch/getTerms"
     SEARCH_PATH = "/StudentRegistrationSsb/ssb/term/search"
     SEARCH_RESULTS_PATH = "/StudentRegistrationSsb/ssb/searchResults/searchResults"
+    TERM_SELECTION_PATH = "/StudentRegistrationSsb/ssb/term/termSelection"
 
-    def __init__(self, session_id: str):
+    def __init__(self, session_id: str | None = None):
         self.session = requests.Session()
-        self.session.cookies.set("JSESSIONID", session_id, domain="sis9.rpi.edu")
+        if session_id:
+            self.session.cookies.set("JSESSIONID", session_id, domain="sis9.rpi.edu")
+        else:
+            self.start_session()
+
+    def start_session(self):
+        """Get an anonymous JSESSIONID. Class search doesn't require login,
+        so loading the term selection page is enough to get a usable cookie.
+        """
+        url = self.BASE_URL + self.TERM_SELECTION_PATH
+        response = self.session.get(url=url, params={"mode": "search"})
+        response.raise_for_status()
+        if "JSESSIONID" not in self.session.cookies:
+            raise RuntimeError("SIS9 did not return a JSESSIONID cookie")
 
     def get_terms(self):
         url = self.BASE_URL + self.TERMS_PATH
@@ -64,8 +78,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--sessionid",
-        required=True,
-        help="Cookie string (JSESSIONID found on sis9.rpi.edu)",
+        help="Optional JSESSIONID from sis9.rpi.edu. If omitted, an anonymous session is started automatically.",
     )
     args = parser.parse_args()
 

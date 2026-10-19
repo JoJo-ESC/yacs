@@ -126,9 +126,9 @@ All commands run in `~/yacs` on the server.
 
 ### Refreshing course data
 
-The scraper needs an SIS9 session cookie from a logged-in browser, so it runs on a developer's machine, not the server:
+The scraper starts its own anonymous SIS9 session (class search doesn't need a login), so no cookie is required:
 
-1. Locally: `cd backend/scraper && python main.py --sessionid <JSESSIONID>`. This updates the JSON for the current and next terms.
+1. Locally: `cd backend/scraper && python main.py`. This updates the JSON for the current and next terms. (`--sessionid <JSESSIONID>` still works if you want to reuse a browser session.)
 2. Commit and merge the updated JSON files.
 3. On the server: `git pull`, then rerun the import for each changed term (step 6). The import clears the API cache, so changes show up immediately.
 
