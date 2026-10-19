@@ -27,11 +27,13 @@ def sync_data_dir() -> str:
     return os.environ.get("SYNC_DATA_DIR") or DATA_DIR
 
 
-def sync(term_codes=None) -> bool:
+def sync(term_codes=None, force: bool = False) -> bool:
     """Scrape and import the given terms (default: active terms).
 
     Returns True if every requested term synced. A term that fails to
-    scrape is reported and skipped; the others are still imported.
+    scrape, or whose scrape looks wrong (see scrape_term), is reported and
+    skipped, keeping its existing data; the others are still imported.
+    `force` imports suspicious scrapes anyway.
     """
     # Imported here so scraping-only failures don't need a database config
     from models import init_db
@@ -53,10 +55,13 @@ def sync(term_codes=None) -> bool:
         print(f"Fetching courses for term {code}...")
         start = time.time()
         try:
-            count = scrape_term(scraper, code, data_dir)
+            count = scrape_term(scraper, code, data_dir, force=force)
         except Exception as exc:
             print(f"ERROR: Failed to scrape term {code}: {exc}", file=sys.stderr)
             ok = False
+            continue
+        if count == 0:
+            print(f"  Term {code} has no sections on SIS9 yet; skipping.")
             continue
         print(f"  Saved {count} courses ({time.time() - start:.1f}s)")
         scraped.append(code)
@@ -77,9 +82,14 @@ def main():
         action='append',
         help='Term to sync (e.g., 202701). Repeatable. Defaults to the current and next terms.',
     )
+    parser.add_argument(
+        '--force',
+        action='store_true',
+        help="Import even if a scrape is empty or much smaller than the last one (e.g. a term really did shrink).",
+    )
     args = parser.parse_args()
 
-    if not sync(args.term):
+    if not sync(args.term, force=args.force):
         sys.exit(1)
 
 

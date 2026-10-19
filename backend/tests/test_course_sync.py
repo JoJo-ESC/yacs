@@ -10,7 +10,7 @@ class _FakeScraper:
 def _patch(monkeypatch, failing=()):
     scraped, imported = [], []
 
-    def fake_scrape_term(scraper, code, output_dir):
+    def fake_scrape_term(scraper, code, output_dir, force=False):
         if code in failing:
             raise RuntimeError("SIS9 timed out")
         scraped.append(code)
@@ -49,7 +49,7 @@ def test_sync_writes_to_sync_data_dir(monkeypatch, tmp_path):
     monkeypatch.setenv("SYNC_DATA_DIR", str(tmp_path))
     dirs = []
     monkeypatch.setattr(sync, "SIS9Scraper", _FakeScraper)
-    monkeypatch.setattr(sync, "scrape_term", lambda scraper, code, output_dir: dirs.append(output_dir) or 10)
+    monkeypatch.setattr(sync, "scrape_term", lambda scraper, code, output_dir, force=False: dirs.append(output_dir) or 10)
     monkeypatch.setattr(models, "init_db", lambda: None)
     monkeypatch.setattr(import_courses, "import_files", lambda files, data_dir: dirs.append(data_dir))
 
