@@ -21,7 +21,11 @@ RUN pip install -r requirements.txt
 COPY . .
 
 # Run as an unprivileged user so a compromised process can't modify the image.
-RUN useradd --create-home --uid 1000 yacs && chown -R yacs:yacs /app
+# scraper/synced is the mount point for the sync volume; creating it here
+# means Docker gives the new volume yacs ownership, so sync can write to it.
+RUN useradd --create-home --uid 1000 yacs \
+    && mkdir -p /app/scraper/synced \
+    && chown -R yacs:yacs /app
 USER yacs
 
 EXPOSE 8000

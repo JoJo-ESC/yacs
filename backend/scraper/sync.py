@@ -16,8 +16,15 @@ import time
 # Make `scraper` and `models` importable however this file is run
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 
-from scraper.main import SIS9Scraper, scrape_term, term_data_path
+from scraper.main import DATA_DIR, SIS9Scraper, scrape_term, term_data_path
 from scraper.terms import get_active_term_codes
+
+
+def sync_data_dir() -> str:
+    """Where sync writes its JSON. Production points SYNC_DATA_DIR at a
+    writable volume so the read-only repo data (and the server's git
+    checkout) are never modified; locally it defaults to scraper/data."""
+    return os.environ.get("SYNC_DATA_DIR") or DATA_DIR
 
 
 def sync(term_codes=None) -> bool:
@@ -30,6 +37,7 @@ def sync(term_codes=None) -> bool:
     from models import init_db
     from scraper.import_courses import import_files
 
+    data_dir = sync_data_dir()
     scraper = SIS9Scraper()
     published = {term["code"] for term in scraper.get_terms()}
     requested = sorted(term_codes or get_active_term_codes())
@@ -45,7 +53,7 @@ def sync(term_codes=None) -> bool:
         print(f"Fetching courses for term {code}...")
         start = time.time()
         try:
-            count = scrape_term(scraper, code)
+            count = scrape_term(scraper, code, data_dir)
         except Exception as exc:
             print(f"ERROR: Failed to scrape term {code}: {exc}", file=sys.stderr)
             ok = False
@@ -58,7 +66,7 @@ def sync(term_codes=None) -> bool:
         return ok
 
     init_db()
-    import_files([os.path.basename(term_data_path(code)) for code in scraped])
+    import_files([os.path.basename(term_data_path(code)) for code in scraped], data_dir)
     return ok
 
 

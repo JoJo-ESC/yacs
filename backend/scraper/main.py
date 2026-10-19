@@ -11,6 +11,25 @@ except ImportError:
 
 DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 
+# certifi 2026.10.18 dropped the emSign root that sis9.rpi.edu's chain ends
+# at, so verifying with requests' default bundle fails. The OS trust stores
+# (Debian in the image, macOS locally) still include it, so prefer those.
+# SIS9_CA_BUNDLE overrides the choice.
+SYSTEM_CA_BUNDLES = (
+    "/etc/ssl/certs/ca-certificates.crt",  # Debian/Ubuntu
+    "/etc/ssl/cert.pem",                   # macOS
+)
+
+
+def ca_bundle():
+    override = os.environ.get("SIS9_CA_BUNDLE")
+    if override:
+        return override
+    for path in SYSTEM_CA_BUNDLES:
+        if os.path.exists(path):
+            return path
+    return True  # requests' default (certifi)
+
 
 class SIS9Scraper:
     BASE_URL = "https://sis9.rpi.edu"
@@ -21,6 +40,7 @@ class SIS9Scraper:
 
     def __init__(self, session_id: str | None = None):
         self.session = requests.Session()
+        self.session.verify = ca_bundle()
         if session_id:
             self.session.cookies.set("JSESSIONID", session_id, domain="sis9.rpi.edu")
         else:
