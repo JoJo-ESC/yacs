@@ -15,6 +15,21 @@ function getMeetingKey(meeting: Meeting) {
   return `${meeting.type}::${meeting.section}::${meeting.crn}::${meeting.start}::${meeting.end}`;
 }
 
+function PreviewTime({ time }: { time: string }) {
+  const parts = time.trim().match(/^(.*?)\s*(AM|PM)$/i);
+
+  return (
+    <span className="block w-full min-w-0 text-center [overflow-wrap:anywhere]">
+      {parts ? (
+        <>
+          {parts[1]}
+          <span className="block text-[9px] sm:inline sm:text-[10px]">{parts[2]}</span>
+        </>
+      ) : time}
+    </span>
+  );
+}
+
 function MiniWeekPreview({
   meetings,
   conflictingMeetingKeys,
@@ -38,25 +53,31 @@ function MiniWeekPreview({
   return (
     <div className="grid grid-cols-5 items-stretch overflow-hidden rounded-2xl border border-slate-200/80 bg-white dark:border-[#353535] dark:bg-[#222222]">
       {WEEK_DAYS.map((day) => (
-        <div key={day.key} className="border-r border-slate-200/80 last:border-r-0 dark:border-[#353535]">
+        <div key={day.key} className="min-w-0 border-r border-slate-200/80 last:border-r-0 dark:border-[#353535]">
           <div className="border-b border-slate-200/80 px-2 py-2 text-center text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:border-[#353535] dark:text-slate-400">
             {day.label}
           </div>
-          <div className="min-h-20 px-2 py-2">
+          <div className="min-h-20 px-1 py-2 sm:px-2">
             <div className="flex min-h-16 flex-col justify-center gap-1">
               {(meetingsByDay.get(day.key) ?? []).length > 0
                 ? (meetingsByDay.get(day.key) ?? []).map((meeting, index) => (
                     <div
                       key={`${day.key}-${meeting.start}-${meeting.end}-${index}`}
                       className={cn(
-                        "rounded-full border px-2 py-1 text-center text-[10px] font-semibold shadow-sm",
+                        "flex w-full min-w-0 flex-col items-center justify-center rounded-xl border px-1 py-2 text-center text-[10px] font-semibold leading-snug tabular-nums shadow-sm sm:rounded-full",
                         conflictingMeetingKeys.has(getMeetingKey(meeting))
                           ? "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200"
                           : "border-[#7cc9ff] bg-sky-100/90 text-sky-800 dark:border-sky-800 dark:bg-sky-950/60 dark:text-sky-100",
                       )}
                       title={`${day.label} ${meeting.start}-${meeting.end}${meeting.location ? ` • ${meeting.location}` : ""}`}
                     >
-                      {meeting.start && meeting.end ? `${meeting.start} - ${meeting.end}` : "Time TBA"}
+                      {meeting.start && meeting.end ? (
+                        <>
+                          <PreviewTime time={meeting.start} />
+                          <span className="block w-full text-center">–</span>
+                          <PreviewTime time={meeting.end} />
+                        </>
+                      ) : "Time TBA"}
                     </div>
                   ))
                 : null}
