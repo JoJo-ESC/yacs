@@ -1,0 +1,44 @@
+# Production image for the FastAPI backend.
+# Development keeps using ./Dockerfile (single process with --reload and the
+# source mounted in); this one bakes the code into the image instead.
+
+FROM python:3.11-slim
+
+# Unbuffered output so logs reach `docker compose logs` immediately; no .pyc
+# files since the image's code never changes after build.
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+WORKDIR /app
+
+# Install dependencies before copying the code so this layer is cached and
+# only rebuilds when requirements.txt changes.
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+
+COPY . .
+
+# Run as an unprivileged user so a compromised process can't modify the image.
+RUN useradd --create-home --uid 1000 yacs && chown -R yacs:yacs /app
+USER yacs
+
+EXPOSE 8000
+
+# The slim image has no curl, so probe the API's root endpoint with Python.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/', timeout=4)" || exit 1
+
+# --workers 4: about 2 per CPU core on a 2-core server. Separate processes so
+#   slow work (e.g. password hashing) in one doesn't stall every request.
+# --proxy-headers: take the client's real IP/scheme from Caddy's
+#   X-Forwarded-For / X-Forwarded-Proto headers (needed for login throttling).
+# --forwarded-allow-ips "*": trust those headers from any sender. Safe ONLY
+#   because the production compose file never publishes this container's port,
+#   so Caddy is the only thing that can reach it.
+#
+# `python -m utils.check_config` checks settings (e.g. SECRET_KEY) first, so bad
+# config stops the container with a clear error. `exec` hands the process
+# over to uvicorn so it receives Docker's stop signals directly.
+CMD ["sh", "-c", "python -m utils.check_config && exec uvicorn main:app --host 0.0.0.0 --port 8000 --workers 4 --proxy-headers --forwarded-allow-ips '*'"]

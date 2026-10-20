@@ -1,6 +1,6 @@
-import { printSchedulePdf, printFinalsPdf, buildFinalsIcs, buildFinalsImageSvg, buildFinalsPrintHtml, buildFinalsText, buildScheduleIcs, buildScheduleImageSvg, buildSchedulePrintHtml, buildScheduleText } from "@/features/schedule/utils/exportSchedule";
+import { printSchedulePdf, printFinalsPdf, buildFinalsIcs, buildFinalsImageSvg, buildFinalsPrintHtml, buildFinalsText, buildScheduleIcs, buildScheduleImageSvg, buildSchedulePrintHtml, buildScheduleText } from "@/lib/schedule/exportSchedule";
 import type { FinalExam } from "@/features/finals/utils/finalsSchedule";
-import type { Course } from "@/features/schedule/types/schedule";
+import type { Course } from "@/types/schedule";
 
 const courses: Course[] = [
   {
@@ -18,6 +18,7 @@ const courses: Course[] = [
     enrolled: 50,
     meetings: [
       {
+        seatsAvailable: 50, enrolled: 50, maxEnroll: 100, crn: "12345",
         type: "LEC",
         days: ["M", "W", "F"],
         start: "09:00AM",

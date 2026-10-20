@@ -1,28 +1,16 @@
 import React from "react";
-import { render, screen, within } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import FourYearPlannerPage from "@/features/planner/routes/FourYearPlannerPage";
+import { render, screen } from "@testing-library/react";
+import FourYearPlannerPage from "@/features/planner/FourYearPlannerPage";
+
+jest.mock("@/features/auth/hooks/useAuth", () => ({useAuth: () => ({user: {entryYear: 2026}})}));
+jest.mock("@/lib/analytics", () => ({track: jest.fn()}));
+jest.mock("@/api/client", () => ({apiFetch: () => Promise.reject(new Error("Offline"))}));
 
 afterEach(() => localStorage.clear());
 
-test("adds a requirement course to a chosen term without dragging and persists removal", () => {
-  const { unmount } = render(<FourYearPlannerPage />);
-  userEvent.selectOptions(screen.getByLabelText("Course"), "PHIL-2140");
-  userEvent.selectOptions(screen.getByLabelText("Term"), "SUMMER 2025");
-  userEvent.click(screen.getByRole("button", { name: "Add course" }));
-  expect(screen.getByRole("status")).toHaveTextContent("Added PHIL-2140 to SUMMER 2025.");
-  expect(JSON.parse(localStorage.getItem("four_year_plan_v1")!)["SUMMER 2025"]).toEqual([
-    expect.objectContaining({ id: "PHIL-2140" }),
-  ]);
-  unmount();
+test("upstream planner preserves compatible locally saved courses when offline", async () => {
+  localStorage.setItem("four_year_plan_v1", JSON.stringify({"FALL 2026": [{id: "CSCI-1100", title: "Computer Science 1", credits: 4, key: "saved"}]}));
   render(<FourYearPlannerPage />);
-  userEvent.click(screen.getByRole("button", { name: "Remove PHIL-2140 from SUMMER 2025" }));
-  expect(JSON.parse(localStorage.getItem("four_year_plan_v1")!)["SUMMER 2025"]).toEqual([]);
-});
-
-test("the ADD shortcut focuses the accessible course picker", () => {
-  render(<FourYearPlannerPage />);
-  userEvent.click(screen.getByRole("button", { name: "ADD +" }));
-  expect(screen.getByLabelText("Course")).toHaveFocus();
-  expect(within(screen.getByLabelText("Course")).getAllByRole("option")).toHaveLength(15);
+  expect(await screen.findByText("CSCI-1100")).toBeInTheDocument();
+  expect(screen.getByText("FALL 2026")).toBeInTheDocument();
 });

@@ -1,5 +1,5 @@
 import React from "react";
-import { useSchedule } from "../context/schedule-context";
+import { useSemester } from "@/context/semester/semester-context";
 
 function getSemesterOptions(semesters: string[]) {
   if (semesters.length > 0) return semesters;
@@ -7,9 +7,9 @@ function getSemesterOptions(semesters: string[]) {
 }
 
 export default function SemesterSelect() {
-  const { availableSemesters, catalogLoading, selectedSemester, setSelectedSemester } = useSchedule();
-  const options = React.useMemo(() => getSemesterOptions(availableSemesters), [availableSemesters]);
-  const disabled = catalogLoading || availableSemesters.length === 0;
+  const { semesters, semestersLoading, selectedSemester, setSelectedSemester } = useSemester();
+  const options = getSemesterOptions(semesters.map((semester) => semester.term));
+  const disabled = semestersLoading || semesters.length === 0;
 
   return (
     <label className="flex items-center gap-2 text-sm text-input-foreground">
@@ -23,7 +23,7 @@ export default function SemesterSelect() {
       >
         {options.map((semester) => (
           <option key={semester} value={semester}>
-            {semester}
+            {semesters.find((entry) => entry.term === semester)?.name ?? semester}
           </option>
         ))}
       </select>

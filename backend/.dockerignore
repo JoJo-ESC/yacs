@@ -1,0 +1,15 @@
+# Kept out of every image built from ./backend. Development is unaffected:
+# docker-compose.yml mounts the whole folder over /app at runtime.
+
+# Secrets are passed in as environment variables, never baked into an image.
+configs/secrets.yaml
+
+# 304 MB of scraped course JSON; mounted into the container only for imports.
+scraper/data/
+
+# Python / tooling clutter
+**/__pycache__/
+**/*.pyc
+**/.pytest_cache/
+**/.DS_Store
+tests/tmp_test_db.sqlite

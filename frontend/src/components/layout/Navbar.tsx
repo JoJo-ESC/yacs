@@ -1,100 +1,230 @@
 import React from "react";
-import * as Dialog from "@radix-ui/react-dialog";
-import "./Navbar.css";
-import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/solid";
+import { Bars3Icon, ChevronDownIcon, XMarkIcon } from "@heroicons/react/24/solid";
 import ClassSearch from "@/features/schedule/components/ClassSearch";
-import SemesterSelect from "@/features/schedule/components/SemesterSelect";
+import { SubjectNavSearch } from "@/features/courses/components/SubjectNavSearch";
 import ThemeToggle from "@/components/theme/ThemeToggle";
-import { NavLink, useLocation } from "react-router-dom";
-
-const links = [
-  { to: "/login", label: "Login" },
-  { to: "/planner", label: "4-Year Plan" },
-  { to: "/", label: "Schedule" },
-  { to: "/professors", label: "Professors" },
-  { to: "/profile", label: "Profile" },
-];
+import { BrandLogo } from "@/components/layout/BrandLogo";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { useSemester } from "@/context/semester/semester-context";
+import { Link, useLocation } from "react-router-dom";
 
 function Navbar() {
-  const [menuOpen, setMenuOpen] = React.useState(false);
   const location = useLocation();
+  const isBrowseRoute = location.pathname === "/" || location.pathname.startsWith("/courses");
+  const navItems = React.useMemo(
+    () => [
+      { key: "browse", label: "Browse", to: "/", matches: (pathname: string) => pathname === "/" || pathname.startsWith("/courses") },
+      { key: "planner", label: "4-Year Plan", to: "/planner", matches: (pathname: string) => pathname.startsWith("/planner") },
+      { key: "schedule", label: "Schedule", to: "/schedule", matches: (pathname: string) => pathname.startsWith("/schedule") },
+      { key: "profile", label: "Profile", to: "/profile", matches: (pathname: string) => pathname.startsWith("/profile") },
+    ],
+    [],
+  );
+  const activeKey = navItems.find((item) => item.matches(location.pathname))?.key ?? "browse";
+  const [hoveredKey, setHoveredKey] = React.useState<string | null>(null);
+  const itemRefs = React.useRef<Record<string, HTMLElement | null>>({});
+  const [bubbleStyle, setBubbleStyle] = React.useState({ x: 0, width: 0, opacity: 0 });
+  const bubbleKey = hoveredKey ?? activeKey;
 
-  React.useEffect(() => setMenuOpen(false), [location]);
+  const { semesters, selectedSemester, setSelectedSemester, semestersLoading } = useSemester();
+  const [semesterOpen, setSemesterOpen] = React.useState(false);
+  const selectedSemesterName = semesters.find((s) => s.term === selectedSemester)?.name ?? selectedSemester;
+
+  // Below the lg breakpoint the links collapse into a menu opened by a button.
+  const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
+  React.useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [location.pathname]);
+  React.useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMobileMenuOpen(false);
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [mobileMenuOpen]);
 
   React.useEffect(() => {
-    const desktop = window.matchMedia("(min-width: 1280px)");
-    const closeOnDesktop = () => {
-      if (desktop.matches) setMenuOpen(false);
-    };
-    desktop.addEventListener("change", closeOnDesktop);
-    return () => desktop.removeEventListener("change", closeOnDesktop);
-  }, []);
+    const updateBubble = () => {
+      const el = itemRefs.current[bubbleKey];
+      if (!el) {
+        setBubbleStyle((prev) => ({ ...prev, opacity: 0 }));
+        return;
+      }
 
-  const navigationLinks = links.map(({ to, label }) => (
-    <NavLink
-      key={to}
-      to={to}
-      end={to === "/"}
-      onClick={() => setMenuOpen(false)}
-      className={({ isActive }) => `flex min-h-[44px] items-center rounded px-3 py-2 hover:bg-muted hover:text-blue-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 ${isActive ? "text-blue-400" : "text-foreground"}`}
-    >
-      {label}
-    </NavLink>
-  ));
+      setBubbleStyle({
+        x: el.offsetLeft,
+        width: el.offsetWidth,
+        opacity: 1,
+      });
+    };
+
+    updateBubble();
+    window.addEventListener("resize", updateBubble);
+    return () => window.removeEventListener("resize", updateBubble);
+  }, [bubbleKey]);
 
   return (
     <>
-      <header className="border-b border-border bg-header p-4 text-input-foreground">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <a href="/" className="text-l font-bold">YACS</a>
-          <Dialog.Root open={menuOpen} onOpenChange={setMenuOpen}>
-            <Dialog.Trigger asChild>
-              <button
-                type="button"
-                className="flex h-11 w-11 items-center justify-center rounded-md hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 xl:hidden"
-                aria-label="Open navigation menu"
-              >
-                <Bars3Icon className="h-6 w-6" aria-hidden="true" />
-              </button>
-            </Dialog.Trigger>
-            <Dialog.Portal>
-              <Dialog.Overlay className="mobile-nav-backdrop fixed inset-0 z-50 bg-black/50" />
-              <Dialog.Content
-                aria-describedby={undefined}
-                className="mobile-nav-drawer fixed inset-y-0 right-0 z-50 flex w-80 max-w-[calc(100%-2rem)] flex-col overflow-y-auto overscroll-contain border-l border-border bg-header p-4 text-input-foreground shadow-xl"
-              >
-                <div className="mb-4 flex items-center justify-between gap-4 border-b border-border pb-3">
-                  <Dialog.Title className="text-lg font-semibold">Navigation</Dialog.Title>
-                  <Dialog.Close asChild>
-                    <button
-                      type="button"
-                      aria-label="Close navigation menu"
-                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
-                    >
-                      <XMarkIcon className="h-6 w-6" aria-hidden="true" />
-                    </button>
-                  </Dialog.Close>
+      <div className="fixed inset-x-0 top-4 z-40 px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-4 rounded-[28px] border border-white/65 bg-[linear-gradient(135deg,_rgba(255,255,255,0.72)_0%,_rgba(252,249,244,0.62)_48%,_rgba(255,255,255,0.68)_100%)] px-5 py-3 text-input-foreground shadow-[0_22px_60px_-28px_rgba(15,23,42,0.18)] backdrop-blur-2xl supports-[backdrop-filter]:bg-[linear-gradient(135deg,_rgba(255,255,255,0.58)_0%,_rgba(252,249,244,0.5)_48%,_rgba(255,255,255,0.56)_100%)] dark:border-white/10 dark:bg-[linear-gradient(135deg,_rgba(34,34,34,0.72)_0%,_rgba(24,24,24,0.68)_50%,_rgba(32,32,32,0.72)_100%)] dark:shadow-[0_26px_70px_-32px_rgba(0,0,0,0.7)] dark:supports-[backdrop-filter]:bg-[linear-gradient(135deg,_rgba(34,34,34,0.58)_0%,_rgba(24,24,24,0.54)_50%,_rgba(32,32,32,0.58)_100%)]">
+          <div className="flex min-w-0 items-center gap-4 md:gap-6">
+            <BrandLogo className="shrink-0" imageClassName="h-[38px] shrink-0" />
+            <div className="min-w-0 w-full max-w-2xl">
+              {isBrowseRoute ? (
+                <SubjectNavSearch />
+              ) : (
+                <div className="max-w-md">
+                  <ClassSearch />
                 </div>
-                <nav aria-label="Mobile navigation" className="flex flex-col gap-1">
-                  {navigationLinks}
-                </nav>
-                <div className="mt-4 border-t border-border pt-4">
-                  <ThemeToggle className="h-11 w-11" />
-                </div>
-              </Dialog.Content>
-            </Dialog.Portal>
-          </Dialog.Root>
-          <div className="order-2 flex w-full min-w-0 flex-col gap-3 sm:flex-row sm:items-center xl:order-none xl:w-auto xl:flex-1">
-            <div className="min-w-0 flex-1"><ClassSearch /></div>
-            <SemesterSelect />
+              )}
+            </div>
           </div>
-          <nav aria-label="Primary navigation" className="hidden items-center gap-2 xl:flex">
-            {navigationLinks}
-            <ThemeToggle className="h-11 w-11" />
-          </nav>
+          <div className="hidden h-11 shrink-0 items-center gap-2 lg:flex">
+            <div
+              className="relative flex h-11 items-center gap-2"
+              onMouseLeave={() => setHoveredKey(null)}
+            >
+              <span
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-y-0 rounded-full border border-[#dfc9ae] bg-[#f4ebe0] shadow-[0_8px_20px_-14px_rgba(107,75,44,0.28)] transition-[transform,width,opacity] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] dark:border-[#6d4f36] dark:bg-[#3a281d]"
+                style={{
+                  width: `${bubbleStyle.width}px`,
+                  opacity: bubbleStyle.opacity,
+                  transform: `translateX(${bubbleStyle.x}px)`,
+                }}
+              />
+              {navItems.map((item) => {
+                const isHighlighted = bubbleKey === item.key;
+                return (
+                  <Link
+                    key={item.key}
+                    ref={(node) => {
+                      itemRefs.current[item.key] = node;
+                    }}
+                    to={item.to}
+                    onMouseEnter={() => setHoveredKey(item.key)}
+                    onFocus={() => setHoveredKey(item.key)}
+                    onBlur={() => setHoveredKey(null)}
+                    className={`relative z-10 px-5 h-11 inline-flex items-center rounded-full text-sm font-semibold transition-colors duration-300 ${
+                      isHighlighted
+                        ? "text-[#7a5230] dark:text-[#f4e6d6]"
+                        : "text-slate-700 dark:text-neutral-200"
+                    }`}
+                  >
+                    {item.label}
+                  </Link>
+                );
+              })}
+
+              {!semestersLoading && semesters.length > 0 && (
+                <Popover open={semesterOpen} onOpenChange={setSemesterOpen}>
+                  <PopoverTrigger asChild>
+                    <button
+                      ref={(node) => { itemRefs.current["semester"] = node; }}
+                      onMouseEnter={() => setHoveredKey("semester")}
+                      onFocus={() => setHoveredKey("semester")}
+                      onBlur={() => setHoveredKey(null)}
+                      className={`relative z-10 px-5 h-11 inline-flex items-center gap-1 rounded-full text-sm font-semibold transition-colors duration-300 ${
+                        bubbleKey === "semester"
+                          ? "text-[#7a5230] dark:text-[#f4e6d6]"
+                          : "text-slate-700 dark:text-neutral-200"
+                      }`}
+                    >
+                      {selectedSemesterName}
+                      <ChevronDownIcon className="h-3 w-3 shrink-0" />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent align="end" className="w-44 p-1 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700">
+                    <ul className="max-h-60 overflow-y-auto">
+                      {semesters.slice(0, 5).map((s) => (
+                        <li key={s.term}>
+                          <button
+                            className={`w-full rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-accent hover:text-accent-foreground ${
+                              s.term === selectedSemester
+                                ? "font-semibold text-[#7a5230] dark:text-[#f4e6d6]"
+                                : "text-slate-700 dark:text-neutral-200"
+                            }`}
+                            onClick={() => {
+                              setSelectedSemester(s.term);
+                              setSemesterOpen(false);
+                            }}
+                          >
+                            {s.name}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </PopoverContent>
+                </Popover>
+              )}
+            </div>
+
+            <ThemeToggle className="h-11 w-11 rounded-full text-slate-700 hover:bg-[#faf5ee] hover:text-[#7a5230] dark:text-neutral-200 dark:hover:bg-[#201813]" />
+          </div>
+          <button
+            type="button"
+            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-slate-700 transition-colors hover:bg-[#faf5ee] hover:text-[#7a5230] lg:hidden dark:text-neutral-200 dark:hover:bg-[#201813]"
+            aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={mobileMenuOpen}
+            aria-controls="mobile-nav-menu"
+            onClick={() => setMobileMenuOpen((open) => !open)}
+          >
+            {mobileMenuOpen ? <XMarkIcon className="h-6 w-6" /> : <Bars3Icon className="h-6 w-6" />}
+          </button>
         </div>
-      </header>
-      <div id="class-search-results-slot" className="w-full"></div>
+        {mobileMenuOpen && (
+          <nav
+            id="mobile-nav-menu"
+            aria-label="Main"
+            className="mx-auto mt-3 w-full max-w-7xl rounded-[22px] border border-white/65 bg-header p-3 text-input-foreground shadow-[0_22px_60px_-28px_rgba(15,23,42,0.25)] lg:hidden dark:border-white/10 dark:shadow-[0_26px_70px_-32px_rgba(0,0,0,0.7)]"
+          >
+            <ul className="space-y-1">
+              {navItems.map((item) => (
+                <li key={item.key}>
+                  <Link
+                    to={item.to}
+                    onClick={() => setMobileMenuOpen(false)}
+                    aria-current={activeKey === item.key ? "page" : undefined}
+                    className={`flex h-11 items-center rounded-full px-5 text-sm font-semibold transition-colors ${
+                      activeKey === item.key
+                        ? "border border-[#dfc9ae] bg-[#f4ebe0] text-[#7a5230] dark:border-[#6d4f36] dark:bg-[#3a281d] dark:text-[#f4e6d6]"
+                        : "text-slate-700 hover:bg-[#faf5ee] dark:text-neutral-200 dark:hover:bg-[#201813]"
+                    }`}
+                  >
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+
+            <div className="mt-3 flex items-center justify-between gap-3 border-t border-slate-200/80 px-2 pt-3 dark:border-[#303030]">
+              {!semestersLoading && semesters.length > 0 ? (
+                <label className="flex min-w-0 items-center gap-2 text-sm font-semibold text-slate-700 dark:text-neutral-200">
+                  <span className="shrink-0">Semester</span>
+                  <select
+                    value={selectedSemester ?? ""}
+                    onChange={(event) => setSelectedSemester(event.target.value)}
+                    className="h-10 min-w-0 rounded-full border border-slate-200 bg-white px-3 text-sm font-medium text-slate-800 dark:border-[#3a3a3a] dark:bg-[#181818] dark:text-neutral-100"
+                  >
+                    {semesters.slice(0, 5).map((s) => (
+                      <option key={s.term} value={s.term}>
+                        {s.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ) : (
+                <span />
+              )}
+              <ThemeToggle className="h-11 w-11 shrink-0 rounded-full text-slate-700 hover:bg-[#faf5ee] hover:text-[#7a5230] dark:text-neutral-200 dark:hover:bg-[#201813]" />
+            </div>
+          </nav>
+        )}
+        {/* Search results render here (via portal), inside the fixed wrapper so
+            they float a set gap below the bar instead of sitting under it. */}
+        <div id="class-search-results-slot" className="mx-auto mt-3 w-full max-w-7xl"></div>
+      </div>
     </>
   );
 }

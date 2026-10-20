@@ -1,10 +1,12 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { useSchedule } from "@/features/schedule/context/schedule-context";
+import { useSemester } from "@/context/semester/semester-context";
+import { useSchedule } from "@/context/schedule/schedule-context";
 import { buildProfessorList } from "@/features/professors/utils/professors";
 
 export default function ProfessorsPage() {
-  const { catalog, catalogLoading, selectedSemester } = useSchedule();
+  const { catalog, catalogLoading } = useSchedule();
+  const { selectedSemester } = useSemester();
   const professors = React.useMemo(() => buildProfessorList(catalog), [catalog]);
   const [query, setQuery] = React.useState("");
   const filteredProfessors = React.useMemo(() => {

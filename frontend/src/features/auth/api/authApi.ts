@@ -1,0 +1,96 @@
+import { getApiBaseUrl } from "@/config";
+
+type ApiEnvelope = {
+  success?: boolean;
+  status?: string;
+  code?: string;
+  message?: string;
+  user?: {
+    user_id: number;
+    email: string;
+    name: string;
+    preferred_semester?: string;
+    entry_year?: number | null;
+  };
+};
+
+export type LoginRequest = {
+  email: string;
+  password: string;
+};
+
+export type SignupRequest = {
+  name: string;
+  email: string;
+  password: string;
+  phone?: string;
+  major?: string;
+  degree?: string;
+  preferredSemester?: string;
+  entryYear?: number;
+};
+
+export type AuthApiResult = ApiEnvelope & {
+  ok: boolean;
+  statusCode: number;
+};
+
+function buildApiUrl(path: string) {
+  const base = getApiBaseUrl();
+  return `${base}${path}`;
+}
+
+async function sendJson(path: string, init: RequestInit): Promise<AuthApiResult> {
+  const response = await fetch(buildApiUrl(path), {
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+      ...(init.headers ?? {}),
+    },
+    ...init,
+  });
+
+  const text = await response.text();
+  const payload = text ? (JSON.parse(text) as ApiEnvelope) : {};
+
+  return {
+    ok: response.ok,
+    statusCode: response.status,
+    ...payload,
+  };
+}
+
+export function loginUser(payload: LoginRequest) {
+  return sendJson("/api/session", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function signupUser(payload: SignupRequest) {
+  return sendJson("/api/user", {
+    method: "POST",
+    body: JSON.stringify({
+      name: payload.name,
+      email: payload.email,
+      phone: payload.phone ?? "",
+      password: payload.password,
+      major: payload.major ?? "Undeclared",
+      degree: payload.degree ?? "BS",
+      preferred_semester: payload.preferredSemester,
+      entry_year: payload.entryYear ?? null,
+    }),
+  });
+}
+
+export function logoutUser() {
+  return sendJson("/api/session", {
+    method: "DELETE",
+  });
+}
+
+export function getCurrentSessionUser() {
+  return sendJson("/api/session/me", {
+    method: "GET",
+  });
+}

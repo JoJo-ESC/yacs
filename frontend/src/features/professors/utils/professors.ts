@@ -1,4 +1,4 @@
-import type { Course } from "@/features/schedule/types/schedule";
+import type { Course } from "@/types/schedule";
 
 export type ProfessorSummary = {
   slug: string;

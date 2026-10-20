@@ -1,23 +1,26 @@
 import * as React from "react";
 import { createPortal } from "react-dom";
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { Search as SearchIcon, X as XIcon, Check as CheckIcon } from "lucide-react";
+import { Check as CheckIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
-import { Spinner } from "@/components/ui/spinner";
-import { useSchedule } from "../context/schedule-context";
-import type { Course, Meeting } from "../types/schedule";
+import { useSchedule } from "@/context/schedule/schedule-context";
+import { useSemester } from "@/context/semester/semester-context";
+import type { Course, Meeting } from "@/types/schedule";
+import { NavbarSearchField } from "@/components/ui/NavbarSearchField";
 
 function pickDefaultMeetings(c: Course): Meeting[] {
-  const chosen = new Map<string, Meeting>();
-  for (const m of c.meetings) if (!chosen.has(m.type)) chosen.set(m.type, m);
-  return Array.from(chosen.values());
+  const chosen = new Map<string, Meeting[]>();
+  for (const m of c.meetings) {
+    if (!chosen.has(m.type)) chosen.set(m.type, c.meetings.filter((meeting) => meeting.type === m.type));
+  }
+  return Array.from(chosen.values()).flat();
 }
 
 export function ClassSearch({
   dropdownContainerId = "class-search-results-slot",
   maxResults = 100,
-  itemHeight = 44,
+  itemHeight = 40,
   listMaxHeight = 320,
 }: {
   dropdownContainerId?: string;
@@ -25,7 +28,8 @@ export function ClassSearch({
   itemHeight?: number;
   listMaxHeight?: number;
 }) {
-  const { catalog, catalogLoading, addCourse, hasCourse } = useSchedule();
+  const { catalog, catalogStatus, catalogLoading, loadCatalog, addCourse, hasCourse } = useSchedule();
+  const { selectedSemester } = useSemester();
 
   const [open, setOpen] = React.useState(false);
   const [query, setQuery] = React.useState("");
@@ -42,7 +46,7 @@ export function ClassSearch({
   }, [dropdownContainerId]);
 
   React.useEffect(() => {
-    const onDocClick = (e: PointerEvent) => {
+    const onDocClick = (e: MouseEvent) => {
       const t = e.target as Node;
       if (
         (wrapperRef.current && wrapperRef.current.contains(t)) ||
@@ -51,9 +55,17 @@ export function ClassSearch({
         return;
       setOpen(false);
     };
-    document.addEventListener("pointerdown", onDocClick);
-    return () => document.removeEventListener("pointerdown", onDocClick);
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
   }, []);
+
+  // ScheduleProvider loads the catalog in the background at startup; this
+  // only retries if that load failed and the user opens the search.
+  React.useEffect(() => {
+    if (open && catalogStatus === "error" && selectedSemester) {
+      loadCatalog(selectedSemester).catch(() => {});
+    }
+  }, [open, catalogStatus, loadCatalog, selectedSemester]);
 
   type Indexed = { id: string; title: string; idL: string; titleL: string; raw: Course };
   const indexedCatalog = React.useMemo<Indexed[]>(() => {
@@ -96,16 +108,16 @@ export function ClassSearch({
   const dropdown = isOpen ? (
     <div
       ref={dropdownRef}
-      className={cn("w-full overflow-hidden bg-header text-input-foreground")}
+      className={cn(
+        "w-full overflow-hidden rounded-[22px] border border-white/65 bg-header text-input-foreground",
+        "shadow-[0_22px_60px_-28px_rgba(15,23,42,0.25)] dark:border-white/10 dark:shadow-[0_26px_70px_-32px_rgba(0,0,0,0.7)]",
+      )}
       id="class-search-dropdown-listbox"
       role="listbox"
       aria-label="Search results"
     >
       {catalogLoading ? (
-        <div className="flex items-center gap-2 p-3 text-sm opacity-80">
-          <Spinner size="sm" label="Loading course catalog" />
-          <span>Loading classes...</span>
-        </div>
+        <div className="p-3 text-sm opacity-80">Loading classes…</div>
       ) : filtered.length === 0 ? (
         <div className="p-3 text-sm opacity-80">No classes found.</div>
       ) : (
@@ -148,10 +160,9 @@ export function ClassSearch({
                   >
                     <li
                       className={cn(
-                        "flex cursor-pointer items-center gap-2 px-3 border-b border-border",
+                        "flex cursor-pointer items-center gap-2 px-3 border-b border-border h-[40px]",
                         already ? "opacity-60 cursor-not-allowed" : "hover:bg-muted"
                       )}
-                      style={{ height: itemHeight }}
                       onMouseDown={(e) => e.preventDefault()}
                       onClick={() => {
                         if (already) return;
@@ -189,23 +200,24 @@ export function ClassSearch({
     <>
       <div
         ref={wrapperRef}
-        className={cn(
-          "flex w-full items-center gap-2 rounded-md border bg-white dark:bg-black",
-          "border-border px-3 py-2 shadow-sm focus-within:ring-2 focus-within:ring-ring"
-        )}
+        className="w-full"
         onClick={() => {
           setOpen(true);
           inputRef.current?.focus();
         }}
       >
-        <SearchIcon className="h-4 w-4 opacity-60" aria-hidden="true" />
-        <input
-          ref={inputRef}
+        <NavbarSearchField
+          id="class-search-input"
           value={query}
-          disabled={catalogLoading}
-          onChange={(e) => {
-            setQuery(e.target.value);
+          inputRef={inputRef}
+          onChange={(nextValue) => {
+            setQuery(nextValue);
             if (!isOpen) setOpen(true);
+          }}
+          onClear={() => {
+            setQuery("");
+            setOpen(true);
+            inputRef.current?.focus();
           }}
           onFocus={() => setOpen(true)}
           onKeyDown={(e) => {
@@ -214,30 +226,13 @@ export function ClassSearch({
               (e.target as HTMLInputElement).blur();
             }
           }}
-          className="min-w-0 flex-1 bg-transparent text-foreground placeholder:opacity-60 outline-none"
-          aria-label="Search classes"
-          aria-expanded={isOpen}
-          aria-haspopup="listbox"
-          aria-controls="class-search-dropdown-listbox"
-          placeholder={catalogLoading ? "Loading classes..." : "Search classes..."}
+          placeholder="Search classes..."
+          ariaLabel="Search classes"
+          ariaExpanded={isOpen}
+          ariaHaspopup="listbox"
+          ariaControls="class-search-dropdown-listbox"
           role="combobox"
         />
-        {catalogLoading && <Spinner size="sm" label="Loading course catalog" className="text-foreground/70" />}
-        {query && (
-          <button
-            type="button"
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded hover:bg-muted"
-            onClick={(e) => {
-              e.stopPropagation();
-              setQuery("");
-              setOpen(true);
-              inputRef.current?.focus();
-            }}
-            aria-label="Clear search"
-          >
-            <XIcon className="h-4 w-4 opacity-60" />
-          </button>
-        )}
       </div>
       {portalEl && dropdown ? createPortal(dropdown, portalEl) : null}
     </>

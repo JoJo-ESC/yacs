@@ -1,6 +1,7 @@
 import React from "react";
 import { Link, useParams } from "react-router-dom";
-import { useSchedule } from "@/features/schedule/context/schedule-context";
+import { useSemester } from "@/context/semester/semester-context";
+import { useSchedule } from "@/context/schedule/schedule-context";
 import { buildProfessorList } from "@/features/professors/utils/professors";
 
 function buildRateMyProfessorsSearchUrl(name: string) {
@@ -10,7 +11,8 @@ function buildRateMyProfessorsSearchUrl(name: string) {
 
 export default function ProfessorDetailPage() {
   const { professorSlug } = useParams();
-  const { catalog, catalogLoading, selectedSemester } = useSchedule();
+  const { catalog, catalogLoading } = useSchedule();
+  const { selectedSemester } = useSemester();
   const professors = React.useMemo(() => buildProfessorList(catalog), [catalog]);
   const professor = React.useMemo(
     () => professors.find((entry) => entry.slug === professorSlug),

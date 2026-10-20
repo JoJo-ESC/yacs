@@ -1,8 +1,8 @@
 import React from "react";
 
 import { Button } from "@/components/ui/button";
-import { useSchedule } from "@/features/schedule/context/schedule-context";
-import { copyFinalsAsText, downloadFinalsIcs, downloadFinalsPng, printFinalsPdf } from "@/features/schedule/utils/exportSchedule";
+import { useSchedule } from "@/context/schedule/schedule-context";
+import { copyFinalsAsText, downloadFinalsIcs, downloadFinalsPng, printFinalsPdf } from "@/lib/schedule/exportSchedule";
 import { getFinalsForCourses } from "@/features/finals/utils/finalsSchedule";
 
 export default function FinalsPage() {

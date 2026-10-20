@@ -1,0 +1,204 @@
+# backend/scraper/import_courses.py
+
+import argparse
+import asyncio
+import json
+import os
+import sys
+
+# Add parent directory to path so we can import from models
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+
+from models import SessionLocal, Course, MeetingTime, init_db, reset_course_tables
+from services import cache_service, redis_client
+
+try:
+    from .terms import get_active_term_codes
+except ImportError:
+    from terms import get_active_term_codes
+
+
+def load_json_file(filepath: str) -> list:
+    """Load and parse a JSON file."""
+    with open(filepath, 'r', encoding='utf-8') as f:
+        return json.load(f)
+
+
+def _build_row_label(course_json: dict, index: int) -> str:
+    row_id = course_json.get('id')
+    subject = course_json.get('subject')
+    course_number = course_json.get('courseNumber')
+    return f"row={index} id={row_id!r} subject={subject!r} course_number={course_number!r}"
+
+
+def _warn_skipped_course(filepath: str, index: int, course_json: dict, reason: str) -> None:
+    print(
+        f"WARNING: Skipping malformed course in {os.path.basename(filepath)} "
+        f"({_build_row_label(course_json, index)}): {reason}",
+        file=sys.stderr,
+    )
+
+
+def import_courses_from_file(filepath: str, db_session) -> int:
+    """Import courses from a single JSON file. Returns count of imported courses."""
+    courses_data = load_json_file(filepath)
+    count = 0
+    skipped = 0
+
+    for index, course_json in enumerate(courses_data, start=1):
+        term = course_json.get('term')
+        crn = course_json.get('courseReferenceNumber')
+        if not term or not crn:
+            missing_fields = []
+            if not term:
+                missing_fields.append('term')
+            if not crn:
+                missing_fields.append('courseReferenceNumber')
+            _warn_skipped_course(filepath, index, course_json, f"missing required field(s): {', '.join(missing_fields)}")
+            skipped += 1
+            continue
+
+        existing_course = db_session.query(Course).filter_by(term=term, crn=crn).one_or_none()
+
+        course_fields = {
+            'term': term,
+            'term_desc': course_json.get('termDesc'),
+            'crn': crn,
+            'subject': course_json.get('subject'),
+            'subject_description': course_json.get('subjectDescription'),
+            'course_number': course_json.get('courseNumber'),
+            'course_title': course_json.get('courseTitle'),
+            'credit_hours': course_json.get('creditHours') or course_json.get('creditHourHigh') or course_json.get('creditHourLow'),
+            'max_enrollment': course_json.get('maximumEnrollment'),
+            'enrollment': course_json.get('enrollment'),
+            'seats_available': course_json.get('seatsAvailable'),
+            'section': course_json.get('sequenceNumber'),
+            'schedule_type': course_json.get('scheduleTypeDescription'),
+            'instructional_method': course_json.get('instructionalMethod'),
+        }
+
+        if existing_course is None:
+            course = Course(id=course_json.get('id'), **course_fields)
+            db_session.add(course)
+        else:
+            for field_name, value in course_fields.items():
+                setattr(existing_course, field_name, value)
+
+        # Replace meeting times for this CRN
+        db_session.query(MeetingTime).filter_by(term=term, crn=crn).delete()
+        for mf in course_json.get('meetingsFaculty', []):
+            mt = mf.get('meetingTime', {})
+            # Instructor: meeting-level faculty first, then primary course faculty
+            instructor = next(
+                (f['displayName'] for f in mf.get('faculty', []) if f.get('displayName')),
+                next((f['displayName'] for f in course_json.get('faculty', []) if f.get('primaryIndicator') and f.get('displayName')), None)
+            )
+            db_session.add(MeetingTime(
+                term=term,
+                crn=crn,
+                monday=mt.get('monday', False),
+                tuesday=mt.get('tuesday', False),
+                wednesday=mt.get('wednesday', False),
+                thursday=mt.get('thursday', False),
+                friday=mt.get('friday', False),
+                saturday=mt.get('saturday', False),
+                sunday=mt.get('sunday', False),
+                begin_time=mt.get('beginTime'),
+                end_time=mt.get('endTime'),
+                building=mt.get('building'),
+                building_description=mt.get('buildingDescription'),
+                room=mt.get('room'),
+                start_date=mt.get('startDate'),
+                end_date=mt.get('endDate'),
+                meeting_schedule_type=mt.get('meetingScheduleType'),
+                instructor_name=instructor,
+            ))
+        count += 1
+
+    import_courses_from_file.last_skipped_count = skipped
+    db_session.commit()
+    return count
+
+
+async def _invalidate_course_cache() -> None:
+    """Clears the API's cached course/department/semester responses so the
+    freshly imported data is served immediately instead of after the TTLs.
+
+    Every current `yacs:cache:*` entry is derived from course data, so the
+    whole namespace is cleared. Redis being down is not an import failure.
+    """
+    redis_url = redis_client.resolve_url()
+    await redis_client.connect(redis_url)
+    try:
+        deleted = await cache_service.invalidate_prefix("yacs:cache:")
+    finally:
+        await redis_client.disconnect()
+
+    if deleted is None:
+        print("WARNING: Could not clear the API cache (Redis unavailable); stale entries will expire via TTL.", file=sys.stderr)
+    else:
+        print(f"Cleared {deleted} cached API responses")
+
+
+def main():
+    parser = argparse.ArgumentParser(description='Import course data from JSON files into database')
+    parser.add_argument(
+        '--term',
+        help='Specific term to import (e.g., 202501).',
+    )
+    parser.add_argument(
+        '--all',
+        action='store_true',
+        help='Import all terms on disk (use for initial setup or full refresh).',
+    )
+    parser.add_argument(
+        '--reset-course-tables',
+        action='store_true',
+        help='Drop and recreate course and meeting_time tables before importing.',
+    )
+    args = parser.parse_args()
+
+    # Initialize database tables
+    init_db()
+    if args.reset_course_tables:
+        reset_course_tables()
+        print("Reset course and meeting_time tables.")
+
+    # Get data directory
+    data_dir = os.path.join(os.path.dirname(__file__), 'data')
+
+    # Get list of files to import
+    if args.term:
+        files = [f'sis9_courses_{args.term}.json']
+    elif args.all:
+        files = sorted([f for f in os.listdir(data_dir) if f.endswith('.json')])
+    else:
+        active_codes = get_active_term_codes()
+        files = [f'sis9_courses_{code}.json' for code in sorted(active_codes)]
+
+    db = SessionLocal()
+    total = 0
+
+    try:
+        for filename in files:
+            filepath = os.path.join(data_dir, filename)
+            if not os.path.exists(filepath):
+                print(f"File not found: {filename}")
+                continue
+
+            print(f"Importing {filename}...")
+            count = import_courses_from_file(filepath, db)
+            skipped = getattr(import_courses_from_file, 'last_skipped_count', 0)
+            print(f"  Imported {count} courses ({skipped} skipped)")
+            total += count
+
+        print(f"\nTotal: {total} courses imported")
+    finally:
+        db.close()
+        # Runs even if a later file failed: earlier files were already
+        # committed, so the cache may be stale either way.
+        asyncio.run(_invalidate_course_cache())
+
+
+if __name__ == '__main__':
+    main()

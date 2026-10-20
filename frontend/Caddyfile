@@ -1,0 +1,87 @@
+# Production web server: serves the built React app, forwards /api to the
+# backend, and handles HTTPS + compression. Baked into the image by
+# Dockerfile.prod.
+#
+# Environment variables:
+#   DOMAIN        Site address. A real domain (e.g. yacs.example.com) gets a
+#                 free Let's Encrypt certificate automatically; its DNS must
+#                 already point at this server. For local testing use ":80"
+#                 (plain HTTP, no certificate).
+#   API_UPSTREAM  Backend address, default backend:8000 (the compose service).
+#   POSTHOG_HOST / POSTHOG_ASSETS_HOST
+#                 PostHog ingestion hosts for the project's region. Defaults are
+#                 US; for an EU project use eu.i.posthog.com and
+#                 eu-assets.i.posthog.com.
+
+{$DOMAIN} {
+	# Compress responses (~17x smaller course listings). Browsers that
+	# support neither get the uncompressed response.
+	encode zstd gzip
+
+	# --- API -----------------------------------------------------------------
+	# Only /api/* reaches the backend, so FastAPI's /docs, /redoc and
+	# /openapi.json stay private.
+	handle /api/* {
+		# Generous for JSON (saved plans are a few KB); blocks huge uploads.
+		request_body {
+			max_size 2MB
+		}
+		# Caddy sets X-Forwarded-For / X-Forwarded-Proto from the real
+		# connection and replaces any value a client sent, so visitors can't
+		# spoof their IP. The backend trusts these headers (--proxy-headers).
+		reverse_proxy {$API_UPSTREAM:backend:8000}
+	}
+
+	# --- Analytics -------------------------------------------------------------
+	# The frontend sends PostHog events to /ingest on this domain, forwarded
+	# here, so ad blockers that block PostHog's own domain don't hide usage.
+	# (Caddy tries the longer /ingest/static/* path first.)
+	handle_path /ingest/static/* {
+		rewrite * /static{path}
+		reverse_proxy https://{$POSTHOG_ASSETS_HOST:us-assets.i.posthog.com} {
+			header_up Host {$POSTHOG_ASSETS_HOST:us-assets.i.posthog.com}
+		}
+	}
+	handle_path /ingest/* {
+		reverse_proxy https://{$POSTHOG_HOST:us.i.posthog.com} {
+			header_up Host {$POSTHOG_HOST:us.i.posthog.com}
+		}
+	}
+
+	# --- Frontend --------------------------------------------------------------
+	handle {
+		root * /srv
+
+		# Build output in /static has content hashes in its file names
+		# (main.9411b1bd.js), so a changed file gets a new name and these can
+		# be cached forever.
+		@hashed path /static/*
+		header @hashed Cache-Control "public, max-age=31536000, immutable"
+
+		# Everything else, index.html especially, must be revalidated so a
+		# deploy takes effect on the next page load.
+		@notHashed not path /static/*
+		header @notHashed Cache-Control "no-cache"
+
+		# Client-side routes (/schedule, /courses/...) have no file on disk:
+		# serve index.html and let React Router render the page.
+		try_files {path} /index.html
+		file_server
+	}
+
+	header {
+		# Remember to always use HTTPS for a year. Browsers ignore this header
+		# over plain HTTP, so local ":80" testing is unaffected.
+		Strict-Transport-Security "max-age=31536000"
+		# Don't guess content types; don't allow the site in other sites' frames.
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+
+	log {
+		output stdout
+		format console
+	}
+}

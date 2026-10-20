@@ -1,3 +1,9 @@
+HISTORICAL REVIEW — BEFORE UPSTREAM MERGE
+The results below apply to backup-before-conflict-resolution-20261013.
+Upstream replaced the menu, planner, authentication, and CSV catalog. The old
+touch-review.cjs runner must be adapted before it can validate the merged UI.
+The 39/39 result below is not a claim about the merged application.
+
 Mobile touch review for issue #17
 
 Scenarios at each size:

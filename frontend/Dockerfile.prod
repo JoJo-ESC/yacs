@@ -1,0 +1,37 @@
+# Production image for the frontend: builds the React app, then serves the
+# static files with Caddy, which also terminates HTTPS, gzips responses and
+# proxies /api to the backend (see Caddyfile).
+# Development keeps using ./Dockerfile (the `npm start` dev server).
+
+# --- Stage 1: build the static site ---------------------------------------
+FROM node:20-alpine AS build
+
+WORKDIR /app
+
+# Install dependencies first so this layer is cached until the lockfile changes.
+# `npm ci` installs exactly what package-lock.json pins.
+COPY package.json package-lock.json ./
+RUN npm ci --no-audit --no-fund
+
+COPY . .
+
+# Empty API base URL = call the API on the same domain the site is served
+# from (Caddy forwards /api to the backend). React bakes this in at build time.
+ARG REACT_APP_API_BASE_URL=""
+ENV REACT_APP_API_BASE_URL=$REACT_APP_API_BASE_URL
+
+# PostHog project key; analytics stay off when empty. It's a public,
+# write-only key (it ends up in the browser), so baking it in is fine.
+ARG REACT_APP_POSTHOG_KEY=""
+ARG REACT_APP_POSTHOG_UI_HOST="https://us.posthog.com"
+ENV REACT_APP_POSTHOG_KEY=$REACT_APP_POSTHOG_KEY \
+    REACT_APP_POSTHOG_UI_HOST=$REACT_APP_POSTHOG_UI_HOST
+
+RUN npm run build
+
+# --- Stage 2: serve it -------------------------------------------------------
+# Only the built files are copied over; Node and node_modules stay behind.
+FROM caddy:2-alpine
+
+COPY Caddyfile /etc/caddy/Caddyfile
+COPY --from=build /app/build /srv

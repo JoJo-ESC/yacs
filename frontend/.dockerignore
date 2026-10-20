@@ -1,0 +1,14 @@
+# Kept out of every image built from ./frontend. Development is unaffected:
+# docker-compose.yml mounts the whole folder over /app at runtime.
+
+# Installed inside the image instead (the host's may hold macOS-only binaries),
+# and at ~600 MB it makes every build slow to start.
+node_modules/
+
+# Previous local build output; the image builds its own.
+build/
+
+# Dev-only API settings; production builds set REACT_APP_API_BASE_URL themselves.
+.env.development
+
+**/.DS_Store
