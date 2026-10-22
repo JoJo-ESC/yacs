@@ -1,62 +1,136 @@
-YACS changes summary
+YACS - Maksymilian's Changes Summary
+Updated: October 22, 2026
 
-1. Semester selection frontend
-- Added a semester dropdown to the navbar.
-- Stored the selected semester in shared frontend app state.
-- Filtered catalog courses and selected schedule courses by the selected semester.
-- Saved the last selected semester in localStorage so it persists across reloads.
+Scope: Changes authored by Maksymilian (Zumaks) in the current branch history,
+through commit c23a492. Please note that some of the implementations were
+later adapted or replaced by upstream changes during the October 20 merge.
 
-Main frontend files involved
-- frontend/src/features/schedule/components/SemesterSelect.tsx
-- frontend/src/features/schedule/context/schedule-context.tsx
-- frontend/src/components/layout/Navbar.tsx
-- frontend/src/testing/App.test.tsx
+1. Error and not-found pages
+Added a 404 page for invalid URLs and an error boundary for application errors,
+then refined routing, error handling, and supporting tests.
+Commits: 9bc9226, 215773f
 
-2. Semester backend
-- Added a new backend endpoint: /api/semesters
-- Added a semester router and service.
-- The backend can return semesters from config if provided.
-- If config is not provided, it discovers semesters from scraper data files.
-- This was kept isolated so it can be replaced easily if the backend changes later.
+2. Reusable loading spinner
+Created a shared spinner component for displaying loading feedback.
+Commit: 3bdc8a4
 
-Main backend files involved
-- backend/routers/semester_router.py
-- backend/services/semester_service.py
-- backend/main.py
-- backend/routers/__init__.py
-- backend/services/__init__.py
-- backend/configs/config.yaml
-- backend/tests/test_semester_service.py
+3. Course loading feedback
+Displayed a spinner while courses load and added skeleton placeholders for
+course cards, with frontend tests for both loading states.
+Commits: 35cfaa6, 778097c
 
-3. Professor directory frontend
-- Added a professor directory page.
-- Added a navbar link and route for the professor directory.
-- Built professor entries from the current semester-filtered catalog.
-- Added professor detail pages.
-- Added the list of courses taught by each professor on the detail page.
-- Added professor search by name on the directory page.
-- Added a Rate My Professors search link on the detail page.
+4. Login loading state
+Added a login page with loading feedback during submission and supporting
+navigation, routing, and frontend tests.
+Commit: cb8e619
 
-Main professor files involved
-- frontend/src/features/professors/routes/ProfessorsPage.tsx
-- frontend/src/features/professors/routes/ProfessorDetailPage.tsx
-- frontend/src/features/professors/utils/professors.ts
-- frontend/src/routes/AppRoutes.tsx
-- frontend/src/components/layout/Navbar.tsx
-- frontend/src/testing/App.test.tsx
+5. Schedule calendar export
+Added ICS export so users can import their course schedule into calendar apps,
+with export helpers and automated tests.
+Commit: 3d609e3
 
-4. Testing
-- Updated frontend route and feature tests in App.test.tsx for:
-  semester state
-  semester filtering
-  semester persistence
-  professor directory route
-  professor detail page
-  professor search
-  Rate My Professors link
-- Added a lightweight backend semester service test script.
+6. Schedule PDF export
+Added a printable schedule view that users can save as a PDF, with tests for
+the export behavior.
+Commit: b2fc33a
 
-Notes
-- The semester frontend work is done.
-- The professor directory frontend work is done.
-- The semesters backend endpoint is done.
+7. Schedule image export
+Added PNG export for saving the schedule as an image, with automated tests.
+Commit: cb577d5
+
+8. Copy schedule as text
+Added a clipboard option for copying a readable text version of the schedule,
+with supporting export tests.
+Commit: 24e26a0
+
+9. Finals page
+Created the frontend finals page and route, including supporting structure for
+future backend integration and a route test.
+Commit: ba37c6d
+
+10. Finals exports
+Added calendar (ICS), PDF, PNG, and clipboard text exports for finals schedules,
+with shared export utilities and tests.
+Commits: 72792b8, 5849a98, 8b39d53, cd04d00
+
+11. Semester selection
+Added a semester dropdown, shared selection state, semester-based course
+filtering, and localStorage persistence for the last selected semester.
+Commits: 3e72ece, caf674f, ef8805e, 5d89c01
+
+12. Backend semesters endpoint
+Added /api/semesters with a router and service that read configured semesters
+or discover them from scraper data filenames, plus semester service tests.
+Commit: 2f237f3
+
+13. Professor directory
+Added a professor directory built from the selected semester's catalog,
+including navigation, routing, and frontend tests.
+Commit: ce77398
+
+14. Professor details and courses
+Added professor detail pages showing names, departments, and courses taught,
+with supporting catalog utilities and tests.
+Commits: 35ef1a4, ccf5041
+
+15. Professor search and external ratings link
+Added professor search by name and a Rate My Professors search link on each
+professor detail page, with frontend tests.
+Commits: 2bedfad, e34eabb
+
+16. Initial changes documentation
+Added the original text summary covering semester selection, the semesters
+endpoint, professor features, and their tests.
+Commit: b890817
+
+17. Mobile navigation
+Added a mobile navigation menu, then developed it into an animated slide-out
+drawer with a backdrop, theme toggle, focus trapping, and scroll locking.
+Added dismissal behavior and navigation tests while preserving desktop use.
+Commits: 1918550, a7d00ed
+
+18. Responsive shared pages
+Adjusted the footer, professor pages, profile page, and error page layouts
+for smaller screens.
+Commit: 6c3a6bb
+
+19. Mobile schedule usability
+Improved search, semester selection, schedule controls, and the weekly calendar
+layout for smaller screens and horizontal scrolling.
+Commit: 39ce131
+
+20. Mobile finals controls
+Adjusted finals export controls and spacing so they wrap on narrow screens.
+Commit: facf62f
+
+21. Planner selection without dragging
+Added a way to select courses and add them to planner terms without dragging,
+with frontend tests for the interaction.
+Commit: a39aa44
+
+22. Touch controls and accessibility
+Enlarged touch targets, improved search dismissal for pointer input, added
+accessible control labels and selection states, and adjusted mobile input sizes.
+Commit: efb588e
+
+23. Blank PDF export fix
+Fixed blank schedule and finals PDF windows by populating the opened window
+before printing, and added regression tests.
+Commit: 2de5a33
+
+24. Repeatable mobile review
+Added a browser touch-review script and a report covering navigation, search,
+schedules, exports, professors, login, and planner interactions across viewports.
+The recorded passing results apply to the pre-merge app, not the current UI.
+Commit: c6a2107
+
+25. Upstream merge and test adaptation
+Merged upstream changes, adapted frontend tests to the merged application,
+and preserved older test copies and historical touch-review results.
+The merge also brought in other contributors' features and backend tests.
+Commit: 369d19b
+
+26. Mobile section preview times
+Adjusted the small weekly section preview so start/end times and AM/PM labels
+fit within narrow day columns, improving the blue time badges on mobile.
+Commit: c23a492
