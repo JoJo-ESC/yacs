@@ -19,7 +19,7 @@ def _patch(monkeypatch, failing=()):
     monkeypatch.setattr(sync, "SIS9Scraper", _FakeScraper)
     monkeypatch.setattr(sync, "scrape_term", fake_scrape_term)
     monkeypatch.setattr(models, "init_db", lambda: None)
-    monkeypatch.setattr(import_courses, "import_files", lambda files, data_dir: imported.extend(files))
+    monkeypatch.setattr(import_courses, "import_files", lambda files, data_dir, prune=False: imported.extend(files))
     return scraped, imported
 
 
@@ -51,7 +51,16 @@ def test_sync_writes_to_sync_data_dir(monkeypatch, tmp_path):
     monkeypatch.setattr(sync, "SIS9Scraper", _FakeScraper)
     monkeypatch.setattr(sync, "scrape_term", lambda scraper, code, output_dir, force=False: dirs.append(output_dir) or 10)
     monkeypatch.setattr(models, "init_db", lambda: None)
-    monkeypatch.setattr(import_courses, "import_files", lambda files, data_dir: dirs.append(data_dir))
+    monkeypatch.setattr(import_courses, "import_files", lambda files, data_dir, prune=False: dirs.append(data_dir))
 
     assert sync.sync(["202609"]) is True
     assert dirs == [str(tmp_path), str(tmp_path)]
+
+
+def test_sync_prunes_removed_sections(monkeypatch):
+    _patch(monkeypatch)
+    calls = []
+    monkeypatch.setattr(import_courses, "import_files", lambda files, data_dir, prune=False: calls.append(prune))
+
+    assert sync.sync(["202609"]) is True
+    assert calls == [True]

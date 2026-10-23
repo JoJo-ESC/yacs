@@ -136,7 +136,7 @@ All commands run in `~/yacs` on the server.
 
 ### Refreshing course data
 
-This is automatic. Every Sunday at 08:00 UTC (3–4 AM Eastern), the `sync` service scrapes the current and next terms from SIS9 and imports them. Which terms count as current and next is worked out from the date (`backend/scraper/terms.py`). SIS9's class search doesn't need a login, so there's no cookie to keep up to date. The import clears the API cache, so changes show up immediately. Deploys and restarts don't trigger a sync.
+This is automatic. Every Sunday at 08:00 UTC (3–4 AM Eastern), the `sync` service scrapes the current and next terms from SIS9 and imports them. Which terms count as current and next is worked out from the date (`backend/scraper/terms.py`). SIS9's class search doesn't need a login, so there's no cookie to keep up to date. Sections that have disappeared from SIS9 (e.g. cancelled) are deleted from that term. The import clears the API cache, so changes show up immediately. Deploys and restarts don't trigger a sync.
 
 | Task | Command |
 | :--- | :--- |

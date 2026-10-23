@@ -30,7 +30,8 @@ def sync_data_dir() -> str:
 def sync(term_codes=None, force: bool = False) -> bool:
     """Scrape and import the given terms (default: active terms).
 
-    Returns True if every requested term synced. A term that fails to
+    Returns True if every requested term synced. Sections no longer on
+    SIS9 are deleted from a synced term. A term that fails to
     scrape, or whose scrape looks wrong (see scrape_term), is reported and
     skipped, keeping its existing data; the others are still imported.
     `force` imports suspicious scrapes anyway.
@@ -71,7 +72,10 @@ def sync(term_codes=None, force: bool = False) -> bool:
         return ok
 
     init_db()
-    import_files([os.path.basename(term_data_path(code)) for code in scraped], data_dir)
+    # Each file is a full fresh scrape, so sections missing from it were
+    # removed from SIS9 (e.g. cancelled). scrape_term's size check keeps a
+    # broken response from getting this far.
+    import_files([os.path.basename(term_data_path(code)) for code in scraped], data_dir, prune=True)
     return ok
 
 

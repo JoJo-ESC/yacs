@@ -41,11 +41,18 @@ def _warn_skipped_course(filepath: str, index: int, course_json: dict, reason: s
     )
 
 
-def import_courses_from_file(filepath: str, db_session) -> int:
-    """Import courses from a single JSON file. Returns count of imported courses."""
+def import_courses_from_file(filepath: str, db_session, prune: bool = False) -> int:
+    """Import courses from a single JSON file. Returns count of imported courses.
+
+    With `prune`, the file is treated as the complete list of sections for
+    each term in it: sections of those terms missing from the file (e.g.
+    cancelled since the last import) are deleted. Only use it with a fresh,
+    full scrape of the term.
+    """
     courses_data = load_json_file(filepath)
     count = 0
     skipped = 0
+    seen_crns = {}  # term -> CRNs in this file
 
     for index, course_json in enumerate(courses_data, start=1):
         term = course_json.get('term')
@@ -60,6 +67,7 @@ def import_courses_from_file(filepath: str, db_session) -> int:
             skipped += 1
             continue
 
+        seen_crns.setdefault(term, set()).add(crn)
         existing_course = db_session.query(Course).filter_by(term=term, crn=crn).one_or_none()
 
         course_fields = {
@@ -117,9 +125,30 @@ def import_courses_from_file(filepath: str, db_session) -> int:
             ))
         count += 1
 
+    pruned = 0
+    if prune:
+        for term, crns in seen_crns.items():
+            pruned += _prune_term(db_session, term, crns)
+
     import_courses_from_file.last_skipped_count = skipped
+    import_courses_from_file.last_pruned_count = pruned
     db_session.commit()
     return count
+
+
+def _prune_term(db_session, term: str, keep_crns: set) -> int:
+    """Delete the term's sections whose CRN isn't in keep_crns. Returns the count."""
+    stale = [
+        crn for (crn,) in db_session.query(Course.crn).filter(Course.term == term)
+        if crn not in keep_crns
+    ]
+    if not stale:
+        return 0
+    # Meeting times first: bulk deletes skip the ORM cascade, and SQLite
+    # doesn't enforce the foreign key's ON DELETE CASCADE by default
+    db_session.query(MeetingTime).filter(MeetingTime.term == term, MeetingTime.crn.in_(stale)).delete(synchronize_session=False)
+    db_session.query(Course).filter(Course.term == term, Course.crn.in_(stale)).delete(synchronize_session=False)
+    return len(stale)
 
 
 async def _invalidate_course_cache() -> None:
@@ -142,9 +171,10 @@ async def _invalidate_course_cache() -> None:
         print(f"Cleared {deleted} cached API responses")
 
 
-def import_files(files: list, data_dir: str = DATA_DIR) -> int:
+def import_files(files: list, data_dir: str = DATA_DIR, prune: bool = False) -> int:
     """Import the given JSON files (names relative to data_dir), then clear
-    the API cache. Returns the total number of courses imported."""
+    the API cache. Returns the total number of courses imported. See
+    import_courses_from_file for `prune`."""
     db = SessionLocal()
     total = 0
 
@@ -156,9 +186,12 @@ def import_files(files: list, data_dir: str = DATA_DIR) -> int:
                 continue
 
             print(f"Importing {filename}...")
-            count = import_courses_from_file(filepath, db)
+            count = import_courses_from_file(filepath, db, prune=prune)
             skipped = getattr(import_courses_from_file, 'last_skipped_count', 0)
-            print(f"  Imported {count} courses ({skipped} skipped)")
+            summary = f"{skipped} skipped"
+            if prune:
+                summary += f", deleted {import_courses_from_file.last_pruned_count} no longer on SIS9"
+            print(f"  Imported {count} courses ({summary})")
             total += count
 
         print(f"\nTotal: {total} courses imported")

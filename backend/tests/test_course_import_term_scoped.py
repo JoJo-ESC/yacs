@@ -147,3 +147,42 @@ def test_missing_term_or_crn_is_skipped_without_mutating_existing_rows(tmp_path,
     assert session.query(Course).count() == 1
     assert _get_course(session, term="202509", crn="72908").course_title == "DATA STRUCTURES"
     assert _count_meetings(session, term="202509", crn="72908") == 1
+
+
+def test_prune_deletes_sections_missing_from_the_file(tmp_path, monkeypatch):
+    session = _bind_importer_models(monkeypatch)
+
+    seed_file = _write_courses_file(
+        tmp_path,
+        "seed.json",
+        [
+            _course_payload(row_id=101, crn="72908"),
+            _course_payload(row_id=102, crn="72909"),
+            _course_payload(row_id=201, term="200701", crn="11111"),
+        ],
+    )
+    rescrape_file = _write_courses_file(tmp_path, "rescrape.json", [_course_payload(row_id=101, crn="72908")])
+
+    import_courses.import_courses_from_file(seed_file, session)
+    assert import_courses.import_courses_from_file(rescrape_file, session, prune=True) == 1
+
+    assert import_courses.import_courses_from_file.last_pruned_count == 1
+    assert session.query(Course).filter_by(term="202509", crn="72909").count() == 0
+    assert _count_meetings(session, term="202509", crn="72909") == 0
+    assert _count_meetings(session, term="202509", crn="72908") == 1
+    # Terms not in the file are left alone
+    assert session.query(Course).filter_by(term="200701", crn="11111").count() == 1
+
+
+def test_import_without_prune_keeps_missing_sections(tmp_path, monkeypatch):
+    session = _bind_importer_models(monkeypatch)
+
+    seed_file = _write_courses_file(
+        tmp_path, "seed.json", [_course_payload(row_id=101, crn="72908"), _course_payload(row_id=102, crn="72909")]
+    )
+    partial_file = _write_courses_file(tmp_path, "partial.json", [_course_payload(row_id=101, crn="72908")])
+
+    import_courses.import_courses_from_file(seed_file, session)
+    import_courses.import_courses_from_file(partial_file, session)
+
+    assert session.query(Course).filter_by(term="202509").count() == 2
