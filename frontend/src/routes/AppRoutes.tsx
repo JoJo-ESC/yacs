@@ -1,16 +1,19 @@
 import React from "react";
+import FinalsPage from "@/features/finals/routes/FinalsPage";
+import ProfessorsPage from "@/features/professors/routes/ProfessorsPage";
+import ProfessorDetailPage from "@/features/professors/routes/ProfessorDetailPage";
   import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
   import { trackPageview } from "@/lib/analytics";
   import App from "@/app/App";
-  import NotFoundPage from "@/app/NotFoundPage";                        
+  import NotFoundPage from "@/app/NotFoundPage";
   import ClassSectionsPage from "@/features/courses/ClassSectionsPage";
-  import SubjectBrowserPage from "@/features/courses/SubjectBrowserPage";           
-  import SubjectCoursesPage from "@/features/courses/SubjectCoursesPage";           
-  import SchedulePage from "@/features/schedule/SchedulePage";                      
-  import FourYearPlannerPage from "@/features/planner/FourYearPlannerPage";         
-  import ProfilePage from "@/features/profile/ProfilePage";                         
+  import SubjectBrowserPage from "@/features/courses/SubjectBrowserPage";
+  import SubjectCoursesPage from "@/features/courses/SubjectCoursesPage";
+  import SchedulePage from "@/features/schedule/SchedulePage";
+  import FourYearPlannerPage from "@/features/planner/FourYearPlannerPage";
+  import ProfilePage from "@/features/profile/ProfilePage";
   import LandingAuthPage from "@/features/auth/routes/LandingAuthPage";
-  import RequireAppAccess from "@/features/auth/components/RequireAppAccess";       
+  import RequireAppAccess from "@/features/auth/components/RequireAppAccess";
   import RequireAuthenticated from
   "@/features/auth/components/RequireAuthenticated";
 
@@ -24,7 +27,7 @@ import React from "react";
     return null;
   }
 
-  export function AppRoutes() {                                                     
+  export function AppRoutes() {
     return (
       <BrowserRouter>
         <PageviewTracker />
@@ -32,20 +35,23 @@ import React from "react";
           <Route path="/login" element={<LandingAuthPage />} />
           <Route element={<RequireAppAccess />}>
             <Route path="/" element={<App />}>
-              <Route index element={<SubjectBrowserPage />} />                      
+              <Route index element={<SubjectBrowserPage />} />
               <Route path="schedule" element={<SchedulePage />} />
-              <Route path="courses" element={<SubjectBrowserPage />} />             
-              <Route path="courses/class/:courseId" element={<ClassSectionsPage />} 
+              <Route path="courses" element={<SubjectBrowserPage />} />
+              <Route path="courses/class/:courseId" element={<ClassSectionsPage />}
   />
               <Route path="courses/:subjectCode" element={<SubjectCoursesPage />} />
+              <Route path="finals" element={<FinalsPage />} />
+              <Route path="professors" element={<ProfessorsPage />} />
+              <Route path="professors/:professorSlug" element={<ProfessorDetailPage />} />
               <Route path="planner" element={<FourYearPlannerPage />} />
-              <Route element={<RequireAuthenticated />}>                            
+              <Route element={<RequireAuthenticated />}>
                 <Route path="profile" element={<ProfilePage />} />
-              </Route>                                                              
+              </Route>
               <Route path="*" element={<NotFoundPage />} />
-            </Route>                                                                
+            </Route>
           </Route>
-        </Routes>                                                                   
-      </BrowserRouter> 
+        </Routes>
+      </BrowserRouter>
     );
   }

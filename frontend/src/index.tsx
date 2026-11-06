@@ -1,7 +1,7 @@
-import "./styles/globals.css";
-import reportWebVitals from "./reportWebVitals";
-import React from "react";
-import ReactDOM from "react-dom/client";
+import './styles/globals.css';
+import reportWebVitals from './reportWebVitals';
+import React from 'react';
+import ReactDOM from 'react-dom/client';
 import { AppProviders } from "@/providers/AppProviders";
 import { AppRoutes } from "@/routes/AppRoutes";
 import { initAnalytics } from "@/lib/analytics";
