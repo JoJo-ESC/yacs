@@ -17,6 +17,8 @@ try:
 except ImportError:
     from terms import get_active_term_codes
 
+DATA_DIR = os.path.join(os.path.dirname(__file__), 'data')
+
 
 def load_json_file(filepath: str) -> list:
     """Load and parse a JSON file."""
@@ -39,11 +41,18 @@ def _warn_skipped_course(filepath: str, index: int, course_json: dict, reason: s
     )
 
 
-def import_courses_from_file(filepath: str, db_session) -> int:
-    """Import courses from a single JSON file. Returns count of imported courses."""
+def import_courses_from_file(filepath: str, db_session, prune: bool = False) -> int:
+    """Import courses from a single JSON file. Returns count of imported courses.
+
+    With `prune`, the file is treated as the complete list of sections for
+    each term in it: sections of those terms missing from the file (e.g.
+    cancelled since the last import) are deleted. Only use it with a fresh,
+    full scrape of the term.
+    """
     courses_data = load_json_file(filepath)
     count = 0
     skipped = 0
+    seen_crns = {}  # term -> CRNs in this file
 
     for index, course_json in enumerate(courses_data, start=1):
         term = course_json.get('term')
@@ -58,6 +67,7 @@ def import_courses_from_file(filepath: str, db_session) -> int:
             skipped += 1
             continue
 
+        seen_crns.setdefault(term, set()).add(crn)
         existing_course = db_session.query(Course).filter_by(term=term, crn=crn).one_or_none()
 
         course_fields = {
@@ -115,9 +125,30 @@ def import_courses_from_file(filepath: str, db_session) -> int:
             ))
         count += 1
 
+    pruned = 0
+    if prune:
+        for term, crns in seen_crns.items():
+            pruned += _prune_term(db_session, term, crns)
+
     import_courses_from_file.last_skipped_count = skipped
+    import_courses_from_file.last_pruned_count = pruned
     db_session.commit()
     return count
+
+
+def _prune_term(db_session, term: str, keep_crns: set) -> int:
+    """Delete the term's sections whose CRN isn't in keep_crns. Returns the count."""
+    stale = [
+        crn for (crn,) in db_session.query(Course.crn).filter(Course.term == term)
+        if crn not in keep_crns
+    ]
+    if not stale:
+        return 0
+    # Meeting times first: bulk deletes skip the ORM cascade, and SQLite
+    # doesn't enforce the foreign key's ON DELETE CASCADE by default
+    db_session.query(MeetingTime).filter(MeetingTime.term == term, MeetingTime.crn.in_(stale)).delete(synchronize_session=False)
+    db_session.query(Course).filter(Course.term == term, Course.crn.in_(stale)).delete(synchronize_session=False)
+    return len(stale)
 
 
 async def _invalidate_course_cache() -> None:
@@ -138,6 +169,39 @@ async def _invalidate_course_cache() -> None:
         print("WARNING: Could not clear the API cache (Redis unavailable); stale entries will expire via TTL.", file=sys.stderr)
     else:
         print(f"Cleared {deleted} cached API responses")
+
+
+def import_files(files: list, data_dir: str = DATA_DIR, prune: bool = False) -> int:
+    """Import the given JSON files (names relative to data_dir), then clear
+    the API cache. Returns the total number of courses imported. See
+    import_courses_from_file for `prune`."""
+    db = SessionLocal()
+    total = 0
+
+    try:
+        for filename in files:
+            filepath = os.path.join(data_dir, filename)
+            if not os.path.exists(filepath):
+                print(f"File not found: {filename}")
+                continue
+
+            print(f"Importing {filename}...")
+            count = import_courses_from_file(filepath, db, prune=prune)
+            skipped = getattr(import_courses_from_file, 'last_skipped_count', 0)
+            summary = f"{skipped} skipped"
+            if prune:
+                summary += f", deleted {import_courses_from_file.last_pruned_count} no longer on SIS9"
+            print(f"  Imported {count} courses ({summary})")
+            total += count
+
+        print(f"\nTotal: {total} courses imported")
+    finally:
+        db.close()
+        # Runs even if a later file failed: earlier files were already
+        # committed, so the cache may be stale either way.
+        asyncio.run(_invalidate_course_cache())
+
+    return total
 
 
 def main():
@@ -164,8 +228,7 @@ def main():
         reset_course_tables()
         print("Reset course and meeting_time tables.")
 
-    # Get data directory
-    data_dir = os.path.join(os.path.dirname(__file__), 'data')
+    data_dir = DATA_DIR
 
     # Get list of files to import
     if args.term:
@@ -176,28 +239,7 @@ def main():
         active_codes = get_active_term_codes()
         files = [f'sis9_courses_{code}.json' for code in sorted(active_codes)]
 
-    db = SessionLocal()
-    total = 0
-
-    try:
-        for filename in files:
-            filepath = os.path.join(data_dir, filename)
-            if not os.path.exists(filepath):
-                print(f"File not found: {filename}")
-                continue
-
-            print(f"Importing {filename}...")
-            count = import_courses_from_file(filepath, db)
-            skipped = getattr(import_courses_from_file, 'last_skipped_count', 0)
-            print(f"  Imported {count} courses ({skipped} skipped)")
-            total += count
-
-        print(f"\nTotal: {total} courses imported")
-    finally:
-        db.close()
-        # Runs even if a later file failed: earlier files were already
-        # committed, so the cache may be stale either way.
-        asyncio.run(_invalidate_course_cache())
+    import_files(files, data_dir)
 
 
 if __name__ == '__main__':

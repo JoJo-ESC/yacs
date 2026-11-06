@@ -5,6 +5,7 @@ itsdangerous
 sqlalchemy>=2.0,<2.1
 psycopg2-binary
 pyyaml
+requests>=2.31,<3
 redis[hiredis]>=5
 slowapi>=0.1
 pytest

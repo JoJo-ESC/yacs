@@ -52,7 +52,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile.prod
-    environment:
+    environment: &backend-env
       # Turns on production checks: refuses to start without a real
       # SECRET_KEY, and always marks session cookies Secure.
       APP_ENV: production
@@ -64,11 +64,43 @@ services:
       DB_USER: ${DB_USER:-yacs}
       DB_PASS: ${DB_PASS:?Set DB_PASS in .env}
       REDIS_URL: redis://redis:6379/0
+      # Where `python -m scraper.sync` writes fresh scrapes (see volumes).
+      SYNC_DATA_DIR: /app/scraper/synced
     volumes:
       # Scraped course JSON isn't in the image (it's 300+ MB); mounted read-only
       # so the importer can run inside this container:
       #   docker compose -f docker-compose.prod.yml exec backend python scraper/import_courses.py --term 202609
       - ./backend/scraper/data:/app/scraper/data:ro
+      # Fresh scrapes from the scheduled sync. A separate volume so sync never
+      # writes into the git checkout above (which would block `git pull`).
+      - course_sync_data:/app/scraper/synced
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    restart: unless-stopped
+    logging: *default-logging
+
+  sync:
+    # Same image as the backend, but runs the scheduled course sync instead
+    # of the API: scrapes the current and next terms from SIS9 and imports
+    # them every Sunday at 08:00 UTC.
+    #   Logs:         docker compose -f docker-compose.prod.yml logs -f sync
+    #   Sync now:     docker compose -f docker-compose.prod.yml exec sync python -m scraper.sync
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.prod
+    command: ["python", "-m", "scraper.schedule"]
+    environment: *backend-env
+    volumes:
+      - course_sync_data:/app/scraper/synced
+    # The image's healthcheck probes the API port, which this service doesn't serve.
+    healthcheck:
+      disable: true
+    # Forwards `docker stop`'s SIGTERM to Python (PID 1 would ignore it and
+    # stall shutdown for 10s).
+    init: true
     depends_on:
       db:
         condition: service_healthy
@@ -109,5 +141,6 @@ services:
 
 volumes:
   postgres_data:
+  course_sync_data:
   caddy_data:
   caddy_config:

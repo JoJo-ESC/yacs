@@ -18,7 +18,7 @@ YACS is a student-led project to make course scheduling at RPI fast and easy. We
 | :--- | :--- | :--- |
 | Frontend | `frontend/src/index.tsx`, `frontend/src/app/App.tsx`, `frontend/src/context/schedule-context.tsx`, `frontend/src/lib/parseSchedule.ts` | React routes, app shell, schedule state, CSV parsing |
 | Backend | `backend/main.py`, `backend/controllers/*`, `backend/db/course_corequisite.py`, `backend/tables/*` | FastAPI routes, controllers, SQL helpers, ORM tables |
-| Data/Tools | `backend/scraper/main.py`, `frontend/public/*.csv`, `rpi_data/major_plans/*` | SIS9 scraping, course catalogs, major plan templates |
+| Data/Tools | `backend/scraper/main.py`, `backend/scraper/sync.py`, `frontend/public/*.csv`, `rpi_data/major_plans/*` | SIS9 scraping and weekly course sync, course catalogs, major plan templates |
 | Dev Infra | `docker-compose.yml` | Local dev wiring for FE/BE/DB |
 
 ## 🤝 Join the Team
