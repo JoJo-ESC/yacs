@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSchedule } from "@/context/schedule/schedule-context";
 import ScheduleList from "@/features/schedule/components/ScheduleList";
+import ScheduleSwitcher from "@/features/schedule/components/ScheduleSwitcher";
 import WeekScheduler from "@/features/schedule/components/WeekScheduler";
 import { hasScheduleConflict } from "@/lib/schedule/schedule";
 import { track } from "@/lib/analytics";
@@ -197,6 +198,9 @@ export default function SchedulePage() {
               <h2 className="mt-1 font-display text-3xl font-semibold tracking-tight text-slate-950 dark:text-white">
                 Schedule grid
               </h2>
+              <div className="mt-3">
+                <ScheduleSwitcher />
+              </div>
             </div>
 
             <div className="flex items-end gap-4 self-start sm:self-auto">
