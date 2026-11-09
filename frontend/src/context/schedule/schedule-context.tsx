@@ -12,9 +12,29 @@ import type { Course } from "@/types/schedule";
 import { fetchAllCourses } from "@/api";
 import { useSemester } from "@/context/semester/semester-context";
 import { track } from "@/lib/analytics";
+import {
+  LEGACY_SELECTION_STORAGE_KEY,
+  SCHEDULES_STORAGE_KEY,
+  addSchedule,
+  deleteSchedule,
+  getActiveSchedule,
+  getSemester,
+  loadScheduleStore,
+  newScheduleId,
+  nextScheduleName,
+  renameSchedule as renameInSemester,
+  selectSchedule as selectInSemester,
+  updateActiveCourses,
+  updateAllCourses,
+  updateSemester,
+  type SavedSchedule,
+  type ScheduleStore,
+  type SemesterSchedules,
+} from "@/lib/schedule/savedSchedules";
 
 type CatalogStatus = "idle" | "loading" | "loaded" | "error";
 
+// Courses and actions act on the active schedule of the selected semester.
 type SelectionCtx = {
   courses: Course[];
   addCourse: (c: Course) => void;
@@ -23,6 +43,13 @@ type SelectionCtx = {
   replaceCourses: (courses: Course[]) => void;
   clear: () => void;
   hasCourse: (id: string) => boolean;
+  // The selected semester's saved schedules
+  schedules: SavedSchedule[];
+  activeScheduleId: string;
+  selectSchedule: (id: string) => void;
+  createSchedule: () => SavedSchedule;
+  renameSchedule: (id: string, name: string) => void;
+  deleteSchedule: (id: string) => void;
 };
 
 const SelectionContext = createContext<SelectionCtx | undefined>(undefined);
@@ -36,72 +63,32 @@ type CatalogCtx = {
 };
 
 const CatalogContext = createContext<CatalogCtx | undefined>(undefined);
-const SELECTION_STORAGE_KEY = "schedule-selected-courses";
-
-function isMeeting(value: unknown): value is Course["meetings"][number] {
-  if (!value || typeof value !== "object") return false;
-  const meeting = value as Record<string, unknown>;
-  return (
-    typeof meeting.type === "string" &&
-    Array.isArray(meeting.days) &&
-    meeting.days.every((day) => typeof day === "string") &&
-    typeof meeting.start === "string" &&
-    typeof meeting.end === "string" &&
-    typeof meeting.location === "string" &&
-    typeof meeting.instructor === "string" &&
-    typeof meeting.section === "string" &&
-    (meeting.startDate === undefined || typeof meeting.startDate === "string") &&
-    (meeting.endDate === undefined || typeof meeting.endDate === "string") &&
-    typeof meeting.seatsAvailable === "number" &&
-    typeof meeting.enrolled === "number" &&
-    typeof meeting.maxEnroll === "number" &&
-    typeof meeting.crn === "string"
-  );
-}
-
-function isCourse(value: unknown): value is Course {
-  if (!value || typeof value !== "object") return false;
-  const course = value as Record<string, unknown>;
-  return (
-    typeof course.id === "string" &&
-    typeof course.title === "string" &&
-    typeof course.credits === "number" &&
-    typeof course.level === "string" &&
-    typeof course.department === "string" &&
-    typeof course.school === "string" &&
-    typeof course.description === "string" &&
-    typeof course.offerFrequency === "string" &&
-    Array.isArray(course.prereqs) &&
-    course.prereqs.every((item) => typeof item === "string") &&
-    Array.isArray(course.coreqs) &&
-    course.coreqs.every((item) => typeof item === "string") &&
-    typeof course.maxEnroll === "number" &&
-    typeof course.enrolled === "number" &&
-    Array.isArray(course.meetings) &&
-    course.meetings.every(isMeeting)
-  );
-}
-
-function loadInitialCourses(): Course[] {
-  if (typeof window === "undefined") return [];
-
-  try {
-    const raw = localStorage.getItem(SELECTION_STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed.filter(isCourse) : [];
-  } catch {
-    return [];
-  }
-}
-
 export function ScheduleProvider({ children }: { children: React.ReactNode }) {
-  const [courses, setCourses] = useState<Course[]>(() => loadInitialCourses());
+  const { selectedSemester } = useSemester();
+  const [store, setStore] = useState<ScheduleStore>(() => loadScheduleStore(localStorage, selectedSemester));
+  const semesterSchedules = getSemester(store, selectedSemester);
+  const courses = getActiveSchedule(semesterSchedules).courses;
+
   const courseIdSet = useMemo(() => {
     const s = new Set<string>();
     for (let i = 0; i < courses.length; i++) s.add(courses[i].id);
     return s;
   }, [courses]);
+
+  const updateSelectedSemester = useCallback(
+    (update: (semester: SemesterSchedules) => SemesterSchedules) => {
+      if (!selectedSemester) return;
+      setStore((prev) => updateSemester(prev, selectedSemester, update));
+    },
+    [selectedSemester],
+  );
+
+  const setCourses = useCallback(
+    (update: (prev: Course[]) => Course[]) => {
+      updateSelectedSemester((sem) => updateActiveCourses(sem, update));
+    },
+    [updateSelectedSemester],
+  );
 
   const addCourse = useCallback((c: Course) => {
     track("course_added", { course: c.id, department: c.department });
@@ -109,32 +96,77 @@ export function ScheduleProvider({ children }: { children: React.ReactNode }) {
       for (let i = 0; i < prev.length; i++) if (prev[i].id === c.id) return prev;
       return [...prev, c];
     });
-  }, []);
+  }, [setCourses]);
 
   const removeCourse = useCallback((id: string) => {
     track("course_removed", { course: id });
     setCourses((prev) => prev.filter((x) => x.id !== id));
-  }, []);
+  }, [setCourses]);
 
   const updateCourse = useCallback((course: Course) => {
     setCourses((prev) => prev.map((existing) => (existing.id === course.id ? course : existing)));
-  }, []);
+  }, [setCourses]);
 
   const replaceCourses = useCallback((nextCourses: Course[]) => {
-    setCourses(nextCourses);
-  }, []);
+    setCourses(() => nextCourses);
+  }, [setCourses]);
 
-  const clear = useCallback(() => setCourses([]), []);
+  const clear = useCallback(() => setCourses(() => []), [setCourses]);
 
   const hasCourse = useCallback((id: string) => courseIdSet.has(id), [courseIdSet]);
 
+  const selectSchedule = useCallback((id: string) => {
+    track("schedule_switched");
+    updateSelectedSemester((sem) => selectInSemester(sem, id));
+  }, [updateSelectedSemester]);
+
+  // Returns the new schedule (already active) so the caller can rename it.
+  const createSchedule = useCallback(() => {
+    const schedule: SavedSchedule = { id: newScheduleId(), name: nextScheduleName(semesterSchedules.schedules), courses: [] };
+    track("schedule_created", { count: semesterSchedules.schedules.length + 1 });
+    updateSelectedSemester((sem) => addSchedule(sem, schedule.id, schedule.name));
+    return schedule;
+  }, [semesterSchedules.schedules, updateSelectedSemester]);
+
+  const renameSchedule = useCallback((id: string, name: string) => {
+    updateSelectedSemester((sem) => renameInSemester(sem, id, name));
+  }, [updateSelectedSemester]);
+
+  const removeSchedule = useCallback((id: string) => {
+    track("schedule_deleted");
+    updateSelectedSemester((sem) => deleteSchedule(sem, id));
+  }, [updateSelectedSemester]);
+
   useEffect(() => {
-    localStorage.setItem(SELECTION_STORAGE_KEY, JSON.stringify(courses));
-  }, [courses]);
+    try {
+      localStorage.setItem(SCHEDULES_STORAGE_KEY, JSON.stringify(store));
+      // Moved into the new format by loadScheduleStore; safe to drop once saved
+      localStorage.removeItem(LEGACY_SELECTION_STORAGE_KEY);
+    } catch {
+      // Storage unavailable (private mode, quota): schedules last for this visit only
+    }
+  }, [store]);
 
   const selectionValue = useMemo<SelectionCtx>(
-    () => ({ courses, addCourse, removeCourse, updateCourse, replaceCourses, clear, hasCourse }),
-    [courses, addCourse, removeCourse, updateCourse, replaceCourses, clear, hasCourse]
+    () => ({
+      courses,
+      addCourse,
+      removeCourse,
+      updateCourse,
+      replaceCourses,
+      clear,
+      hasCourse,
+      schedules: semesterSchedules.schedules,
+      activeScheduleId: semesterSchedules.activeId,
+      selectSchedule,
+      createSchedule,
+      renameSchedule,
+      deleteSchedule: removeSchedule,
+    }),
+    [
+      courses, addCourse, removeCourse, updateCourse, replaceCourses, clear, hasCourse,
+      semesterSchedules, selectSchedule, createSchedule, renameSchedule, removeSchedule,
+    ]
   );
 
   const [catalog, setCatalog] = useState<Course[]>([]);
@@ -169,14 +201,18 @@ export function ScheduleProvider({ children }: { children: React.ReactNode }) {
         const catalogMap = new Map(nextCatalog.map((c) => [c.id, c]));
         startTransition(() => {
           setCatalog(nextCatalog);
-          setCourses((prev) =>
-            prev.map((c) => {
-              const fresh = catalogMap.get(c.id);
-              return fresh && c.credits === 0 && fresh.credits > 0
-                ? { ...c, credits: fresh.credits }
-                : c;
-            })
-          );
+          if (semester) {
+            setStore((prev) =>
+              updateSemester(prev, semester, (sem) =>
+                updateAllCourses(sem, (c) => {
+                  const fresh = catalogMap.get(c.id);
+                  return fresh && c.credits === 0 && fresh.credits > 0
+                    ? { ...c, credits: fresh.credits }
+                    : c;
+                })
+              )
+            );
+          }
         });
         setCatalogStatus("loaded");
       } catch (err) {
@@ -201,7 +237,6 @@ export function ScheduleProvider({ children }: { children: React.ReactNode }) {
   // load without one: that fetches every term on record (~93K sections).
   // Keyed on the semester only (via a ref to the loader), so a failed load
   // isn't retried in a loop; ClassSearch retries when the user opens it.
-  const { selectedSemester } = useSemester();
   const loadCatalogRef = useRef(loadCatalog);
   loadCatalogRef.current = loadCatalog;
   useEffect(() => {
