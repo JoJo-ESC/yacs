@@ -8,6 +8,7 @@ import {
   getActiveSchedule,
   getSemester,
   loadScheduleStore,
+  mergeScheduleStores,
   nextScheduleName,
   parseScheduleStore,
   renameSchedule,
@@ -137,5 +138,36 @@ describe("managing schedules", () => {
   test("the last schedule can't be deleted", () => {
     const sem = semester(["a", []]);
     expect(deleteSchedule(sem, "a")).toBe(sem);
+  });
+});
+
+describe("mergeScheduleStores", () => {
+  const ids = (sem: SemesterSchedules) => sem.schedules.map((s) => s.courses.map((c) => c.id));
+
+  test("keeps the account's schedules and adds local ones it doesn't have", () => {
+    const account = { "202701": semester(["a", ["CSCI-1100"]]) };
+    const local = { "202701": semester(["schedule-1", ["MATH-1010"]]) };
+    const merged = mergeScheduleStores(account, local);
+    expect(ids(merged["202701"])).toEqual([["CSCI-1100"], ["MATH-1010"]]);
+    expect(merged["202701"].activeId).toBe("a");
+  });
+
+  test("skips local schedules that are empty or already in the account", () => {
+    const account = { "202701": semester(["a", ["CSCI-1100"]]) };
+    const local = { "202701": semester(["b", ["CSCI-1100"]], ["c", []]) };
+    expect(mergeScheduleStores(account, local)).toEqual(account);
+  });
+
+  test("adds semesters only the device has", () => {
+    const local = { "202609": semester(["a", ["CSCI-1100"]]) };
+    expect(mergeScheduleStores({}, local)).toEqual(local);
+  });
+
+  test("renames and re-ids local schedules that clash with the account's", () => {
+    const account = { "202701": semester(["schedule-1", ["CSCI-1100"]]) };
+    const local = { "202701": semester(["schedule-1", ["MATH-1010"]]) };
+    const [kept, added] = mergeScheduleStores(account, local)["202701"].schedules;
+    expect(added.id).not.toBe(kept.id);
+    expect(added.name).toBe("schedule-1 (this device)");
   });
 });
