@@ -26,3 +26,7 @@ backend/tests/tmp_test_db.sqlite
 # OS
 .DS_Store
 Thumbs.db
+.pytest_cache/
+.coverage
+backend/coverage.xml
+backend/test-results.xml

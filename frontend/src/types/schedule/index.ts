@@ -8,6 +8,7 @@ export type Meeting = {
   section: string;           // "01", "L1", "R1", ...
   startDate?: string;        // "2026-01-12"
   endDate?: string;          // "2026-05-06"
+  semester?: string;         // Optional metadata used by fork export helpers
   seatsAvailable: number;
   enrolled: number;
   maxEnroll: number;
