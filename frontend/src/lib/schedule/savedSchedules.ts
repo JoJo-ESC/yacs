@@ -220,3 +220,44 @@ export function deleteSchedule(semester: SemesterSchedules, id: string): Semeste
     semester.activeId === id ? schedules[Math.min(index, schedules.length - 1)].id : semester.activeId;
   return { activeId, schedules };
 }
+
+function scheduleSignature(schedule: SavedSchedule): string {
+  return schedule.courses
+    .map((c) => `${c.id}:${c.meetings.map((m) => m.crn).join(",")}`)
+    .sort()
+    .join("|");
+}
+
+// Combines an account's schedules with ones made on this device before
+// logging in, so neither is lost: the account's are kept as-is, and each
+// non-empty local schedule the account doesn't already have (same courses
+// and sections) is added after them, renamed if its name is taken.
+export function mergeScheduleStores(account: ScheduleStore, local: ScheduleStore): ScheduleStore {
+  const merged: ScheduleStore = { ...account };
+
+  for (const [term, localSemester] of Object.entries(local)) {
+    const accountSemester = merged[term];
+    const existing = new Set((accountSemester?.schedules ?? []).map(scheduleSignature));
+    const extra = localSemester.schedules.filter(
+      (s) => s.courses.length > 0 && !existing.has(scheduleSignature(s)),
+    );
+    if (extra.length === 0) continue;
+
+    if (!accountSemester) {
+      const activeId = extra.some((s) => s.id === localSemester.activeId) ? localSemester.activeId : extra[0].id;
+      merged[term] = { activeId, schedules: extra };
+      continue;
+    }
+
+    const ids = new Set(accountSemester.schedules.map((s) => s.id));
+    const names = new Set(accountSemester.schedules.map((s) => s.name));
+    const added = extra.map((s) => ({
+      ...s,
+      id: ids.has(s.id) ? newScheduleId() : s.id,
+      name: names.has(s.name) ? `${s.name} (this device)`.slice(0, MAX_SCHEDULE_NAME_LENGTH) : s.name,
+    }));
+    merged[term] = { ...accountSemester, schedules: [...accountSemester.schedules, ...added] };
+  }
+
+  return merged;
+}

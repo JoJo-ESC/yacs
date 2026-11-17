@@ -5,3 +5,4 @@ from . import corequisite_router
 from . import admin_router
 from . import course_router
 from . import planner_router
+from . import schedule_router

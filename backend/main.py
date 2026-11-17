@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 from starlette.middleware.sessions import SessionMiddleware
 
 from middleware.admin_middleware import AdminMiddleware
-from routers import user_router, auth_router, corequisite_router, admin_router, course_router, planner_router
+from routers import user_router, auth_router, corequisite_router, admin_router, course_router, planner_router, schedule_router
 from models import init_db
 from services import redis_client
 from utils import get_secret_key, is_production, load_secrets
@@ -85,6 +85,7 @@ app.include_router(corequisite_router.router)
 app.include_router(admin_router.router)
 app.include_router(course_router.router)
 app.include_router(planner_router.router)
+app.include_router(schedule_router.router)
 
 
 # --- Root Endpoint ---

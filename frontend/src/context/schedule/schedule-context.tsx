@@ -11,6 +11,7 @@ import React, {
 import type { Course } from "@/types/schedule";
 import { fetchAllCourses } from "@/api";
 import { useSemester } from "@/context/semester/semester-context";
+import { useScheduleSync } from "@/context/schedule/useScheduleSync";
 import { track } from "@/lib/analytics";
 import {
   LEGACY_SELECTION_STORAGE_KEY,
@@ -66,6 +67,7 @@ const CatalogContext = createContext<CatalogCtx | undefined>(undefined);
 export function ScheduleProvider({ children }: { children: React.ReactNode }) {
   const { selectedSemester } = useSemester();
   const [store, setStore] = useState<ScheduleStore>(() => loadScheduleStore(localStorage, selectedSemester));
+  useScheduleSync(store, setStore);
   const semesterSchedules = getSemester(store, selectedSemester);
   const courses = getActiveSchedule(semesterSchedules).courses;
 
