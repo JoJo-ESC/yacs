@@ -4,3 +4,12 @@
 DB_HOST: "db"
 DB_PORT: "5432"
 DB_NAME: "yacsdb"
+
+# Optional backend-backed semester source overrides:
+# If SEMESTERS is set, /api/semesters returns that list directly.
+# Each entry can be a string term code like "202609" or an object like:
+#   - id: "202609"
+#     name: "Fall 2026"
+# If SEMESTERS is omitted, the backend discovers semesters from SEMESTER_DATA_GLOBS.
+# SEMESTER_DATA_GLOBS:
+#   - "scraper/data/sis9_courses_*.json"

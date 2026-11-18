@@ -98,3 +98,36 @@ cd yacs
 
 ## Developer Notes
 - Remember to stop the YACS docker container when you're done to relieve system resources. Click the red Stop button under Actions in Docker Desktop next to `new_yacs`.
+## Backend tests
+
+From the repository root, install the test dependencies and run pytest:
+
+```bash
+python3 -m pip install -r backend/requirements-dev.txt
+python3 -m pytest
+```
+
+Pytest discovers `backend/tests` (including the existing service tests). Run
+individual groups with `python3 -m pytest backend/tests/test_auth_endpoints.py`,
+`backend/tests/test_course_endpoints.py`, or
+`backend/tests/test_schedule_endpoints.py`.
+
+Endpoint tests use the real FastAPI middleware, services and SQLAlchemy queries.
+Each test gets a fresh in-memory SQLite database by default; no running database
+or Redis server is required. Test fixtures replace database session factories and
+Redis startup before entering the application lifespan. Authentication uses real
+registration, password hashing, login and signed session cookies.
+
+For PostgreSQL coverage, point `TEST_DATABASE_URL` at a **disposable database named
+`yacs_test`**. Fixtures create and drop its application tables for each endpoint
+test, so do not use a database containing data you want to keep. Only PostgreSQL
+URLs with this database name are accepted. Run these tests serially.
+
+The Backend tests GitHub Actions workflow runs on pushes and pull requests using
+PostgreSQL 16, and uploads coverage XML and JUnit results. SQLite maps JSONB to JSON
+only in the test harness; CI exercises actual PostgreSQL JSONB. Schema creation
+uses SQLAlchemy metadata; production startup migrations are not covered here.
+
+```bash
+python3 -m pytest --cov=backend/routers --cov=backend/services --cov-report=term-missing
+```

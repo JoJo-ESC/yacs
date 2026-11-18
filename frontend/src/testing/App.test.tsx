@@ -1,30 +1,16 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
-import { AppProviders } from "@/providers/AppProviders";
 import { AppRoutes } from "@/routes/AppRoutes";
 
-const mockFetch = () =>
-  Promise.resolve({
-    ok: true,
-    text: () => Promise.resolve(""),
-  });
+jest.mock("@/lib/analytics", () => ({ trackPageview: jest.fn() }));
+jest.mock("@/features/auth/hooks/useAuth", () => ({ useAuth: () => ({ isAuthenticated: false, isGuest: false }) }));
+jest.mock("@/features/auth/routes/LandingAuthPage", () => () => <h1>Sign in</h1>);
+jest.mock("@/app/App", () => () => <div>Protected app</div>);
 
-const originalFetch = global.fetch;
-
-beforeAll(() => {
-  global.fetch = mockFetch as unknown as typeof fetch;
-});
-
-afterAll(() => {
-  global.fetch = originalFetch;
-});
-
-test("renders app shell", () => {
-  render(
-    <AppProviders>
-      <AppRoutes />
-    </AppProviders>
-  );
-
-  expect(screen.getByText(/yacs/i)).toBeInTheDocument();
+test("upstream authentication still protects the merged app", () => {
+  window.history.replaceState({}, "", "/schedule");
+  render(<AppRoutes />);
+  expect(screen.getByRole("heading", { name: "Sign in" })).toBeInTheDocument();
+  expect(window.location.pathname).toBe("/login");
+  expect(screen.queryByText("Protected app")).not.toBeInTheDocument();
 });

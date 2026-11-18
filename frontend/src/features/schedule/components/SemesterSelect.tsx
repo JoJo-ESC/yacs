@@ -1,0 +1,32 @@
+import React from "react";
+import { useSemester } from "@/context/semester/semester-context";
+
+function getSemesterOptions(semesters: string[]) {
+  if (semesters.length > 0) return semesters;
+  return ["Semester selection coming soon"];
+}
+
+export default function SemesterSelect() {
+  const { semesters, semestersLoading, selectedSemester, setSelectedSemester } = useSemester();
+  const options = getSemesterOptions(semesters.map((semester) => semester.term));
+  const disabled = semestersLoading || semesters.length === 0;
+
+  return (
+    <label className="flex items-center gap-2 text-sm text-input-foreground">
+      <span className="hidden md:inline">Semester</span>
+      <select
+        aria-label="Semester"
+        className="h-11 min-w-0 w-full sm:w-auto max-w-full rounded-md border border-border bg-background px-3 text-base text-foreground outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 disabled:cursor-not-allowed disabled:opacity-70"
+        disabled={disabled}
+        value={selectedSemester || options[0] || ""}
+        onChange={(event) => setSelectedSemester(event.target.value)}
+      >
+        {options.map((semester) => (
+          <option key={semester} value={semester}>
+            {semesters.find((entry) => entry.term === semester)?.name ?? semester}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
